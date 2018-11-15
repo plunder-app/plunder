@@ -57,11 +57,11 @@ By default, all services are disabled (this is to make sure you look at the conf
 
 The plan is to have `plunder` mount and extract the correct kernels and netboot `initrd` (TBD)
 
-#Troubleshooting
+# Troubleshooting
 
 PXE booting provides very little feedback when things aren't working, but usually the hand-off is why things wont work i.e. `DHCP` -> `TFTP` boot. Logs from `plunder` should show the hand-off from the CLI.
 
-#Roadmap
+# Roadmap
 
 Fix the templating of Preseed and Kickstart files, automate the entire process end-to-end. May have `plunder` keep all configurations internally and use http handlers to expose them as urls to the boot loader (TBD)
 
