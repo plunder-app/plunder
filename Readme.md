@@ -57,6 +57,32 @@ By default, all services are disabled (this is to make sure you look at the conf
 
 The plan is to have `plunder` mount and extract the correct kernels and netboot `initrd` (TBD)
 
+# Usage
+
+Once the configuration file has been updated the `./plunder server` command will start the required services as shown below:
+
+```
+sudo ./plunder server --config ./config.json --logLevel 5
+[sudo] password for dan: 
+INFO[0000] Reading configuration from [./config.json]   
+INFO[0000] Starting Remote Boot Services, press CTRL + c to stop 
+DEBU[0000] 
+Server IP:	192.168.1.1
+Adapter:	ens192
+Start Address:	192.168.1.2
+Pool Size:	100
+ 
+INFO[0000] RemoteBoot => Starting DHCP                  
+INFO[0000] RemoteBoot => Starting TFTP                  
+DEBU[0000] 
+Server IP:	192.168.1.1
+PXEFile:	undionly.kpxe
+ 
+INFO[0000] Opening and caching undionly.kpxe            
+INFO[0000] RemoteBoot => Starting HTTP                  
+INFO[0286] DCHP Message: Discover   
+```
+
 # Troubleshooting
 
 PXE booting provides very little feedback when things aren't working, but usually the hand-off is why things wont work i.e. `DHCP` -> `TFTP` boot. Logs from `plunder` should show the hand-off from the CLI.
