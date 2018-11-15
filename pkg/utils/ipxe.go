@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // Static URL for retrieving the bootloader
@@ -16,6 +18,7 @@ const iPXEURL = "https://boot.ipxe.org/undionly.kpxe"
 //
 //////////////////////////////
 
+// GenerateiPXEScript - This will build an iPXE boot script
 func GenerateiPXEScript(webserverAddress string, kernel string, initrd string, cmdline string) error {
 	script := `#!ipxe
 dhcp
@@ -45,31 +48,28 @@ boot`
 }
 
 // PullPXEBooter - This will attempt to download the iPXE bootloader
-func pullPXEBooter() {
-	fmt.Printf("Beginning of iPXE download... ")
+func PullPXEBooter() error {
+	log.Infoln("Beginning of iPXE download... ")
 
 	// Create the file
 	out, err := os.Create("undionly.kpxe")
 	if err != nil {
-		fmt.Printf("%v", err)
-		os.Exit(-1)
+		return err
 	}
 	defer out.Close()
 
 	// Get the data
 	resp, err := http.Get(iPXEURL)
 	if err != nil {
-		fmt.Printf("%v", err)
-		os.Exit(-1)
+		return err
 	}
 	defer resp.Body.Close()
 
 	// Writer the body to file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		fmt.Printf("%v", err)
-		os.Exit(-1)
+		return err
 	}
-	fmt.Printf("Completed\n")
-	os.Exit(0)
+	log.Infoln("Completed\n")
+	return nil
 }
