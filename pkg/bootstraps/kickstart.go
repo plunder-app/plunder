@@ -2,14 +2,6 @@ package bootstraps
 
 import "fmt"
 
-// KickstartConfig contains all of the configuration detail specific to an Ubuntu/Debian instance
-type KickstartConfig struct {
-	Gateway    string
-	IPAddress  string
-	Subnet     string
-	NameServer string
-}
-
 // This initial template will be modifyable based upon the build requirements
 const kickstart = `
 install
@@ -173,7 +165,7 @@ yum clean all
 %end
 `
 
-// BuildConfig - Creates a new presseed configuration using the passed data
-func (u *KickstartConfig) BuildConfig() string {
+// BuildKickStartConfig - Creates a new presseed configuration using the passed data
+func (config *ServerConfig) BuildKickStartConfig() string {
 	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, preseedNet, preseedPkg, preseedUsers, preseedCmd)
 }

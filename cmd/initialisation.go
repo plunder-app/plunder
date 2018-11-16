@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/thebsdbox/plunder/pkg/bootstraps"
 	"github.com/thebsdbox/plunder/pkg/utils"
 
 	log "github.com/Sirupsen/logrus"
@@ -12,14 +13,28 @@ import (
 )
 
 func init() {
-	plunderCmd.AddCommand(PlunderConfig)
-	plunderCmd.AddCommand(PlunderGet)
+	plunderCmd.AddCommand(plunderConfig)
+	plunderConfig.AddCommand(plunderServerConfig)
+	plunderConfig.AddCommand(plunderDeploymentConfig)
+
+	plunderCmd.AddCommand(plunderGet)
 
 }
 
 // PlunderConfig - This is for intialising a blank or partial configuration
-var PlunderConfig = &cobra.Command{
+var plunderConfig = &cobra.Command{
 	Use:   "config",
+	Short: "Initialise a plunder configuration",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+		cmd.Help()
+		return
+	},
+}
+
+// PlunderServerConfig - This is for intialising a blank or partial configuration
+var plunderServerConfig = &cobra.Command{
+	Use:   "server",
 	Short: "Initialise a plunder configuration",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
@@ -34,8 +49,26 @@ var PlunderConfig = &cobra.Command{
 	},
 }
 
-// PlunderGet - The Get command will pull any required components (iPXE boot files)
-var PlunderGet = &cobra.Command{
+// PlunderDeploymentConfig - This is for intialising a blank or partial configuration
+var plunderDeploymentConfig = &cobra.Command{
+	Use:   "deployment",
+	Short: "Initialise a server configuration",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+		var configuration []bootstraps.ConfigFile
+		configuration = append(configuration, bootstraps.ConfigFile{})
+		// Indent (or pretty-print) the configuration output
+		b, err := json.MarshalIndent(configuration, "", "\t")
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		fmt.Printf("\n%s\n", b)
+		return
+	},
+}
+
+// plunderGet - The Get command will pull any required components (iPXE boot files)
+var plunderGet = &cobra.Command{
 	Use:   "get",
 	Short: "Get any components needed for bootstrapping (internet access required)",
 	Run: func(cmd *cobra.Command, args []string) {

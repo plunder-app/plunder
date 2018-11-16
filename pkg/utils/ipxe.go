@@ -29,11 +29,11 @@ echo | mac.....: ${net0/mac}
 echo | gateway.: ${net0/gateway} 
 echo +------------------------------------------------------------
 echo .
-kernel http://%s/%s %s 
+kernel http://%s/%s auto=true url=http://%s/${mac:hexhyp}.cfg priority=critical %s 
 initrd http://%s/%s
 boot`
 	// Replace the addresses inline
-	buildScript := fmt.Sprintf(script, webserverAddress, kernel, cmdline, webserverAddress, initrd)
+	buildScript := fmt.Sprintf(script, webserverAddress, kernel, webserverAddress, cmdline, webserverAddress, initrd)
 
 	f, err := os.Create("./plunder.ipxe")
 	if err != nil {

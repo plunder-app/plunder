@@ -22,7 +22,7 @@ func WaitForCtrlC() {
 	endWaiter.Wait()
 }
 
-//FileToHex, this is a helper function to allow embedding files into .go files
+//FileToHex - this is a helper function to allow embedding files into .go files
 func FileToHex(filePath string) (sl string, err error) {
 
 	bs, err := ioutil.ReadFile(filePath)
