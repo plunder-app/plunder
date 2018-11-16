@@ -41,9 +41,9 @@ A `./plunder config > config.json` will look at the network configuration of the
 }
 ```
 
-### Retreiving bootstrap components
+### Retreiving bootstrap components (now optional)
 
-The `./plunder get` command will download the `iPXE` bootloader that is needed by the `TFTP` service in order to bootstrap the OS build. 
+The plunder binary has an embedded `iPXE` bootloader, meaning that nothing other than the `plunder` binary is needed in order to deploy servers. However if a newer version is required then the `./plunder get` command will download the `iPXE` bootloader that is needed by the `TFTP` service in order to bootstrap the OS build. 
 
 ### Networking configuration
 In a mutli-adapter host (recommended) ensure that the correct adapter is used i.e. `eth0 -> eth1` also that the correct IP addresses are used, the IP addresses are needed for the TFTP and HTTP stages as that is all managed through TCP connections. 
