@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/thebsdbox/plunder/pkg/bootstraps"
+
 	"github.com/thebsdbox/plunder/pkg/utils"
 
 	"github.com/thebsdbox/plunder/pkg/server"
@@ -17,7 +19,7 @@ import (
 var controller server.BootController
 var dhcpSettings server.DHCPSettings
 
-var gateway, dns, startAddress, configPath *string
+var gateway, dns, startAddress, configPath, deploymentPath *string
 
 var leasecount *int
 
@@ -55,7 +57,7 @@ func init() {
 
 	// Config File
 	configPath = PlunderServer.Flags().String("config", "", "Path to a plunder server configuration")
-
+	deploymentPath = PlunderServer.Flags().String("deployment", "", "Path to a plunder deployment configuration")
 	plunderCmd.AddCommand(PlunderServer)
 }
 
@@ -66,9 +68,18 @@ var PlunderServer = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 
+		// If deploymentPath is not blank then the flag has been used
+		if *deploymentPath != "" {
+			log.Infof("Reading deployment configuration from [%s]", *deploymentPath)
+			err := bootstraps.GenerateConfigFiles(*deploymentPath)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+		}
+
 		// If configPath is not blank then the flag has been used
 		if *configPath != "" {
-			log.Infof("Reading configuration from [%s]", *configPath)
+			log.Infof("Reading server configuration from [%s]", *configPath)
 
 			// Check the actual path from the string
 			if _, err := os.Stat(*configPath); !os.IsNotExist(err) {

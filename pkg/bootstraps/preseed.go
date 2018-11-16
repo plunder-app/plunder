@@ -4,14 +4,6 @@ import (
 	"fmt"
 )
 
-// PreseedConfig contains all of the configuration detail specific to an Ubuntu/Debian instance
-type PreseedConfig struct {
-	Gateway    string
-	IPAddress  string
-	Subnet     string
-	NameServer string
-}
-
 // Preseed const, this is the basis for the configuration that will be modified per use-case
 const preseed = `
 # Force debconf priority to critical.
@@ -31,6 +23,9 @@ d-i clock-setup/utc boolean true
 d-i time/zone string Europe/GMT
 d-i clock-setup/ntp boolean true
 d-i clock-setup/ntp-server string 1.pl.pool.ntp.org
+
+### Preseed Early
+d-i preseed/early_command string kill-all-dhcp; netcfg
 `
 
 const preseedNet = `
@@ -47,8 +42,6 @@ d-i netcfg/get_nameservers string 8.8.8.8
 d-i netcfg/get_netmask string 255.255.255.0
 d-i netcfg/use_dhcp string
 d-i netcfg/disable_dhcp boolean true
-# HACK: https://www.debian.org/releases/wheezy/i386/apbs04.html.en#preseed-network
-d-i preseed/run string net-static.sh
 
 d-i netcfg/get_hostname string ubuntu
 d-i netcfg/get_domain string internal
@@ -156,7 +149,7 @@ d-i preseed/late_command string \
 	in-target chmod -R go-rwx /home/ubuntu/.ssh/authorized_keys;
 `
 
-// BuildConfig - Creates a new presseed configuration using the passed data
-func (u *PreseedConfig) BuildConfig() string {
+//BuildPreeSeedConfig - Creates a new presseed configuration using the passed data
+func (config *ServerConfig) BuildPreeSeedConfig() string {
 	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, preseedNet, preseedPkg, preseedUsers, preseedCmd)
 }
