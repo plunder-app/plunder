@@ -5,6 +5,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/thebsdbox/plunder/pkg/utils"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -21,11 +23,15 @@ var plunderCmd = &cobra.Command{
 }
 
 var logLevel int
+var filePath string
 
 func init() {
+	plunderUtilsEncode.Flags().StringVar(&filePath, "path", "", "Path to a file to encode")
 	// Global flag across all subcommands
 	plunderCmd.PersistentFlags().IntVar(&logLevel, "logLevel", 4, "Set the logging level [0=panic, 3=warning, 5=debug]")
 	plunderCmd.AddCommand(plunderVersion)
+	plunderCmd.AddCommand(plunderUtils)
+	plunderUtils.AddCommand(plunderUtilsEncode)
 }
 
 // Execute - starts the command parsing process
@@ -56,5 +62,25 @@ var plunderVersion = &cobra.Command{
 		fmt.Printf("Plunder Release Information\n")
 		fmt.Printf("Version:  %s\n", Release.Version)
 		fmt.Printf("Build:    %s\n", Release.Build)
+	},
+}
+
+var plunderUtils = &cobra.Command{
+	Use:   "utils",
+	Short: "Additional utilities for Plunder",
+	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Help()
+	},
+}
+
+var plunderUtilsEncode = &cobra.Command{
+	Use:   "encode",
+	Short: "This will encode a file into Hex",
+	Run: func(cmd *cobra.Command, args []string) {
+		hex, err := utils.FileToHex(filePath)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		fmt.Printf("%s", hex)
 	},
 }
