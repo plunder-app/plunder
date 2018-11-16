@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"encoding/hex"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"sync"
@@ -18,4 +20,16 @@ func WaitForCtrlC() {
 		endWaiter.Done()
 	}()
 	endWaiter.Wait()
+}
+
+//FileToHex, this is a helper function to allow embedding files into .go files
+func FileToHex(filePath string) (sl string, err error) {
+
+	bs, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return
+	}
+	sl = hex.EncodeToString(bs)
+	return
+
 }

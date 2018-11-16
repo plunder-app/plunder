@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -32,16 +33,17 @@ func (c *BootController) serveTFTP() error {
 	log.Printf("Opening and caching undionly.kpxe")
 	f, err := os.Open(*c.PXEFileName)
 	if err != nil {
-		log.Printf("Please download the bootloader with the pulliPXE command")
-		return err
-	}
-	// Use bufio.NewReader to get a Reader.
-	// ... Then use ioutil.ReadAll to read the entire content.
-	r := bufio.NewReader(f)
+		log.Warnf("No local undionly.kpxe found, falling back to embedded version which may be out of date")
+		iPXEData, err = hex.DecodeString(pxeFile)
+	} else {
+		// Use bufio.NewReader to get a Reader.
+		// ... Then use ioutil.ReadAll to read the entire content.
+		r := bufio.NewReader(f)
 
-	iPXEData, err = ioutil.ReadAll(r)
-	if err != nil {
-		return err
+		iPXEData, err = ioutil.ReadAll(r)
+		if err != nil {
+			return err
+		}
 	}
 	s := tftp.NewServer("", HandleRead, HandleWrite)
 	err = s.Serve(*c.TFTPAddress + ":69")
