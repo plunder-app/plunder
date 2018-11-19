@@ -7,6 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	dhcp "github.com/krolaw/dhcp4"
+	"github.com/thebsdbox/plunder/pkg/bootstraps"
 )
 
 type lease struct {
@@ -27,16 +28,16 @@ type DHCPSettings struct {
 
 //ServeDHCP -
 func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, options dhcp.Options) (d dhcp.Packet) {
-	log.Infof("DCHP Message: %v", msgType)
+	mac := p.CHAddr().String()
+	log.Debugf("DCHP Message Type: [%v] from MAC Address [%s]", msgType, mac)
 	switch msgType {
-
 	case dhcp.Discover:
-		if string(options[77]) != "" {
-			if string(options[77]) == "iPXE" {
-				h.Options[67] = []byte("http://" + h.IP.String() + "/plunder.ipxe")
-			}
-		}
-		free, nic := -1, p.CHAddr().String()
+		// if string(options[77]) != "" {
+		// 	if string(options[77]) == "iPXE" {
+		// 		h.Options[67] = []byte("http://" + h.IP.String() + "/plunder.ipxe")
+		// 	}
+		// }
+		free, nic := -1, mac
 		for i, v := range h.Leases { // Find previous lease
 			if v.nic == nic {
 				free = i
@@ -48,13 +49,20 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 		}
 	reply:
 		h.Options[60] = h.IP
+		// Reply should have the configuration details in for iPXE to boot from
+		if string(options[77]) != "" {
+			if string(options[77]) == "iPXE" {
+				log.Debugf("Mac address is configured for [%s]", bootstraps.FindDeployment(mac))
+				h.Options[67] = []byte("http://" + h.IP.String() + "/plunder.ipxe")
+			}
+		}
 		ipLease := dhcp.IPAdd(h.Start, free)
+		log.Debugf("Allocated IP [%s] for [%s]", ipLease.String(), mac)
 
 		return dhcp.ReplyPacket(p, dhcp.Offer, h.IP, ipLease, h.LeaseDuration,
 			h.Options.SelectOrderOrAll(options[dhcp.OptionParameterRequestList]))
 
 	case dhcp.Request:
-		log.Debugf("Allocated IP for [%s]", p.CHAddr())
 
 		if server, ok := options[dhcp.OptionServerIdentifier]; ok && !net.IP(server).Equal(h.IP) {
 			return nil // Message not for this dhcp server

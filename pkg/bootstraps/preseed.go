@@ -2,6 +2,8 @@ package bootstraps
 
 import (
 	"fmt"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // Preseed const, this is the basis for the configuration that will be modified per use-case
@@ -36,17 +38,17 @@ d-i netcfg/wireless_wep string
 d-i netcfg/choose_interface select auto
 
 # Any hostname and domain names assigned from dhcp take precedence over
-d-i netcfg/get_gateway string 192.168.1.1
-d-i netcfg/get_ipaddress string 192.168.1.2
-d-i netcfg/get_nameservers string 8.8.8.8
-d-i netcfg/get_netmask string 255.255.255.0
+d-i netcfg/get_gateway string %s
+d-i netcfg/get_ipaddress string %s
+d-i netcfg/get_nameservers string %s
+d-i netcfg/get_netmask string %s
 d-i netcfg/use_dhcp string
 d-i netcfg/disable_dhcp boolean true
 
 d-i netcfg/get_hostname string ubuntu
 d-i netcfg/get_domain string internal
 
-d-i netcfg/hostname string pxe`
+d-i netcfg/hostname string %s`
 
 const preseedDisk = `
 ### Partitions
@@ -107,8 +109,8 @@ const preseedPkg = `
 ### Apt setup
 d-i apt-setup/restricted boolean true
 d-i apt-setup/universe boolean true
-d-i mirror/http/hostname string 192.168.1.1
-d-i mirror/http/directory string /ubuntu
+d-i mirror/http/hostname string %s
+d-i mirror/http/directory string %s
 d-i mirror/country string manual
 d-i mirror/http/proxy string
 
@@ -151,5 +153,15 @@ d-i preseed/late_command string \
 
 //BuildPreeSeedConfig - Creates a new presseed configuration using the passed data
 func (config *ServerConfig) BuildPreeSeedConfig() string {
-	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, preseedNet, preseedPkg, preseedUsers, preseedCmd)
+	// TODO - this is broken
+	if config.SSHKeyPath != "" {
+		err := config.ReadKeyFromFile(config.SSHKeyPath)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+	}
+
+	parsedNet := fmt.Sprintf(preseedNet, config.Gateway, config.IPAddress, config.NameServer, config.Subnet, config.ServerName)
+	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory)
+	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, parsedNet, parsedPkg, preseedUsers, preseedCmd)
 }
