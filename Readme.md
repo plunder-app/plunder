@@ -17,9 +17,9 @@ Plunder is a single-binary service that provides `DHCP`/`TFTP` and `HTTP` functi
 
 Releases may be provdided in the future, but for now grab the source and `go build` or `make build`.
 
-## Configuration
+## Server Configuration
 
-A `./plunder config > config.json` will look at the network configuration of the current machine and build a default configuration file (in json). This file will need opening in your favourite text editor an modifying to ensure that `plunder` works correctly. 
+A `./plunder config server > config.json` will look at the network configuration of the current machine and build a default configuration file (in json). This file will need opening in your favourite text editor an modifying to ensure that `plunder` works correctly. 
 
 ```
 {
@@ -39,6 +39,35 @@ A `./plunder config > config.json` will look at the network configuration of the
 	"initrdPath": "",
 	"cmdline": ""
 }
+```
+
+## Deployment Configuration
+
+A `./plunder config deployment > deployment.json` will create a blank deployment configuration that can be pre-populated in order to create specific deployments.
+
+A configured deployment should resemble something like the example below:
+
+```
+[
+	{
+		"mac": "00:50:56:a3:64:a2",
+		"deployment": "preseed",
+		"config": {
+			"gateway": "192.168.1.1",
+			"address": "192.168.1.3",
+			"subnet": "255.255.255.0",
+			"nameserver": "8.8.8.8",
+                        "hostname": "etcd01",
+			"ntpserver": "",
+			"username": "",
+			"password": "",
+			"repoaddress": "192.168.1.1",
+			"mirrordir": "/ubuntu",
+			"sshkeypath": "/home/dan/.ssh/id_rsa.pub"
+		}
+	},
+        { ... }
+]	
 ```
 
 ### Retreiving bootstrap components (now optional)
@@ -62,7 +91,7 @@ The plan is to have `plunder` mount and extract the correct kernels and netboot 
 Once the configuration file has been updated the `./plunder server` command will start the required services as shown below:
 
 ```
-sudo ./plunder server --config ./config.json --logLevel 5
+sudo ./plunder server --config ./config.json --deployment ./deployment.json --logLevel 5
 [sudo] password for dan: 
 INFO[0000] Reading configuration from [./config.json]   
 INFO[0000] Starting Remote Boot Services, press CTRL + c to stop 
