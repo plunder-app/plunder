@@ -55,8 +55,8 @@ var plunderDeploymentConfig = &cobra.Command{
 	Short: "Initialise a server configuration",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
-		var configuration []bootstraps.ConfigFile
-		configuration = append(configuration, bootstraps.ConfigFile{})
+		var configuration bootstraps.DeploymentConfigurationFile
+		configuration.Deployments = append(configuration.Deployments, bootstraps.DeploymentConfigurations{})
 		// Indent (or pretty-print) the configuration output
 		b, err := json.MarshalIndent(configuration, "", "\t")
 		if err != nil {
