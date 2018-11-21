@@ -57,7 +57,7 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 			}
 		}
 		ipLease := dhcp.IPAdd(h.Start, free)
-		log.Debugf("Allocated IP [%s] for [%s]", ipLease.String(), mac)
+		log.Infof("Allocated IP [%s] for [%s]", ipLease.String(), mac)
 
 		return dhcp.ReplyPacket(p, dhcp.Offer, h.IP, ipLease, h.LeaseDuration,
 			h.Options.SelectOrderOrAll(options[dhcp.OptionParameterRequestList]))

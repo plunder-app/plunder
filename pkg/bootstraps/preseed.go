@@ -125,7 +125,7 @@ d-i pkgsel/ubuntu-standard boolean false
 # Allowed values: none, safe-upgrade, full-upgrade
 d-i pkgsel/upgrade select none
 d-i pkgsel/ignore-incomplete-language-support boolean true
-d-i pkgsel/include string openssh-server
+d-i pkgsel/include string openssh-server iptables
 
 # Language pack selection
 d-i pkgsel/install-language-support boolean false
@@ -143,19 +143,25 @@ d-i pkgsel/updatedb boolean false
 
 const preseedCmd = `
 d-i preseed/late_command string \
-    in-target sed -i 's/^%sudo.*$/%sudo ALL=(ALL:ALL) NOPASSWD: ALL/g' /etc/sudoers; \
+    in-target sed -i 's/^%%sudo.*$/%%sudo ALL=(ALL:ALL) NOPASSWD: ALL/g' /etc/sudoers; \
     in-target /bin/sh -c "echo 'Defaults env_keep += \"SSH_AUTH_SOCK\" >> /etc/sudoers"; \
     in-target mkdir -p /home/ubuntu/.ssh; \
-    in-target /bin/sh -c "echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDbT6GcIYdJB96MVL35dhIAy9tRx0Hl/0HnHuk/ep+NRuGTExepHEO/8Dop67MT24e3Q6VXORYPeAHc3sgWrP3D7NrzKJkgE44SSL1v/94BpHJ0yNsver79DS73FU+NOCOJXWoxvB40F5UhAIVOkWqs8dLOugqKfKZfovetu6RvgEDcjR79Ndqk6JBqPotybQ9Kfpgt/wyCponBWXZn4Q+sAQAT1pg6FUICOh4/SZwDv29E7x0/1hD9tO+r2x1ZNo/VMecsecBdWPixXlpS1Az16bmYrgXULTfO8Y9174bu2MlnlPGLmm7wBO4PL7L9WiiG3it82ZDzi7PO59yUIUpL ubuntu insecure public key' >> /home/ubuntu/.ssh/authorized_keys"; \
+    in-target /bin/sh -c "echo '%s' >> /home/ubuntu/.ssh/authorized_keys"; \
     in-target chown -R ubuntu:ubuntu /home/ubuntu/; \
 	in-target chmod -R go-rwx /home/ubuntu/.ssh/authorized_keys;
 `
 
 //BuildPreeSeedConfig - Creates a new presseed configuration using the passed data
 func (config *ServerConfig) BuildPreeSeedConfig() string {
-	// TODO - this is broken
+
+	var key string
+	var err error
+
+	// This will populate anything missing from the global configuration
+	config.PopulateConfiguration()
+
 	if config.SSHKeyPath != "" {
-		err := config.ReadKeyFromFile(config.SSHKeyPath)
+		key, err = config.ReadKeyFromFile(config.SSHKeyPath)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -163,5 +169,6 @@ func (config *ServerConfig) BuildPreeSeedConfig() string {
 
 	parsedNet := fmt.Sprintf(preseedNet, config.Gateway, config.IPAddress, config.NameServer, config.Subnet, config.ServerName)
 	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory)
-	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, parsedNet, parsedPkg, preseedUsers, preseedCmd)
+	parsedCmd := fmt.Sprintf(preseedCmd, key)
+	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, parsedNet, parsedPkg, preseedUsers, parsedCmd)
 }
