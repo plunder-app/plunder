@@ -125,7 +125,7 @@ d-i pkgsel/ubuntu-standard boolean false
 # Allowed values: none, safe-upgrade, full-upgrade
 d-i pkgsel/upgrade select none
 d-i pkgsel/ignore-incomplete-language-support boolean true
-d-i pkgsel/include string openssh-server iptables
+d-i pkgsel/include string %s
 
 # Language pack selection
 d-i pkgsel/install-language-support boolean false
@@ -168,7 +168,7 @@ func (config *ServerConfig) BuildPreeSeedConfig() string {
 	}
 
 	parsedNet := fmt.Sprintf(preseedNet, config.Gateway, config.IPAddress, config.NameServer, config.Subnet, config.ServerName)
-	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory)
+	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory, config.Packages)
 	parsedCmd := fmt.Sprintf(preseedCmd, key)
 	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, parsedNet, parsedPkg, preseedUsers, parsedCmd)
 }
