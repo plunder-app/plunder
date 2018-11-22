@@ -44,6 +44,9 @@ type ServerConfig struct {
 
 	// SSHKeyPath will typically be loaded from a file ~/.ssh/id_rsa.pub
 	SSHKeyPath string `json:"sshkeypath"`
+
+	// Packages to be installed
+	Packages string `json:"packages"`
 }
 
 // ReadKeyFromFile - will attempt to read an sshkey from a file and populate the struct
@@ -180,5 +183,12 @@ func (config *ServerConfig) PopulateConfiguration() {
 	// Inherit the global SSH Key Path
 	if config.SSHKeyPath == "" {
 		config.SSHKeyPath = DeploymentConfig.GlobalServerConfig.SSHKeyPath
+	}
+
+	// Package Configuration
+
+	// Inherit the global package selection
+	if config.Packages == "" {
+		config.Packages = DeploymentConfig.GlobalServerConfig.Packages
 	}
 }
