@@ -12,15 +12,8 @@ import (
 // Static URL for retrieving the bootloader
 const iPXEURL = "https://boot.ipxe.org/undionly.kpxe"
 
-//////////////////////////////
-//
-// Helper Functions
-//
-//////////////////////////////
-
-// GenerateiPXEScript - This will build an iPXE boot script
-func GenerateiPXEScript(webserverAddress string, kernel string, initrd string, cmdline string) error {
-	script := `#!ipxe
+// This header is used by all configurations
+const iPXEHeader = `#!ipxe
 dhcp
 echo +-------------------- Plunder -------------------------------
 echo | hostname: ${hostname}, next-server: ${next-server}
@@ -28,23 +21,49 @@ echo | address.: ${net0/ip}
 echo | mac.....: ${net0/mac}  
 echo | gateway.: ${net0/gateway} 
 echo +------------------------------------------------------------
-echo .
+echo .`
+
+//////////////////////////////
+//
+// Helper Functions
+//
+//////////////////////////////
+
+// IPXEReboot -
+func IPXEReboot() string {
+	script := `
+echo MAC ADDRESS is unknown to, plunder, server will reboot in 5 seconds
+sleep 5
+reboot
+`
+	return iPXEHeader + script
+
+}
+
+// IPXEPreeseed - This will build an iPXE boot script for Debian/Ubuntu
+func IPXEPreeseed(webserverAddress string, kernel string, initrd string, cmdline string) string {
+	script := `
 kernel http://%s/%s auto=true url=http://%s/${mac:hexhyp}.cfg priority=critical %s 
 initrd http://%s/%s
-boot`
+boot
+`
 	// Replace the addresses inline
 	buildScript := fmt.Sprintf(script, webserverAddress, kernel, webserverAddress, cmdline, webserverAddress, initrd)
 
-	f, err := os.Create("./plunder.ipxe")
-	if err != nil {
-		return err
-	}
-	_, err = f.WriteString(buildScript)
-	if err != nil {
-		return err
-	}
-	f.Sync()
-	return nil
+	return iPXEHeader + buildScript
+}
+
+// IPXEKickstart - This will build an iPXE boot script for RHEL/CentOS
+func IPXEKickstart(webserverAddress string, kernel string, initrd string, cmdline string) string {
+	script := `
+kernel http://%s/%s auto=true url=http://%s/${mac:hexhyp}.cfg priority=critical %s 
+initrd http://%s/%s
+boot
+`
+	// Replace the addresses inline
+	buildScript := fmt.Sprintf(script, webserverAddress, kernel, webserverAddress, cmdline, webserverAddress, initrd)
+
+	return iPXEHeader + buildScript
 }
 
 // PullPXEBooter - This will attempt to download the iPXE bootloader
