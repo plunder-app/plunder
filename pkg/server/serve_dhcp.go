@@ -52,8 +52,15 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 		// Reply should have the configuration details in for iPXE to boot from
 		if string(options[77]) != "" {
 			if string(options[77]) == "iPXE" {
-				log.Debugf("Mac address is configured for [%s]", bootstraps.FindDeployment(mac))
-				h.Options[67] = []byte("http://" + h.IP.String() + "/plunder.ipxe")
+				deploymentType := bootstraps.FindDeployment(mac)
+				log.Debugf("Mac address is configured for [%s]", deploymentType)
+				// If this mac address has no deployment attached then reboot IPXE
+				if deploymentType == "" {
+					h.Options[67] = []byte("http://" + h.IP.String() + "/reboot.ipxe")
+				} else {
+					// Assign the deployment boot script
+					h.Options[67] = []byte("http://" + h.IP.String() + "/" + deploymentType + ".ipxe")
+				}
 			}
 		}
 		ipLease := dhcp.IPAdd(h.Start, free)
