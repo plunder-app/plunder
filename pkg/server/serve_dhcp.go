@@ -56,15 +56,17 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 				log.Debugf("Mac address is configured for [%s]", deploymentType)
 				// If this mac address has no deployment attached then reboot IPXE
 				if deploymentType == "" {
+					log.Warnf("Mac address[%s] is unknown, rebooting server", mac)
 					h.Options[67] = []byte("http://" + h.IP.String() + "/reboot.ipxe")
 				} else {
 					// Assign the deployment boot script
+					log.Infof("Mac address [%s] is assigned a [%s] deployment type", mac, deploymentType)
 					h.Options[67] = []byte("http://" + h.IP.String() + "/" + deploymentType + ".ipxe")
 				}
 			}
 		}
 		ipLease := dhcp.IPAdd(h.Start, free)
-		log.Infof("Allocated IP [%s] for [%s]", ipLease.String(), mac)
+		log.Debugf("Allocated IP [%s] for [%s]", ipLease.String(), mac)
 
 		return dhcp.ReplyPacket(p, dhcp.Offer, h.IP, ipLease, h.LeaseDuration,
 			h.Options.SelectOrderOrAll(options[dhcp.OptionParameterRequestList]))
