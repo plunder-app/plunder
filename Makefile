@@ -6,7 +6,7 @@ TARGET := plunder
 .DEFAULT_GOAL: $(TARGET)
 
 # These will be provided to the target
-VERSION := 1.0.0
+VERSION := 0.1
 BUILD := `git rev-parse HEAD`
 
 # Operating System Default (LINUX)
@@ -49,6 +49,21 @@ docker:
 	@docker build -t $(TARGET):$(DOCKERTAG) ./dockerfile/
 	@rm ./dockerfile/$(TARGET)
 	@echo New Docker image created
+
+release:
+	@echo Creating Darwin Build
+	@GOOS=darwin make build
+	@zip -9 -r plunder-darwin-$(VERSION).zip ./plunder
+	@rm plunder
+	@echo Creating Linux Build
+	@GOOS=linux make build
+	@zip -9 -r plunder-linux-$(VERSION).zip ./plunder
+	@rm plunder
+	@echo Creating Windows Build
+	@GOOS=windows make build
+	@zip -9 -r plunder-win-$(VERSION).zip ./plunder
+	@rm plunder
+
 
 simplify:
 	@gofmt -s -l -w $(SRC)
