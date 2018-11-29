@@ -32,11 +32,6 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 	log.Debugf("DCHP Message Type: [%v] from MAC Address [%s]", msgType, mac)
 	switch msgType {
 	case dhcp.Discover:
-		// if string(options[77]) != "" {
-		// 	if string(options[77]) == "iPXE" {
-		// 		h.Options[67] = []byte("http://" + h.IP.String() + "/plunder.ipxe")
-		// 	}
-		// }
 		free, nic := -1, mac
 		for i, v := range h.Leases { // Find previous lease
 			if v.nic == nic {
@@ -53,11 +48,11 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 		if string(options[77]) != "" {
 			if string(options[77]) == "iPXE" {
 				deploymentType := bootstraps.FindDeployment(mac)
-				log.Debugf("Mac address is configured for [%s]", deploymentType)
 				// If this mac address has no deployment attached then reboot IPXE
 				if deploymentType == "" {
-					log.Warnf("Mac address[%s] is unknown, rebooting server", mac)
-					h.Options[67] = []byte("http://" + h.IP.String() + "/reboot.ipxe")
+					log.Warnf("Mac address[%s] is unknown, not returning an address", mac)
+					return nil
+					//h.Options[67] = []byte("http://" + h.IP.String() + "/reboot.ipxe")
 				} else {
 					// Assign the deployment boot script
 					log.Infof("Mac address [%s] is assigned a [%s] deployment type", mac, deploymentType)

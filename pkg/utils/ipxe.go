@@ -32,7 +32,7 @@ echo .`
 // IPXEReboot -
 func IPXEReboot() string {
 	script := `
-echo MAC ADDRESS is unknown to, plunder, server will reboot in 5 seconds
+echo MAC ADDRESS is set to reboot, plunder will reboot the server in 5 seconds
 sleep 5
 reboot
 `
@@ -43,7 +43,7 @@ reboot
 // IPXEPreeseed - This will build an iPXE boot script for Debian/Ubuntu
 func IPXEPreeseed(webserverAddress string, kernel string, initrd string, cmdline string) string {
 	script := `
-kernel http://%s/%s auto=true url=http://%s/${mac:hexhyp}.cfg priority=critical %s 
+kernel http://%s/%s auto=true url=http://%s/${mac:hexhyp}.cfg priority=critical %s netcfg/choose_interface=${netX/mac}
 initrd http://%s/%s
 boot
 `
