@@ -35,7 +35,7 @@ const preseedNet = `
 d-i netcfg/wireless_wep string
 
 # Set network interface or 'auto'
-d-i netcfg/choose_interface select auto
+d-i netcfg/choose_interface select %s
 
 # Any hostname and domain names assigned from dhcp take precedence over
 d-i netcfg/get_gateway string %s
@@ -72,21 +72,39 @@ grub-pc grub-pc/timeout string  0
 ### Regular, primary partitions
 d-i partman-auto/disk string /dev/sda
 
-# The presently available methods are:
-# - regular: use the usual partition types for your architecture
-# - lvm:     use LVM to partition the disk
-# - crypto:  use LVM within an encrypted partition
+d-i partman/alignment string cylinder
+d-i partman/confirm_write_new_label boolean true
+d-i partman-basicfilesystems/choose_label string gpt
+d-i partman-basicfilesystems/default_label string gpt
+d-i partman-partitioning/choose_label string gpt
+d-i partman-partitioning/default_label string gpt
+d-i partman/choose_label string gpt
+d-i partman/default_label string gpt
+
 d-i partman-auto/method string regular
+d-i partman-auto/choose_recipe select gpt-boot-root-swap
+d-i partman-auto/expert_recipe string         \
+   gpt-boot-root-swap ::                      \
+      1 1 1 free                              \
+         $bios_boot{ }                        \
+         method{ biosgrub } .                 \
+      200 200 200 fat32                       \
+         $primary{ }                          \
+         method{ efi } format{ } .            \
+      512 512 512 ext3                        \
+         $primary{ } $bootable{ }             \
+         method{ format } format{ }           \
+         use_filesystem{ } filesystem{ ext3 } \
+         mountpoint{ /boot } .                \
+      1000 20000 -1 ext4                      \
+         $primary{ }                          \
+         method{ format } format{ }           \
+         use_filesystem{ } filesystem{ ext4 } \
+         mountpoint{ / } .                    \
+      65536 65536 65536 linux-swap            \
+         $primary{ }                          \
+         method{ swap } format{ } .
 
-# You can choose one of the three predefined partitioning recipes:
-# - atomic: all files in one partition
-# - home:   separate /home partition
-# - multi:  separate /home, /usr, /var, and /tmp partitions
-d-i partman-auto/choose_recipe select atomic
-d-i partman/default_filesystem string ext4
-
-# This makes partman automatically partition without confirmation, provided
-# that you told it what to do using one of the methods above.
 d-i partman-partitioning/confirm_write_new_label boolean true
 d-i partman/choose_partition select finish
 d-i partman/confirm boolean true
@@ -167,7 +185,7 @@ func (config *ServerConfig) BuildPreeSeedConfig() string {
 		}
 	}
 
-	parsedNet := fmt.Sprintf(preseedNet, config.Gateway, config.IPAddress, config.NameServer, config.Subnet, config.ServerName)
+	parsedNet := fmt.Sprintf(preseedNet, config.Adapter, config.Gateway, config.IPAddress, config.NameServer, config.Subnet, config.ServerName)
 	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory, config.Packages)
 	parsedCmd := fmt.Sprintf(preseedCmd, key)
 	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, parsedNet, parsedPkg, preseedUsers, parsedCmd)

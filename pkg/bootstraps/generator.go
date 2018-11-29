@@ -34,6 +34,7 @@ type ServerConfig struct {
 	NameServer string `json:"nameserver"`
 	ServerName string `json:"hostname"`
 	NTPServer  string `json:"ntpserver"`
+	Adapter    string `json:"adapter"`
 
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -154,6 +155,10 @@ func (config *ServerConfig) PopulateConfiguration() {
 	// Inherit the global Name Server (DNS)
 	if config.NameServer == "" {
 		config.NameServer = DeploymentConfig.GlobalServerConfig.NameServer
+	}
+
+	if config.Adapter == "" {
+		config.Adapter = DeploymentConfig.GlobalServerConfig.Adapter
 	}
 
 	// REPOSITORY CONFIGURATION
