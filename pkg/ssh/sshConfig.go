@@ -14,6 +14,7 @@ type HostSSHConfig struct {
 	Timeout      int
 	ClientConfig *ssh.ClientConfig
 	Session      *ssh.Session
+	Connection   *ssh.Client
 }
 
 // SetPassword - Turn a password string into an SSH auth method

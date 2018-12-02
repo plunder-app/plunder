@@ -3,10 +3,13 @@ package ssh
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -80,17 +83,18 @@ func ExecuteSingleCommand(cmd string, host HostSSHConfig, to int) {
 
 // StartSession -
 func (c *HostSSHConfig) StartSession() (*ssh.Session, error) {
+	var err error
 	host := c.Host
 	if !strings.ContainsAny(c.Host, ":") {
 		host = host + ":22"
 	}
 	log.Printf("%v", c)
-	conn, err := ssh.Dial("tcp", host, c.ClientConfig)
+	c.Connection, err = ssh.Dial("tcp", host, c.ClientConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	c.Session, err = conn.NewSession()
+	c.Session, err = c.Connection.NewSession()
 	if err != nil {
 		return nil, err
 	}
@@ -122,4 +126,66 @@ func (c *HostSSHConfig) ExecuteCmd(cmd string) (string, error) {
 // To string
 func (c HostSSHConfig) String() string {
 	return c.User + "@" + c.Host
+}
+
+// DownloadFile -
+func (c HostSSHConfig) DownloadFile(source, destination string) error {
+	// New SFTP client
+	sftp, err := sftp.NewClient(c.Connection)
+	if err != nil {
+		return err
+	}
+	defer sftp.Close()
+
+	// Open remote source
+	sftpSource, err := sftp.Open(source)
+	if err != nil {
+		return err
+	}
+	defer sftpSource.Close()
+
+	// Open local destination
+	localDestination, err := os.Create(destination)
+	if err != nil {
+		return err
+	}
+	defer localDestination.Close()
+
+	//
+	_, err = sftpSource.WriteTo(localDestination)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UploadFile -
+func (c HostSSHConfig) UploadFile(source, destination string) error {
+	// New SFTP client
+	sftp, err := sftp.NewClient(c.Connection)
+	if err != nil {
+		return err
+	}
+	defer sftp.Close()
+
+	// Open remote source
+	sftpDestination, err := sftp.Create(destination)
+	if err != nil {
+		return err
+	}
+	defer sftpDestination.Close()
+
+	// Open local destination
+	localSource, err := os.Open(source)
+	if err != nil {
+		return err
+	}
+	defer localSource.Close()
+
+	// copy source file to destination file
+	_, err = io.Copy(sftpDestination, localSource)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return nil
 }
