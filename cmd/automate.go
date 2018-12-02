@@ -46,7 +46,16 @@ var plunderAutomateSSH = &cobra.Command{
 		log.Infof("Found [%d] ssh configurations", len(ssh.Hosts))
 		//ssh.ExecuteSingleCommand("pwd", ssh.Hosts[0], 1)
 		ssh.Execute("hostname", ssh.Hosts, 10)
+		log.Infof("%v", ssh.Hosts[0])
+		err := ssh.Hosts[0].UploadFile("test", "/tmp/test")
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		ssh.Execute("hostname", ssh.Hosts, 10)
+
+		ssh.Hosts[0].DownloadFile("/tmp/test", "test1")
 		ssh.Hosts[0].StopSession()
+
 		return
 	},
 }

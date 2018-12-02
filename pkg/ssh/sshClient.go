@@ -81,9 +81,10 @@ func ExecuteSingleCommand(cmd string, host HostSSHConfig, to int) {
 	//}
 }
 
-// StartSession -
-func (c *HostSSHConfig) StartSession() (*ssh.Session, error) {
+// StartConnection -
+func (c *HostSSHConfig) StartConnection() (*ssh.Client, error) {
 	var err error
+
 	host := c.Host
 	if !strings.ContainsAny(c.Host, ":") {
 		host = host + ":22"
@@ -93,7 +94,16 @@ func (c *HostSSHConfig) StartSession() (*ssh.Session, error) {
 	if err != nil {
 		return nil, err
 	}
+	return c.Connection, nil
+}
 
+// StartSession -
+func (c *HostSSHConfig) StartSession() (*ssh.Session, error) {
+	var err error
+	c.Connection, err = c.StartConnection()
+	if err != nil {
+		return nil, err
+	}
 	c.Session, err = c.Connection.NewSession()
 	if err != nil {
 		return nil, err
@@ -130,6 +140,12 @@ func (c HostSSHConfig) String() string {
 
 // DownloadFile -
 func (c HostSSHConfig) DownloadFile(source, destination string) error {
+	var err error
+	c.Connection, err = c.StartConnection()
+	if err != nil {
+		return err
+	}
+
 	// New SFTP client
 	sftp, err := sftp.NewClient(c.Connection)
 	if err != nil {
@@ -161,6 +177,11 @@ func (c HostSSHConfig) DownloadFile(source, destination string) error {
 
 // UploadFile -
 func (c HostSSHConfig) UploadFile(source, destination string) error {
+	var err error
+	c.Connection, err = c.StartConnection()
+	if err != nil {
+		return err
+	}
 	// New SFTP client
 	sftp, err := sftp.NewClient(c.Connection)
 	if err != nil {
