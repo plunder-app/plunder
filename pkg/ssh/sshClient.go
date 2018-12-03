@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -13,72 +12,53 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-//Execute -
-func Execute(cmd string, hosts []HostSSHConfig, to int) {
+// SingleExecute - This will execute a command on a single host
+func SingleExecute(cmd string, host HostSSHConfig, to int) CommandResult {
+	var configs []HostSSHConfig
+	configs = append(configs, host)
+	result := ParalellExecute(cmd, configs, to)
+	return result[0]
+}
+
+//ParalellExecute - This will execute the same command in paralell across multiple hosts
+func ParalellExecute(cmd string, hosts []HostSSHConfig, to int) []CommandResult {
+	var cmdResults []CommandResult
 	// Run parallel ssh session (max 10)
-	results := make(chan string, 10)
+	results := make(chan CommandResult, 10)
 	timeout := time.After(time.Duration(to) * time.Second)
 
 	// Execute command on hosts
 	for _, host := range hosts {
 		go func(host HostSSHConfig) {
-			var result string
+			res := new(CommandResult)
+			res.Host = host.Host
 
 			if text, err := host.ExecuteCmd(cmd); err != nil {
-				result = err.Error()
+				res.Error = err
 			} else {
-				result = text
+				res.Result = text
 			}
-
-			results <- fmt.Sprintf("%s > %s -> %s", host, cmd, result)
+			results <- *res
 		}(host)
 	}
 
 	for i := 0; i < len(hosts); i++ {
 		select {
 		case res := <-results:
-			if res != "" {
-				fmt.Printf(res)
-			}
+			// Append the results of a succesfull command
+			cmdResults = append(cmdResults, res)
 		case <-timeout:
-			//color.Red("Timed out!")
-			return
+			// In the event that a command times out then append the details
+			failedCommand := CommandResult{
+				Host:   hosts[i].Host,
+				Error:  fmt.Errorf("Command Timed out"),
+				Result: "",
+			}
+			cmdResults = append(cmdResults, failedCommand)
+
 		}
 	}
-}
-
-//ExecuteSingleCommand -
-func ExecuteSingleCommand(cmd string, host HostSSHConfig, to int) {
-	// Run parallel ssh session (max 10)
-	results := make(chan string, 10)
-	timeout := time.After(time.Duration(to) * time.Second)
-
-	// // Execute command on hosts
-	// for _, host := range hosts {
-	// 	go func(host HostSSHConfig) {
-	var result string
-
-	if text, err := host.ExecuteCmd(cmd); err != nil {
-		result = err.Error()
-	} else {
-		result = text
-	}
-
-	results <- fmt.Sprintf("%s > %s\n%s\n", host, cmd, result)
-	// 	}(host)
-	// }
-
-	//for i := 0; i < len(hosts); i++ {
-	select {
-	case res := <-results:
-		if res != "" {
-			fmt.Println(res)
-		}
-	case <-timeout:
-		//color.Red("Timed out!")
-		return
-	}
-	//}
+	return cmdResults
 }
 
 // StartConnection -
@@ -89,12 +69,20 @@ func (c *HostSSHConfig) StartConnection() (*ssh.Client, error) {
 	if !strings.ContainsAny(c.Host, ":") {
 		host = host + ":22"
 	}
-	log.Printf("%v", c)
+	//log.Printf("%v", c)
 	c.Connection, err = ssh.Dial("tcp", host, c.ClientConfig)
 	if err != nil {
 		return nil, err
 	}
 	return c.Connection, nil
+}
+
+// StopConnection -
+func (c *HostSSHConfig) StopConnection() error {
+	if c.Connection != nil {
+		return c.Connection.Close()
+	}
+	return fmt.Errorf("Connection not established")
 }
 
 // StartSession -
@@ -133,11 +121,6 @@ func (c *HostSSHConfig) ExecuteCmd(cmd string) (string, error) {
 	return stdoutBuf.String(), nil
 }
 
-// To string
-func (c HostSSHConfig) String() string {
-	return c.User + "@" + c.Host
-}
-
 // DownloadFile -
 func (c HostSSHConfig) DownloadFile(source, destination string) error {
 	var err error
@@ -172,6 +155,10 @@ func (c HostSSHConfig) DownloadFile(source, destination string) error {
 	if err != nil {
 		return err
 	}
+
+	// An error here isn't cause for alarm, any new transaction should create a new connection
+	_ = c.StopConnection()
+
 	return nil
 }
 
@@ -206,7 +193,16 @@ func (c HostSSHConfig) UploadFile(source, destination string) error {
 	// copy source file to destination file
 	_, err = io.Copy(sftpDestination, localSource)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	// An error here isn't cause for alarm, any new transaction should create a new connection
+	_ = c.StopConnection()
+
 	return nil
+}
+
+// To string
+func (c HostSSHConfig) String() string {
+	return c.User + "@" + c.Host
 }
