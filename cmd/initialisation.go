@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/thebsdbox/plunder/pkg/bootstraps"
+	"github.com/thebsdbox/plunder/pkg/parlay"
 	"github.com/thebsdbox/plunder/pkg/utils"
 
 	log "github.com/Sirupsen/logrus"
@@ -16,6 +17,7 @@ func init() {
 	plunderCmd.AddCommand(plunderConfig)
 	plunderConfig.AddCommand(plunderServerConfig)
 	plunderConfig.AddCommand(plunderDeploymentConfig)
+	plunderConfig.AddCommand(PlunderParlayConfig)
 
 	plunderCmd.AddCommand(plunderGet)
 
@@ -59,6 +61,73 @@ var plunderDeploymentConfig = &cobra.Command{
 		configuration.Deployments = append(configuration.Deployments, bootstraps.DeploymentConfigurations{})
 		// Indent (or pretty-print) the configuration output
 		b, err := json.MarshalIndent(configuration, "", "\t")
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		fmt.Printf("\n%s\n", b)
+		return
+	},
+}
+
+// PlunderParlayConfig - This is for intialising a parlay deployment
+var PlunderParlayConfig = &cobra.Command{
+	Use:   "parlay",
+	Short: "Initialise a parlay configuration",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+
+		parlayActionPackage := parlay.Action{
+			Name:         "Add package",
+			ActionType:   "pkg",
+			PkgManager:   "apt",
+			PkgOperation: "install",
+			Packages:     "mysql",
+		}
+
+		parlayActionCommand := parlay.Action{
+			Name:             "Run Command",
+			ActionType:       "command",
+			Command:          "which uptime",
+			CommandSudo:      "root",
+			CommandSaveAsKey: "cmdKey",
+		}
+		parlayActionUpload := parlay.Action{
+			Name:        "Upload File",
+			ActionType:  "upload",
+			Source:      "./my_file",
+			Destination: "/tmp/file",
+		}
+
+		parlayActionDownload := parlay.Action{
+			Name:        "Download File",
+			ActionType:  "download",
+			Destination: "./my_file",
+			Source:      "/tmp/file",
+		}
+
+		parlayActionKey := parlay.Action{
+			Name:       "Execute key",
+			ActionType: "command",
+			KeyName:    "cmdKey",
+		}
+
+		parlayDeployment := parlay.Deployment{
+			Name:  "Install MySQL",
+			Hosts: []string{"192.168.0.1", "192.168.0.2"},
+		}
+
+		parlayDeployment.Actions = append(parlayDeployment.Actions, parlayActionPackage)
+		parlayDeployment.Actions = append(parlayDeployment.Actions, parlayActionCommand)
+		parlayDeployment.Actions = append(parlayDeployment.Actions, parlayActionUpload)
+		parlayDeployment.Actions = append(parlayDeployment.Actions, parlayActionDownload)
+		parlayDeployment.Actions = append(parlayDeployment.Actions, parlayActionKey)
+
+		parlayConfig := &parlay.TreasureMap{}
+		parlayConfig.Deployments = []parlay.Deployment{}
+		parlayConfig.Deployments = append(parlayConfig.Deployments, parlayDeployment)
+
+		// Indent (or pretty-print) the configuration output
+		b, err := json.MarshalIndent(parlayConfig, "", "\t")
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
