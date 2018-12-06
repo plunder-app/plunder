@@ -28,7 +28,7 @@ func init() {
 	// Find an example nic to use, that isn't the loopback address
 	nicName, nicAddr, err := utils.FindIPAddress("")
 	if err != nil {
-		log.Warn("%v", err)
+		log.Warnf("%v", err)
 	}
 
 	// Prepopulate the flags with the found nic information

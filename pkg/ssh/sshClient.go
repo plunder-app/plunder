@@ -162,6 +162,47 @@ func (c HostSSHConfig) DownloadFile(source, destination string) error {
 	return nil
 }
 
+// ParalellUpload - Allow uploading a file over SFTP to multiple hosts in parallel
+func ParalellUpload(hosts []HostSSHConfig, source, destination string, to int) []CommandResult {
+	var cmdResults []CommandResult
+	// Run parallel ssh session (max 10)
+	results := make(chan CommandResult, 10)
+	timeout := time.After(time.Duration(to) * time.Second)
+
+	// Execute command on hosts
+	for _, host := range hosts {
+		go func(host HostSSHConfig) {
+			res := new(CommandResult)
+			res.Host = host.Host
+
+			if err := host.UploadFile(source, destination); err != nil {
+				res.Error = err
+			} else {
+				res.Result = "Upload completed"
+			}
+			results <- *res
+		}(host)
+	}
+
+	for i := 0; i < len(hosts); i++ {
+		select {
+		case res := <-results:
+			// Append the results of a succesfull command
+			cmdResults = append(cmdResults, res)
+		case <-timeout:
+			// In the event that a command times out then append the details
+			failedCommand := CommandResult{
+				Host:   hosts[i].Host,
+				Error:  fmt.Errorf("Command Timed out"),
+				Result: "",
+			}
+			cmdResults = append(cmdResults, failedCommand)
+
+		}
+	}
+	return cmdResults
+}
+
 // UploadFile -
 func (c HostSSHConfig) UploadFile(source, destination string) error {
 	var err error
@@ -205,4 +246,25 @@ func (c HostSSHConfig) UploadFile(source, destination string) error {
 // To string
 func (c HostSSHConfig) String() string {
 	return c.User + "@" + c.Host
+}
+
+//FindHosts - This will take an array of hosts and find the matching HostSSH Configuration
+func FindHosts(parlayHosts []string) ([]HostSSHConfig, error) {
+	var hostArray []HostSSHConfig
+	for x := range parlayHosts {
+		found := false
+		for y := range Hosts {
+
+			//TODO : Probably needs strings.ToLower() (needs testing)
+			if parlayHosts[x] == Hosts[y].Host {
+				hostArray = append(hostArray, Hosts[y])
+				found = true
+				continue
+			}
+		}
+		if found == false {
+			return nil, fmt.Errorf("Host [%s] has no SSH credentials", parlayHosts[x])
+		}
+	}
+	return hostArray, nil
 }
