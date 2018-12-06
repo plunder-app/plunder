@@ -48,27 +48,58 @@ A `./plunder config deployment > deployment.json` will create a blank deployment
 A configured deployment should resemble something like the example below:
 
 ```
-[
-	{
-		"mac": "00:50:56:a3:64:a2",
-		"deployment": "preseed",
-		"config": {
-			"gateway": "192.168.1.1",
-			"address": "192.168.1.3",
-			"subnet": "255.255.255.0",
-			"nameserver": "8.8.8.8",
-                        "hostname": "etcd01",
-			"ntpserver": "",
-			"username": "",
-			"password": "",
-			"repoaddress": "192.168.1.1",
-			"mirrordir": "/ubuntu",
-			"sshkeypath": "/home/dan/.ssh/id_rsa.pub"
-		}
+{
+	"globalConfig": {
+		"gateway": "192.168.1.1",
+		"address": "",
+		"subnet": "255.255.255.0",
+		"nameserver": "8.8.8.8",
+		"hostname": "",
+		"ntpserver": "",
+		"adapter": "",
+		"username": "ubuntu",
+		"password": "",
+		"repoaddress": "192.168.1.1",
+		"mirrordir": "/ubuntu",
+		"sshkeypath": "/home/dan/.ssh/id_rsa.pub",
+		"packages": "openssh-server iptables libltdl7"
 	},
-        { ... }
-]	
+	"deployments": [
+		{
+			"mac": "00:50:56:a3:64:a2",
+			"deployment": "preseed",
+			"config": {
+				"gateway": "192.168.1.1",
+				[...]
+			}
+		}
+	]
+}
 ```
+
+The *globalConfig* is the configuration that is inherited by any of the deployment configurations where that information has been omitted, typically a lot of networking information, keys or package information will be shared amongst deployments. 
+
+### Online updates of deployment configuration
+The webserver exposes a `/deployment` end point that can be used to provide an online update of the configuration, this has the following benefits:
+
+- Allows automation of updates, through things like an API call
+- Provides no-downtime, stopping and starting the server to load a new configuration can result in a broken installation as the network connection will be broken during restart
+
+*Retrieve the existing configuration*
+
+The currently active configuration can be retrieved through a simple get on the `/deployment` endpoint 
+
+e.g.
+
+`curl -vX <IP ADDRESS>/deployment`
+
+*Updating the configuration*
+
+The configuration can be updated by `POST`ing the configuration JSON to the same URL.
+
+e.g.
+
+`curl -vX POST deploy01/deployment -d @deployment.json --header "Content-Type: application/json"`
 
 ### Retreiving bootstrap components (now optional)
 

@@ -69,19 +69,10 @@ func (config *ServerConfig) ReadKeyFromFile(sshKeyPath string) (string, error) {
 	return singleLine, nil
 }
 
-// GenerateConfigFiles will read a configuration file and build the iPXE files needed
-func GenerateConfigFiles(configFile string) error {
-
-	// Check the actual path from the string
-	if _, err := os.Stat(configFile); !os.IsNotExist(err) {
-		configFile, err := ioutil.ReadFile(configFile)
-		if err != nil {
-			return err
-		}
-		json.Unmarshal(configFile, &DeploymentConfig)
-	} else {
-		return fmt.Errorf("Unable to open [%s]", configFile)
-	}
+// UpdateConfiguration will read a configuration string and build the iPXE files needed
+func UpdateConfiguration(configFile []byte) error {
+	log.Infoln("Updating the Deployment Configuration")
+	json.Unmarshal(configFile, &DeploymentConfig)
 
 	if len(DeploymentConfig.Deployments) == 0 {
 		log.Warnln("No deployment configurations found")

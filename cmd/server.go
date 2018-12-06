@@ -71,9 +71,15 @@ var PlunderServer = &cobra.Command{
 		// If deploymentPath is not blank then the flag has been used
 		if *deploymentPath != "" {
 			log.Infof("Reading deployment configuration from [%s]", *deploymentPath)
-			err := bootstraps.GenerateConfigFiles(*deploymentPath)
-			if err != nil {
-				log.Fatalf("%v", err)
+			if _, err := os.Stat(*deploymentPath); !os.IsNotExist(err) {
+				deployment, err := ioutil.ReadFile(*deploymentPath)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+				err = bootstraps.UpdateConfiguration(deployment)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
 			}
 		}
 

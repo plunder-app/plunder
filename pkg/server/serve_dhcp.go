@@ -52,12 +52,11 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 				if deploymentType == "" {
 					log.Warnf("Mac address[%s] is unknown, not returning an address", mac)
 					return nil
-					//h.Options[67] = []byte("http://" + h.IP.String() + "/reboot.ipxe")
-				} else {
-					// Assign the deployment boot script
-					log.Infof("Mac address [%s] is assigned a [%s] deployment type", mac, deploymentType)
-					h.Options[67] = []byte("http://" + h.IP.String() + "/" + deploymentType + ".ipxe")
 				}
+				// Assign the deployment boot script
+				log.Infof("Mac address [%s] is assigned a [%s] deployment type", mac, deploymentType)
+				h.Options[67] = []byte("http://" + h.IP.String() + "/" + deploymentType + ".ipxe")
+
 			}
 		}
 		ipLease := dhcp.IPAdd(h.Start, free)

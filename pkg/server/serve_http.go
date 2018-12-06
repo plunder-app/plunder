@@ -1,9 +1,14 @@
 package server
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"path/filepath"
+
+	"github.com/thebsdbox/plunder/pkg/bootstraps"
 
 	"github.com/thebsdbox/plunder/pkg/utils"
 )
@@ -12,13 +17,6 @@ import (
 var preseed, kickstart, reboot string
 
 func (c *BootController) serveHTTP() error {
-	// if _, err := os.Stat("./plunder.ipxe"); os.IsNotExist(err) {
-	// 	log.Println("Auto generating ./plunder.ipxe")
-	// 	err = utils.IPXEPreeseed(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
 
 	preseed = utils.IPXEPreeseed(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
 	kickstart = utils.IPXEKickstart(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
@@ -36,6 +34,10 @@ func (c *BootController) serveHTTP() error {
 	http.HandleFunc("/preseed.ipxe", preseedHandler)
 	http.HandleFunc("/reboot.ipxe", rebootHandler)
 	http.HandleFunc("/kickstart.ipxe", kickstartHandler)
+
+	// Update Endpoints - allow the update of various configuration without restarting
+	//http.HandleFunc("/config", kickstartHandler) // TODO
+	http.HandleFunc("/deployment", deploymentHandler)
 
 	return http.ListenAndServe(":80", nil)
 }
@@ -70,4 +72,31 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	// In the future we could report back on the status of our DB, or our cache
 	// (e.g. Redis) by performing a simple PING, and include them in the response.
 	io.WriteString(w, `{"alive": true}`)
+}
+
+func deploymentHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "text/plain")
+	switch r.Method {
+	case "GET":
+		b, err := json.MarshalIndent(bootstraps.DeploymentConfig, "", "\t")
+		if err != nil {
+			io.WriteString(w, "<b>Unable to Parse Deployment configuration</b>")
+		}
+		io.WriteString(w, string(b))
+	case "POST":
+		if b, err := ioutil.ReadAll(r.Body); err == nil {
+			if err != nil {
+				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
+				io.WriteString(w, errorHTML)
+			}
+			err := bootstraps.UpdateConfiguration(b)
+			if err != nil {
+				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
+				io.WriteString(w, errorHTML)
+			}
+		}
+	default:
+		// Unknown HTTP Method for this endpoint
+	}
 }
