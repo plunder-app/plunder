@@ -21,6 +21,11 @@ type TreasureMap struct {
 type Deployment struct {
 	// Name of the deployment that is taking place i.e. (Install MySQL)
 	Name string `json:"name"`
+
+	// Parallel allow multiple actions across multiple hosts in parallel
+	Parallel         bool `json:"parallel"`
+	ParallelSessions int  `json:"sessions"`
+
 	// An array/list of hosts that these actions should be performed upon
 	Hosts   []string `json:"hosts"`
 	Actions []Action `json:"actions"`
