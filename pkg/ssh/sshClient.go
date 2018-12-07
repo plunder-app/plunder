@@ -1,7 +1,6 @@
 package ssh
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -44,7 +43,9 @@ func ParalellExecute(cmd string, hosts []HostSSHConfig, to int) []CommandResult 
 			res.Host = host.Host
 
 			if text, err := host.ExecuteCmd(cmd); err != nil {
+				// Report any returned values
 				res.Error = err
+				res.Result = text
 			} else {
 				res.Result = text
 			}
@@ -124,11 +125,9 @@ func (c *HostSSHConfig) ExecuteCmd(cmd string) (string, error) {
 		}
 	}
 
-	var stdoutBuf bytes.Buffer
-	c.Session.Stdout = &stdoutBuf
-	c.Session.Run(cmd)
+	b, err := c.Session.CombinedOutput(cmd)
 
-	return stdoutBuf.String(), nil
+	return string(b), err
 }
 
 // DownloadFile -

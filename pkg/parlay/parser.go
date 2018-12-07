@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -31,7 +32,18 @@ func (m *TreasureMap) DeploySSH() error {
 			for y := range m.Deployments[x].Actions {
 				switch m.Deployments[x].Actions[y].ActionType {
 				case "upload":
-					ssh.ParalellUpload(hosts, m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination, m.Deployments[x].Actions[y].Timeout)
+					results := ssh.ParalellUpload(hosts, m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination, m.Deployments[x].Actions[y].Timeout)
+					// Unlikely that this should happen
+					if len(results) == 0 {
+						return fmt.Errorf("No results have been returned from the parallel execution")
+					}
+					// Parse the results from the parallel updates
+					for i := range results {
+						if results[i].Error != nil {
+							return fmt.Errorf("Upload task [%s] on host [%s] failed with error [%s]", m.Deployments[x].Actions[y].Name, results[i].Host, results[i].Error)
+						}
+						log.Infof("Succesfully uploaded [%s] to [%s] on [%s]", m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination, results[i].Host)
+					}
 				case "download":
 
 				case "command":
@@ -72,8 +84,10 @@ func (m *TreasureMap) DeploySSH() error {
 						// Build out a configuration based upon the action
 						cr := m.Deployments[x].Actions[y].parseAndExecute(&hostConfig)
 						if cr.Error != nil {
-							return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]", m.Deployments[x].Actions[y].Name, hostConfig.Host, cr.Error)
+							return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", m.Deployments[x].Actions[y].Name, hostConfig.Host, cr.Error, cr.Result)
 						}
+						log.Infof("Command Task [%s] on node [%s] completed successfully", m.Deployments[x].Actions[y].Name, hostConfig.Host)
+						log.Debugf("Command Results ->\n%s", cr.Result)
 					case "pkg":
 
 					case "key":
@@ -125,10 +139,11 @@ func (a *Action) parseAndExecute(h *ssh.HostSSHConfig) ssh.CommandResult {
 		if cr.Error != nil {
 			return cr
 		}
-		cr.Result = string(b)
+		cr.Result = strings.TrimRight(string(b), "\r\n")
 	} else {
 		log.Debugf("Executing command [%s] on host [%s]", command, h.Host)
 		cr = ssh.SingleExecute(command, *h, a.Timeout)
+		cr.Result = strings.TrimRight(cr.Result, "\r\n")
 		if cr.Error != nil {
 			return cr
 		}

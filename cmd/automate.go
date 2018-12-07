@@ -90,13 +90,13 @@ var plunderAutomateValidate = &cobra.Command{
 	Use:   "validate",
 	Short: "Validate a deployment map",
 	Run: func(cmd *cobra.Command, args []string) {
-		if *mapFile != "" {
-			log.Infof("Reading deployment configuration from [%s]", *mapFile)
+		if *mapFileValidate != "" {
+			log.Infof("Reading deployment configuration from [%s]", *mapFileValidate)
 			//var err error
 			var deployment parlay.TreasureMap
 			// // Check the actual path from the string
-			if _, err := os.Stat(*mapFile); !os.IsNotExist(err) {
-				b, err := ioutil.ReadFile(*mapFile)
+			if _, err := os.Stat(*mapFileValidate); !os.IsNotExist(err) {
+				b, err := ioutil.ReadFile(*mapFileValidate)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
