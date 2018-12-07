@@ -72,7 +72,7 @@ func (m *TreasureMap) DeploySSH() error {
 						// Build out a configuration based upon the action
 						cr := m.Deployments[x].Actions[y].parseAndExecute(&hostConfig)
 						if cr.Error != nil {
-							return err
+							return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]", m.Deployments[x].Actions[y].Name, hostConfig.Host, cr.Error)
 						}
 					case "pkg":
 
@@ -96,27 +96,47 @@ func (a *Action) parseAndExecute(h *ssh.HostSSHConfig) ssh.CommandResult {
 	var cr ssh.CommandResult
 	var b []byte
 
-	if a.CommandSudo != "" {
-		// Add sudo to the command
-		command = fmt.Sprintf("sudo %s %s", a.CommandSudo, a.Command)
+	// An executable Key takes presedence
+	if a.KeyName != "" {
+		keycmd := Keys[a.KeyName]
+		// Check that the key exists
+		if keycmd == "" {
+			cr.Error = fmt.Errorf("Unable to find command under key '%s'", a.KeyName)
+			return cr
+		}
+		if a.CommandSudo != "" {
+			// Add sudo to the Key command
+			command = fmt.Sprintf("sudo -n -u %s %s", a.CommandSudo, keycmd)
+		} else {
+			command = keycmd
+		}
 	} else {
-		command = a.Command
+		// Not using a key, using a shell command
+		if a.CommandSudo != "" {
+			// Add sudo to the Shell command
+			command = fmt.Sprintf("sudo -n -u %s %s", a.CommandSudo, a.Command)
+		} else {
+			command = a.Command
+		}
 	}
 
 	if a.CommandLocal == true {
 		b, cr.Error = exec.Command(command).Output()
+		if cr.Error != nil {
+			return cr
+		}
 		cr.Result = string(b)
 	} else {
 		log.Debugf("Executing command [%s] on host [%s]", command, h.Host)
 		cr = ssh.SingleExecute(command, *h, a.Timeout)
 		if cr.Error != nil {
-			log.Fatalf("%v", cr.Error)
 			return cr
 		}
 	}
 
 	// Save the results into a key to be used at another point
 	if a.CommandSaveAsKey != "" {
+		log.Debugf("Adding new results to key [%s]", a.CommandSaveAsKey)
 		Keys[a.CommandSaveAsKey] = cr.Result
 	}
 
