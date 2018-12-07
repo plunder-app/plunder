@@ -11,11 +11,15 @@ import (
 	"github.com/thebsdbox/plunder/pkg/ssh"
 )
 
-var deploymentSSH, mapFile *string
+var deploymentSSH, mapFile, mapFileValidate *string
 
 func init() {
+	// SSH Deployment flags
 	deploymentSSH = plunderAutomateSSH.Flags().String("deployment", "", "Path to a plunder deployment configuration")
-	mapFile = plunderAutomateValidate.Flags().String("map", "", "Path to a plunder map")
+	mapFile = plunderAutomateSSH.Flags().String("map", "", "Path to a plunder map")
+
+	// Validation flags
+	mapFileValidate = plunderAutomateValidate.Flags().String("map", "", "Path to a plunder map")
 
 	// Automate SSH Flags
 	plunderAutomate.AddCommand(plunderAutomateValidate)
@@ -48,9 +52,35 @@ var plunderAutomateSSH = &cobra.Command{
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
+		} else {
+			log.Warnln("No Deployment information imported")
+		}
+		log.Infof("Found [%d] ssh configurations", len(ssh.Hosts))
+
+		if *mapFile != "" {
+			log.Infof("Reading deployment configuration from [%s]", *mapFile)
+			//var err error
+			var deployment parlay.TreasureMap
+			// // Check the actual path from the string
+			if _, err := os.Stat(*mapFile); !os.IsNotExist(err) {
+				b, err := ioutil.ReadFile(*mapFile)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+				err = json.Unmarshal(b, &deployment)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+				// Begin the parsing
+				err = deployment.DeploySSH()
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+			} else {
+				log.Fatalf("%v", err)
+			}
 		}
 
-		log.Infof("Found [%d] ssh configurations", len(ssh.Hosts))
 		return
 	},
 }
@@ -60,13 +90,13 @@ var plunderAutomateValidate = &cobra.Command{
 	Use:   "validate",
 	Short: "Validate a deployment map",
 	Run: func(cmd *cobra.Command, args []string) {
-		if *mapFile != "" {
-			log.Infof("Reading deployment configuration from [%s]", *mapFile)
+		if *mapFileValidate != "" {
+			log.Infof("Reading deployment configuration from [%s]", *mapFileValidate)
 			//var err error
 			var deployment parlay.TreasureMap
 			// // Check the actual path from the string
-			if _, err := os.Stat(*mapFile); !os.IsNotExist(err) {
-				b, err := ioutil.ReadFile(*mapFile)
+			if _, err := os.Stat(*mapFileValidate); !os.IsNotExist(err) {
+				b, err := ioutil.ReadFile(*mapFileValidate)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}

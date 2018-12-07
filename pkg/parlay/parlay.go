@@ -24,7 +24,7 @@ type Deployment struct {
 
 	// Parallel allow multiple actions across multiple hosts in parallel
 	Parallel         bool `json:"parallel"`
-	ParallelSessions int  `json:"sessions"`
+	ParallelSessions int  `json:"parallelSessions"`
 
 	// An array/list of hosts that these actions should be performed upon
 	Hosts   []string `json:"hosts"`
@@ -56,4 +56,14 @@ type Action struct {
 	// Key operations
 	KeyFile string `json:"keyFile,omitempty"`
 	KeyName string `json:"keyName,omitempty"`
+}
+
+// KeyMap
+
+// Keys are used to store information between sessions and deployments
+var Keys map[string]string
+
+func init() {
+	// Initialise the map
+	Keys = make(map[string]string)
 }
