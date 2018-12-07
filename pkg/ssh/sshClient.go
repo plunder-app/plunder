@@ -25,8 +25,18 @@ func ParalellExecute(cmd string, hosts []HostSSHConfig, to int) []CommandResult 
 	var cmdResults []CommandResult
 	// Run parallel ssh session (max 10)
 	results := make(chan CommandResult, 10)
-	timeout := time.After(time.Duration(to) * time.Second)
+	var d time.Duration
 
+	// Calculate the timeout
+	if to == 0 {
+		// If no timeout then default to one year (TODO)
+		d = time.Duration(8760) * time.Hour
+	} else {
+		d = time.Duration(to) * time.Second
+	}
+
+	// Set the timeout
+	timeout := time.After(d)
 	// Execute command on hosts
 	for _, host := range hosts {
 		go func(host HostSSHConfig) {
@@ -167,7 +177,19 @@ func ParalellUpload(hosts []HostSSHConfig, source, destination string, to int) [
 	var cmdResults []CommandResult
 	// Run parallel ssh session (max 10)
 	results := make(chan CommandResult, 10)
-	timeout := time.After(time.Duration(to) * time.Second)
+
+	var d time.Duration
+
+	// Calculate the timeout
+	if to == 0 {
+		// If no timeout then default to one year (TODO)
+		d = time.Duration(8760) * time.Hour
+	} else {
+		d = time.Duration(to) * time.Second
+	}
+
+	// Set the timeout
+	timeout := time.After(d)
 
 	// Execute command on hosts
 	for _, host := range hosts {

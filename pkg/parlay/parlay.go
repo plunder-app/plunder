@@ -62,3 +62,8 @@ type Action struct {
 
 // Keys are used to store information between sessions and deployments
 var Keys map[string]string
+
+func init() {
+	// Initialise the map
+	Keys = make(map[string]string)
+}

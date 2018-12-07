@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 
+	log "github.com/Sirupsen/logrus"
+
 	"github.com/thebsdbox/plunder/pkg/ssh"
 )
 
@@ -57,13 +59,19 @@ func (m *TreasureMap) DeploySSH() error {
 				for y := range m.Deployments[x].Actions {
 					switch m.Deployments[x].Actions[y].ActionType {
 					case "upload":
-						hostConfig.UploadFile(m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination)
+						err = hostConfig.UploadFile(m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination)
+						if err != nil {
+							return err
+						}
 					case "download":
-						hostConfig.DownloadFile(m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination)
+						err = hostConfig.DownloadFile(m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination)
+						if err != nil {
+							return err
+						}
 					case "command":
 						// Build out a configuration based upon the action
-						err = m.Deployments[x].Actions[y].parseAndExecute(&hostConfig)
-						if err != nil {
+						cr := m.Deployments[x].Actions[y].parseAndExecute(&hostConfig)
+						if cr.Error != nil {
 							return err
 						}
 					case "pkg":
@@ -81,10 +89,12 @@ func (m *TreasureMap) DeploySSH() error {
 	return nil
 }
 
-func (a *Action) parseAndExecute(h *ssh.HostSSHConfig) error {
+func (a *Action) parseAndExecute(h *ssh.HostSSHConfig) ssh.CommandResult {
 	// This will parse the options passed in the action and execute the required string
-	var command, result string
-	var err error
+
+	var command string
+	var cr ssh.CommandResult
+	var b []byte
 
 	if a.CommandSudo != "" {
 		// Add sudo to the command
@@ -94,37 +104,38 @@ func (a *Action) parseAndExecute(h *ssh.HostSSHConfig) error {
 	}
 
 	if a.CommandLocal == true {
-		b, err := exec.Command(command).Output()
-		if err != nil {
-			return err
-		}
-		result = string(b)
+		b, cr.Error = exec.Command(command).Output()
+		cr.Result = string(b)
 	} else {
-		result, err = h.ExecuteCmd(command)
-		if err != nil {
-			return err
+		log.Debugf("Executing command [%s] on host [%s]", command, h.Host)
+		cr = ssh.SingleExecute(command, *h, a.Timeout)
+		if cr.Error != nil {
+			log.Fatalf("%v", cr.Error)
+			return cr
 		}
 	}
 
 	// Save the results into a key to be used at another point
 	if a.CommandSaveAsKey != "" {
-		Keys[a.CommandSaveAsKey] = result
+		Keys[a.CommandSaveAsKey] = cr.Result
 	}
 
 	// Save the results into a file to be used at another point
 	if a.CommandSaveFile != "" {
-		f, err := os.Create(a.CommandSaveFile)
-		if err != nil {
-			return err
+		var f *os.File
+		f, cr.Error = os.Create(a.CommandSaveFile)
+		if cr.Error != nil {
+			return cr
 		}
+
 		defer f.Close()
 
-		_, err = f.WriteString(result)
-		if err != nil {
-			return err
+		_, cr.Error = f.WriteString(cr.Result)
+		if cr.Error != nil {
+			return cr
 		}
 		f.Sync()
 	}
 
-	return nil
+	return cr
 }
