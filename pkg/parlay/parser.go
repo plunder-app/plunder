@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -12,10 +13,22 @@ import (
 )
 
 // DeploySSH - will iterate through a deployment and perform the relevant actions
-func (m *TreasureMap) DeploySSH() error {
+func (m *TreasureMap) DeploySSH(logFile string) error {
+	var logging bool
+	var file *os.File
+	var err error
+	if logFile != "" {
+		//enable logging
+		logging = true
+		file, err = os.Create(logFile)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+	}
 
 	if len(ssh.Hosts) == 0 {
-		return fmt.Errorf("No hosts credentials have been loaded")
+		log.Warnln("No hosts credentials have been loaded, only commands with commandLocal = true will work")
 	}
 	if len(m.Deployments) == 0 {
 		return fmt.Errorf("No Deployments in parlay map")
@@ -26,12 +39,23 @@ func (m *TreasureMap) DeploySSH() error {
 		if err != nil {
 			return err
 		}
-
+		if logging {
+			_, err = file.WriteString(fmt.Sprintf("[%s] Beginning Deployment [%s]\n", time.Now().Format(time.ANSIC), m.Deployments[x].Name))
+			if err != nil {
+				return err
+			}
+		}
 		if m.Deployments[x].Parallel == true {
 			// Begin parallel work
 			for y := range m.Deployments[x].Actions {
 				switch m.Deployments[x].Actions[y].ActionType {
 				case "upload":
+					if logging {
+						_, err = file.WriteString(fmt.Sprintf("[%s] Uploading file [%s] to Destination [%s] to multiple hosts\n", time.Now().Format(time.ANSIC), m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination))
+						if err != nil {
+							return err
+						}
+					}
 					results := ssh.ParalellUpload(hosts, m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination, m.Deployments[x].Actions[y].Timeout)
 					// Unlikely that this should happen
 					if len(results) == 0 {
@@ -40,7 +64,23 @@ func (m *TreasureMap) DeploySSH() error {
 					// Parse the results from the parallel updates
 					for i := range results {
 						if results[i].Error != nil {
+							if logging {
+								_, err = file.WriteString(fmt.Sprintf("[%s] Error uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination, results[i].Host))
+								if err != nil {
+									return err
+								}
+								_, err = file.WriteString(fmt.Sprintf("[%s] [%s]\n", time.Now().Format(time.ANSIC), results[i].Error))
+								if err != nil {
+									return err
+								}
+							}
 							return fmt.Errorf("Upload task [%s] on host [%s] failed with error [%s]", m.Deployments[x].Actions[y].Name, results[i].Host, results[i].Error)
+						}
+						if logging {
+							_, err = file.WriteString(fmt.Sprintf("[%s] Completed uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination, results[i].Host))
+							if err != nil {
+								return err
+							}
 						}
 						log.Infof("Succesfully uploaded [%s] to [%s] on [%s]", m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination, results[i].Host)
 					}
@@ -73,8 +113,9 @@ func (m *TreasureMap) DeploySSH() error {
 					case "upload":
 						err = hostConfig.UploadFile(m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination)
 						if err != nil {
-							return err
+							return fmt.Errorf("Upload task [%s] on host [%s] failed with error [%s]", m.Deployments[x].Actions[y].Name, hostConfig.Host, err)
 						}
+						log.Infof("Upload Task [%s] on node [%s] completed successfully", m.Deployments[x].Actions[y].Name, hostConfig.Host)
 					case "download":
 						err = hostConfig.DownloadFile(m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination)
 						if err != nil {
@@ -84,10 +125,30 @@ func (m *TreasureMap) DeploySSH() error {
 						// Build out a configuration based upon the action
 						cr := m.Deployments[x].Actions[y].parseAndExecute(&hostConfig)
 						if cr.Error != nil {
+							if logging {
+								_, err = file.WriteString(fmt.Sprintf("[%s] Command task [%s] on host [%s] failed with error [%s]\n", time.Now().Format(time.ANSIC), m.Deployments[x].Actions[y].Name, hostConfig.Host, cr.Error))
+								if err != nil {
+									return err
+								}
+								_, err = file.WriteString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", cr.Result))
+								if err != nil {
+									return err
+								}
+							}
 							return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", m.Deployments[x].Actions[y].Name, hostConfig.Host, cr.Error, cr.Result)
 						}
 						log.Infof("Command Task [%s] on node [%s] completed successfully", m.Deployments[x].Actions[y].Name, hostConfig.Host)
 						log.Debugf("Command Results ->\n%s", cr.Result)
+						if logging {
+							_, err = file.WriteString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), m.Deployments[x].Actions[y].Name, hostConfig.Host))
+							if err != nil {
+								return err
+							}
+						}
+						_, err = file.WriteString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", cr.Result))
+						if err != nil {
+							return err
+						}
 					case "pkg":
 
 					case "key":
@@ -105,7 +166,6 @@ func (m *TreasureMap) DeploySSH() error {
 
 func (a *Action) parseAndExecute(h *ssh.HostSSHConfig) ssh.CommandResult {
 	// This will parse the options passed in the action and execute the required string
-
 	var command string
 	var cr ssh.CommandResult
 	var b []byte
