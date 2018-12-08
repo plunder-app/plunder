@@ -130,7 +130,7 @@ func (m *TreasureMap) DeploySSH(logFile string) error {
 								if err != nil {
 									return err
 								}
-								_, err = file.WriteString(fmt.Sprintf("------  Output  ------\n[%s]\n ----------------------", cr.Result))
+								_, err = file.WriteString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", cr.Result))
 								if err != nil {
 									return err
 								}
@@ -140,12 +140,12 @@ func (m *TreasureMap) DeploySSH(logFile string) error {
 						log.Infof("Command Task [%s] on node [%s] completed successfully", m.Deployments[x].Actions[y].Name, hostConfig.Host)
 						log.Debugf("Command Results ->\n%s", cr.Result)
 						if logging {
-							_, err = file.WriteString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully", time.Now().Format(time.ANSIC), m.Deployments[x].Actions[y].Name, hostConfig.Host))
+							_, err = file.WriteString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), m.Deployments[x].Actions[y].Name, hostConfig.Host))
 							if err != nil {
 								return err
 							}
 						}
-						_, err = file.WriteString(fmt.Sprintf("------  Output  ------\n[%s]\n ----------------------", cr.Result))
+						_, err = file.WriteString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", cr.Result))
 						if err != nil {
 							return err
 						}
