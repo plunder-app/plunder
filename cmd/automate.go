@@ -73,7 +73,7 @@ var plunderAutomateSSH = &cobra.Command{
 					log.Fatalf("%v", err)
 				}
 				// Begin the parsing
-				err = deployment.DeploySSH(logFile)
+				err = deployment.DeploySSH(*logFile)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
