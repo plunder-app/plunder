@@ -11,10 +11,11 @@ import (
 	"github.com/thebsdbox/plunder/pkg/ssh"
 )
 
-var deploymentSSH, mapFile, mapFileValidate *string
+var deploymentSSH, mapFile, mapFileValidate, logFile *string
 
 func init() {
 	// SSH Deployment flags
+	logFile = plunderAutomateSSH.Flags().String("logfile", "", "Patht to where plunder will write automation logs")
 	deploymentSSH = plunderAutomateSSH.Flags().String("deployment", "", "Path to a plunder deployment configuration")
 	mapFile = plunderAutomateSSH.Flags().String("map", "", "Path to a plunder map")
 
@@ -72,7 +73,7 @@ var plunderAutomateSSH = &cobra.Command{
 					log.Fatalf("%v", err)
 				}
 				// Begin the parsing
-				err = deployment.DeploySSH()
+				err = deployment.DeploySSH(logFile)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
