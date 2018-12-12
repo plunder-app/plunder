@@ -13,11 +13,23 @@ import (
 
 var deploymentSSH, mapFile, mapFileValidate, logFile *string
 
+// These flags are used to determine if a particular deployment, action and specific host need to be used.
+var deploymentName, actionName, host *string
+
+// This flag determines if a singular action should occur or wheter to resume all actions from this point
+var resume *bool
+
 func init() {
 	// SSH Deployment flags
 	logFile = plunderAutomateSSH.Flags().String("logfile", "", "Patht to where plunder will write automation logs")
-	deploymentSSH = plunderAutomateSSH.Flags().String("deployment", "", "Path to a plunder deployment configuration")
+	deploymentSSH = plunderAutomateSSH.Flags().String("config", "", "Path to a plunder deployment configuration")
 	mapFile = plunderAutomateSSH.Flags().String("map", "", "Path to a plunder map")
+
+	// Deployment control flags
+	deploymentName = plunderAutomateSSH.Flags().String("deployment", "", "Automate a specific deployment")
+	actionName = plunderAutomateSSH.Flags().String("action", "", "Automate a specific action")
+	host = plunderAutomateSSH.Flags().String("host", "", "Automate the deployment for a specific host")
+	resume = plunderAutomateSSH.Flags().Bool("resume", false, "Resume all actions after the one specified by --action")
 
 	// Validation flags
 	mapFileValidate = plunderAutomateValidate.Flags().String("map", "", "Path to a plunder map")
@@ -72,8 +84,16 @@ var plunderAutomateSSH = &cobra.Command{
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
-				// Begin the parsing
-				err = deployment.DeploySSH(*logFile)
+
+				// If a specific deployment is being used then find it's details
+				if *deploymentName != "" {
+					log.Infof("Looking for deployment [%s]", *deploymentName)
+
+					err = deployment.FindDeployment(*deploymentName, *actionName, *host, *logFile, *resume)
+				} else {
+					// Parse the entire deployment
+					err = deployment.DeploySSH(*logFile)
+				}
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
