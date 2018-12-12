@@ -198,9 +198,11 @@ func (m *TreasureMap) DeploySSH(logFile string) error {
 								return err
 							}
 						}
-						_, err = file.WriteString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", cr.Result))
-						if err != nil {
-							return err
+						if logging {
+							_, err = file.WriteString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", cr.Result))
+							if err != nil {
+								return err
+							}
 						}
 					case "pkg":
 
