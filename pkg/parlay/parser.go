@@ -12,6 +12,59 @@ import (
 	"github.com/thebsdbox/plunder/pkg/ssh"
 )
 
+//FindDeployment - takes a number of flags and builds a new map to be processed
+func (m *TreasureMap) FindDeployment(deployment, action, host, logFile string, resume bool) error {
+	var foundMap TreasureMap
+	if deployment != "" {
+		log.Debugf("Looking for deployment [%s]", deployment)
+		for x := range m.Deployments {
+			if m.Deployments[x].Name == deployment {
+				foundMap.Deployments = append(foundMap.Deployments, m.Deployments[x])
+				// Find a specific action and add or resume from
+				if action != "" {
+					for y := range m.Deployments[x].Actions {
+						if m.Deployments[x].Actions[y].Name == action {
+							// Clear the slice as we will be possibly adding different actions
+							foundMap.Deployments[0].Actions = nil
+
+							// If we're not resuming that just add the action that we want to happen
+							if resume != true {
+								foundMap.Deployments[0].Actions = append(foundMap.Deployments[0].Actions, m.Deployments[x].Actions[y])
+							} else {
+								// Alternatively add all actions from this point
+								foundMap.Deployments[0].Actions = m.Deployments[x].Actions[y:]
+							}
+							// If this is zero it means that no actions have been found
+							if len(foundMap.Deployments[0].Actions) == 0 {
+								fmt.Printf("No actions have been found, looking for action [%s]", action)
+							}
+						}
+					}
+				}
+				// If a host is specified act soley on it
+				if host != "" {
+					for y := range m.Deployments[x].Hosts {
+						if m.Deployments[x].Hosts[y] == host {
+							foundMap.Deployments[0].Hosts = append(foundMap.Deployments[0].Hosts, m.Deployments[x].Hosts[y])
+						}
+					}
+					// If this is zero it means that no hosts have been found
+					if len(foundMap.Deployments[0].Hosts) == 0 {
+						fmt.Printf("No host has been found, looking for host [%s]", host)
+					}
+				}
+			}
+		}
+		// If this is zero it means that no actions have been found
+		if len(foundMap.Deployments) == 0 {
+			fmt.Printf("No deployment has been found, looking for deployment [%s]", deployment)
+		}
+	} else {
+		return fmt.Errorf("No deployment was specified")
+	}
+	return foundMap.DeploySSH(logFile)
+}
+
 // DeploySSH - will iterate through a deployment and perform the relevant actions
 func (m *TreasureMap) DeploySSH(logFile string) error {
 	var logging bool
