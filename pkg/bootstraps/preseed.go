@@ -114,11 +114,11 @@ const preseedUsers = `
 ### Account setup
 d-i passwd/root-login boolean false
 d-i passwd/make-user boolean true
-d-i passwd/user-fullname string ubuntu
-d-i passwd/username string ubuntu
+d-i passwd/user-fullname string %s
+d-i passwd/username string %s
 # TODO probably you need some decent password
-d-i passwd/user-password password ubuntu
-d-i passwd/user-password-again password ubuntu
+d-i passwd/user-password password %s
+d-i passwd/user-password-again password %s
 d-i user-setup/allow-password-weak boolean true
 d-i user-setup/encrypt-home boolean false
 `
@@ -188,5 +188,6 @@ func (config *ServerConfig) BuildPreeSeedConfig() string {
 	parsedNet := fmt.Sprintf(preseedNet, config.Adapter, config.Gateway, config.IPAddress, config.NameServer, config.Subnet, config.ServerName)
 	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory, config.Packages)
 	parsedCmd := fmt.Sprintf(preseedCmd, key)
-	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, parsedNet, parsedPkg, preseedUsers, parsedCmd)
+	parsedUsr := fmt.Sprintf(preseedUsers, config.Username, config.Username, config.Password, config.Password)
+	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, parsedNet, parsedPkg, parsedUsr, parsedCmd)
 }
