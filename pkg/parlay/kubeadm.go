@@ -38,6 +38,9 @@ type etcdMembers struct {
 
 	// Intialise a Certificate Authority
 	InitCA bool `json:"initCA,omitempty"`
+
+	// Set kubernetes API version
+	APIVersion string `json:"apiversion,omitempty"`
 }
 
 func (e *etcdMembers) generateActions() []Action {
@@ -54,6 +57,11 @@ func (e *etcdMembers) generateActions() []Action {
 		}
 		generatedActions = append(generatedActions, a)
 	}
+
+	// Default to < 1.12 API version
+	if e.APIVersion == "" {
+		e.APIVersion = "v1beta1"
+	}
 	// Generate the configuration directories
 	a.ActionType = "command"
 	a.Command = fmt.Sprintf("mkdir -p /tmp/%s/ /tmp/%s/ /tmp/%s/", e.Address1, e.Address2, e.Address3)
@@ -63,16 +71,16 @@ func (e *etcdMembers) generateActions() []Action {
 
 	// Node 0
 	a.Name = "build kubeadm config for node 0"
-	a.Command = fmt.Sprintf("echo '%s' > /tmp/%s/kubeadmcfg.yaml", e.buildKubeadm("v1beta1", e.Hostname1, e.Address1), e.Address1)
+	a.Command = fmt.Sprintf("echo '%s' > /tmp/%s/kubeadmcfg.yaml", e.buildKubeadm(e.APIVersion, e.Hostname1, e.Address1), e.Address1)
 	generatedActions = append(generatedActions, a)
 
 	// Node 1
 	a.Name = "build kubeadm config for node 1"
-	a.Command = fmt.Sprintf("echo '%s' > /tmp/%s/kubeadmcfg.yaml", e.buildKubeadm("v1beta1", e.Hostname2, e.Address2), e.Address2)
+	a.Command = fmt.Sprintf("echo '%s' > /tmp/%s/kubeadmcfg.yaml", e.buildKubeadm(e.APIVersion, e.Hostname2, e.Address2), e.Address2)
 	generatedActions = append(generatedActions, a)
 
 	// Node 2
-	a.Command = fmt.Sprintf("echo '%s' > /tmp/%s/kubeadmcfg.yaml", e.buildKubeadm("v1beta1", e.Hostname3, e.Address3), e.Address3)
+	a.Command = fmt.Sprintf("echo '%s' > /tmp/%s/kubeadmcfg.yaml", e.buildKubeadm(e.APIVersion, e.Hostname3, e.Address3), e.Address3)
 	generatedActions = append(generatedActions, a)
 
 	// Add certificate actions

@@ -203,15 +203,14 @@ func sequentialDeployment(action []Action, hostConfig ssh.HostSSHConfig) error {
 		case "key":
 
 		case "etcd":
-
+			// Generate all of the actions required for ETCd deployments
 			etcdActions := action[y].ETCD.generateActions()
 			log.Debugf("About to execute [%d] actions to build the etcd cluster", len(etcdActions))
-			return sequentialDeployment(etcdActions, hostConfig)
-			// b, err := json.MarshalIndent(action[y].ETCD.generateActions(), "", "\t")
-			// if err != nil {
-			// 	log.Fatalf("%v", err)
-			// }
-			// fmt.Printf("\n%s\n", b)
+			// Run these deployments
+			err = sequentialDeployment(etcdActions, hostConfig)
+			if err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("Unknown Action [%s]", action[y].ActionType)
 		}
