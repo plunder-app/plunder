@@ -62,7 +62,7 @@ The above example covers simple usage of `uploading` and `command` usage.. there
 			],
 			"actions": [
 				{
-					"name": "Upload Docker Packages",
+					"name": "Certificate provisioning",
 					"type": "etcd",
 					"etcd" : {
 						"hostname1" : "etcd01",
