@@ -56,6 +56,9 @@ type Action struct {
 	// Key operations
 	KeyFile string `json:"keyFile,omitempty"`
 	KeyName string `json:"keyName,omitempty"`
+
+	// etcd configuration
+	ETCD etcdMembers `json:"etcd,omitempty"`
 }
 
 // KeyMap
