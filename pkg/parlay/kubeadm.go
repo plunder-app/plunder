@@ -54,6 +54,7 @@ func (e *etcdMembers) generateActions() []Action {
 			ActionType:  "command",
 			Command:     fmt.Sprintf("kubeadm init phase certs etcd-ca"),
 			CommandSudo: "root",
+			Name:        "Initialise Certificate Authority",
 		}
 		generatedActions = append(generatedActions, a)
 	}
@@ -65,6 +66,7 @@ func (e *etcdMembers) generateActions() []Action {
 	// Generate the configuration directories
 	a.ActionType = "command"
 	a.Command = fmt.Sprintf("mkdir -p /tmp/%s/ /tmp/%s/ /tmp/%s/", e.Address1, e.Address2, e.Address3)
+	a.Name = "Generate temporary directories"
 	generatedActions = append(generatedActions, a)
 
 	// Generate the kubeadm configuration files
@@ -104,29 +106,42 @@ func (e *etcdMembers) generateCertificateActions(hosts []string) []Action {
 			ActionType:  "command",
 			Command:     fmt.Sprintf("kubeadm init phase certs etcd-server --config=/tmp/%s/kubeadmcfg.yaml", v),
 			CommandSudo: "root",
+			Name:        fmt.Sprintf("Generate etcd server certificate for [%s]", v),
 		}
 		generatedActions = append(generatedActions, a)
 		// Generate peer certificate
 		a.Command = fmt.Sprintf("kubeadm init phase certs etcd-peer --config=/tmp/%s/kubeadmcfg.yaml", v)
+		a.Name = fmt.Sprintf("Generate peer certificate for [%s]", v)
 		generatedActions = append(generatedActions, a)
+
 		// Generate health check certificate
 		a.Command = fmt.Sprintf("kubeadm init phase certs etcd-healthcheck-client --config=/tmp/%s/kubeadmcfg.yaml", v)
+		a.Name = fmt.Sprintf("Generate health check certificate for [%s]", v)
 		generatedActions = append(generatedActions, a)
+
 		// Generate api-server client certificate
 		a.Command = fmt.Sprintf("kubeadm init phase certs apiserver-etcd-client --config=/tmp/%s/kubeadmcfg.yaml", v)
+		a.Name = fmt.Sprintf("Generate api-server client certificate for [%s]", v)
 		generatedActions = append(generatedActions, a)
 
 		// These steps are only required for the latter two hosts
 		if i != (len(hosts) - 1) {
 			// Archive the certificates and the kubeadm configuration in a host specific archive name
 			a.Command = fmt.Sprintf("tar -cvzf /tmp/%s.tar.gz $(find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f) /tmp/%s/kubeadmcfg.yaml", v, v)
+			a.Name = fmt.Sprintf("Archive generated certificates [%s]", v)
 			generatedActions = append(generatedActions, a)
+
 			// Download the archive files to the local machine
 			a.ActionType = "download"
 			a.Source = fmt.Sprintf("/tmp/%s.tar.gz", hosts[i])
 			a.Destination = fmt.Sprintf("/tmp/%s.tar.gz", hosts[i])
+			a.Name = fmt.Sprintf("Retrieve the certificate bundle for [%s]", v)
 			generatedActions = append(generatedActions, a)
+
+			// Tidy the certificates from the /etc/kubernetes/pki folder
+			a.ActionType = "command"
 			a.Command = fmt.Sprintf("find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f -delete")
+			a.Name = fmt.Sprintf("Remove the temporary certificate bundle for [%s]", v)
 			generatedActions = append(generatedActions, a)
 		}
 	}
