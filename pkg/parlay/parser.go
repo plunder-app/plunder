@@ -12,108 +12,6 @@ import (
 	"github.com/thebsdbox/plunder/pkg/ssh"
 )
 
-type fileLogger struct {
-	enabled bool
-	f       *os.File
-}
-
-var logging fileLogger
-
-func (l *fileLogger) init(logFile string) (err error) {
-	l.enabled = true
-	l.f, err = os.Create(logFile)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// This file based logging function may error, but logging should never break the running of a system, so errors are passed to "Debug" logging
-func (l *fileLogger) writeString(logMessage string) {
-	if l.enabled == true {
-		_, err := l.f.WriteString(logMessage)
-		if err != nil {
-			log.Debugf("%v", err)
-		}
-	}
-}
-
-// DeploySSH - will iterate through a deployment and perform the relevant actions
-func (m *TreasureMap) DeploySSH(logFile string) error {
-	if logFile != "" {
-		//enable logging
-		logging.init(logFile)
-		defer logging.f.Close()
-	}
-
-	if len(ssh.Hosts) == 0 {
-		log.Warnln("No hosts credentials have been loaded, only commands with commandLocal = true will work")
-	}
-	if len(m.Deployments) == 0 {
-		return fmt.Errorf("No Deployments in parlay map")
-	}
-	for x := range m.Deployments {
-		// Build new hosts list from imported SSH servers and compare that we have required credentials
-		hosts, err := ssh.FindHosts(m.Deployments[x].Hosts)
-		if err != nil {
-			return err
-		}
-		logging.writeString(fmt.Sprintf("[%s] Beginning Deployment [%s]\n", time.Now().Format(time.ANSIC), m.Deployments[x].Name))
-
-		if m.Deployments[x].Parallel == true {
-			// Begin parallel work
-			for y := range m.Deployments[x].Actions {
-				switch m.Deployments[x].Actions[y].ActionType {
-				case "upload":
-					logging.writeString(fmt.Sprintf("[%s] Uploading file [%s] to Destination [%s] to multiple hosts\n", time.Now().Format(time.ANSIC), m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination))
-
-					results := ssh.ParalellUpload(hosts, m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination, m.Deployments[x].Actions[y].Timeout)
-					// Unlikely that this should happen
-					if len(results) == 0 {
-						return fmt.Errorf("No results have been returned from the parallel execution")
-					}
-					// Parse the results from the parallel updates
-					for i := range results {
-						if results[i].Error != nil {
-							logging.writeString(fmt.Sprintf("[%s] Error uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination, results[i].Host))
-							logging.writeString(fmt.Sprintf("[%s] [%s]\n", time.Now().Format(time.ANSIC), results[i].Error))
-							return fmt.Errorf("Upload task [%s] on host [%s] failed with error [%s]", m.Deployments[x].Actions[y].Name, results[i].Host, results[i].Error)
-						}
-						logging.writeString(fmt.Sprintf("[%s] Completed uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination, results[i].Host))
-						log.Infof("Succesfully uploaded [%s] to [%s] on [%s]", m.Deployments[x].Actions[y].Source, m.Deployments[x].Actions[y].Destination, results[i].Host)
-					}
-				case "download":
-
-				case "command":
-
-				case "pkg":
-
-				case "key":
-
-				default:
-					return fmt.Errorf("Unknown Action [%s]", m.Deployments[x].Actions[y].ActionType)
-				}
-			}
-		} else {
-			for z := range m.Deployments[x].Hosts {
-
-				var hostConfig ssh.HostSSHConfig
-				// Find the hosts SSH configuration
-				for i := range hosts {
-					if hosts[i].Host == m.Deployments[x].Hosts[z] {
-						hostConfig = hosts[i]
-					}
-				}
-				err = sequentialDeployment(m.Deployments[x].Actions, hostConfig)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}
-
 //FindDeployment - takes a number of flags and builds a new map to be processed
 func (m *TreasureMap) FindDeployment(deployment, action, host, logFile string, resume bool) error {
 	var foundMap TreasureMap
@@ -166,9 +64,60 @@ func (m *TreasureMap) FindDeployment(deployment, action, host, logFile string, r
 	return foundMap.DeploySSH(logFile)
 }
 
+// DeploySSH - will iterate through a deployment and perform the relevant actions
+func (m *TreasureMap) DeploySSH(logFile string) error {
+	if logFile != "" {
+		//enable logging
+		logging.init(logFile)
+		defer logging.f.Close()
+	}
+
+	if len(ssh.Hosts) == 0 {
+		log.Warnln("No hosts credentials have been loaded, only commands with commandLocal = true will work")
+	}
+	if len(m.Deployments) == 0 {
+		return fmt.Errorf("No Deployments in parlay map")
+	}
+	for x := range m.Deployments {
+		// Build new hosts list from imported SSH servers and compare that we have required credentials
+		hosts, err := ssh.FindHosts(m.Deployments[x].Hosts)
+		if err != nil {
+			return err
+		}
+
+		// Beggining of deployment work
+		log.Infof("Beginning Deployment [%s]\n", m.Deployments[x].Name)
+		logging.writeString(fmt.Sprintf("[%s] Beginning Deployment [%s]\n", time.Now().Format(time.ANSIC), m.Deployments[x].Name))
+
+		if m.Deployments[x].Parallel == true {
+			// Begin this deployment in parallel across all hosts
+			err = parallelDeployment(m.Deployments[x].Actions, hosts)
+			if err != nil {
+				return err
+			}
+		} else {
+			// This work will be sequential, one host after the next
+			for z := range m.Deployments[x].Hosts {
+				var hostConfig ssh.HostSSHConfig
+				// Find the hosts SSH configuration
+				for i := range hosts {
+					if hosts[i].Host == m.Deployments[x].Hosts[z] {
+						hostConfig = hosts[i]
+					}
+				}
+				err = sequentialDeployment(m.Deployments[x].Actions, hostConfig)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// Begin host by host deployments as part of each deployment
 func sequentialDeployment(action []Action, hostConfig ssh.HostSSHConfig) error {
 	var err error
-	// Begin host by host deployments as part of each deployment
 
 	for y := range action {
 		switch action[y].ActionType {
@@ -219,19 +168,74 @@ func sequentialDeployment(action []Action, hostConfig ssh.HostSSHConfig) error {
 	return nil
 }
 
-func (a *Action) parseAndExecute(h *ssh.HostSSHConfig) ssh.CommandResult {
-	// This will parse the options passed in the action and execute the required string
+// Peform all of the actions in parallel on all hosts in the host array
+// this function will make use of the parallel ssh calls
+func parallelDeployment(action []Action, hosts []ssh.HostSSHConfig) error {
+	for y := range action {
+		switch action[y].ActionType {
+		case "upload":
+			logging.writeString(fmt.Sprintf("[%s] Uploading file [%s] to Destination [%s] to multiple hosts\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination))
+
+			results := ssh.ParalellUpload(hosts, action[y].Source, action[y].Destination, action[y].Timeout)
+			// Unlikely that this should happen
+			if len(results) == 0 {
+				return fmt.Errorf("No results have been returned from the parallel execution")
+			}
+			// Parse the results from the parallel updates
+			for i := range results {
+				if results[i].Error != nil {
+					logging.writeString(fmt.Sprintf("[%s] Error uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
+					logging.writeString(fmt.Sprintf("[%s] [%s]\n", time.Now().Format(time.ANSIC), results[i].Error))
+					return fmt.Errorf("Upload task [%s] on host [%s] failed with error [%s]", action[y].Name, results[i].Host, results[i].Error)
+				}
+				logging.writeString(fmt.Sprintf("[%s] Completed uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
+				log.Infof("Succesfully uploaded [%s] to [%s] on [%s]", action[y].Source, action[y].Destination, results[i].Host)
+			}
+		case "download":
+
+		case "command":
+			logging.writeString(fmt.Sprintf("[%s] Executing command action [%s] to multiple hosts\n", time.Now().Format(time.ANSIC), action[y].Name))
+			command, err := action[y].buildCommand()
+			if err != nil {
+				return err
+			}
+			crs := ssh.ParalellExecute(command, hosts, action[y].Timeout)
+			var errors bool // This will only be set to true if a command fails
+			for x := range crs {
+				if crs[x].Error != nil {
+					log.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", action[y].Name, crs[x].Host, crs[x].Error.Error())
+					errors = true // An error has been found
+					logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", crs[x].Result))
+					return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", action[y].Name, crs[x].Host, crs[x].Error, crs[x].Result)
+				}
+				log.Infof("Command Task [%s] on node [%s] completed successfully", action[y].Name, crs[x].Host)
+				logging.writeString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), action[y].Name, crs[x].Host))
+				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", crs[x].Result))
+			}
+			if errors == true {
+				return fmt.Errorf("An error was encountered on command Task [%s]", action[y].Name)
+			}
+		case "pkg":
+
+		case "key":
+
+		default:
+			return fmt.Errorf("Unknown Action [%s]", action[y].ActionType)
+		}
+	}
+	return nil
+}
+
+func (a *Action) buildCommand() (string, error) {
 	var command string
-	var cr ssh.CommandResult
-	var b []byte
 
 	// An executable Key takes presedence
 	if a.KeyName != "" {
 		keycmd := Keys[a.KeyName]
 		// Check that the key exists
 		if keycmd == "" {
-			cr.Error = fmt.Errorf("Unable to find command under key '%s'", a.KeyName)
-			return cr
+			return "", fmt.Errorf("Unable to find command under key '%s'", a.KeyName)
+
 		}
 		if a.CommandSudo != "" {
 			// Add sudo to the Key command
@@ -247,6 +251,19 @@ func (a *Action) parseAndExecute(h *ssh.HostSSHConfig) ssh.CommandResult {
 		} else {
 			command = a.Command
 		}
+	}
+	return command, nil
+}
+
+func (a *Action) parseAndExecute(h *ssh.HostSSHConfig) ssh.CommandResult {
+	// This will parse the options passed in the action and execute the required string
+	var cr ssh.CommandResult
+	var b []byte
+
+	command, err := a.buildCommand()
+	if err != nil {
+		cr.Error = err
+		return cr
 	}
 
 	if a.CommandLocal == true {
