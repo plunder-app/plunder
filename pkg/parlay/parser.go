@@ -138,14 +138,14 @@ func sequentialDeployment(action []Action, hostConfig ssh.HostSSHConfig) error {
 			if cr.Error != nil {
 				// Output error messages
 				logging.writeString(fmt.Sprintf("[%s] Command task [%s] on host [%s] failed with error [%s]\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host, cr.Error))
-				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", cr.Result))
+				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
 				return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", action[y].Name, hostConfig.Host, cr.Error, cr.Result)
 			}
 			// Output success Messages
 			log.Infof("Command Task [%s] on node [%s] completed successfully", action[y].Name, hostConfig.Host)
 			log.Debugf("Command Results ->\n%s", cr.Result)
 			logging.writeString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
-			logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", cr.Result))
+			logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
 
 		case "pkg":
 
@@ -205,12 +205,12 @@ func parallelDeployment(action []Action, hosts []ssh.HostSSHConfig) error {
 				if crs[x].Error != nil {
 					log.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", action[y].Name, crs[x].Host, crs[x].Error.Error())
 					errors = true // An error has been found
-					logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", crs[x].Result))
+					logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", crs[x].Result))
 					return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", action[y].Name, crs[x].Host, crs[x].Error, crs[x].Result)
 				}
 				log.Infof("Command Task [%s] on node [%s] completed successfully", action[y].Name, crs[x].Host)
 				logging.writeString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), action[y].Name, crs[x].Host))
-				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n---------------------------------\n", crs[x].Result))
+				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", crs[x].Result))
 			}
 			if errors == true {
 				return fmt.Errorf("An error was encountered on command Task [%s]", action[y].Name)
@@ -275,7 +275,13 @@ func (a *Action) parseAndExecute(h *ssh.HostSSHConfig) ssh.CommandResult {
 	} else {
 		log.Debugf("Executing command [%s] on host [%s]", command, h.Host)
 		cr = ssh.SingleExecute(command, *h, a.Timeout)
+
 		cr.Result = strings.TrimRight(cr.Result, "\r\n")
+
+		// If the command hasn't returned anything, put a filler in
+		if cr.Result == "" {
+			cr.Result = "[No Output]"
+		}
 		if cr.Error != nil {
 			return cr
 		}
