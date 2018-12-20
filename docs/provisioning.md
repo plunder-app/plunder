@@ -63,7 +63,7 @@ The above example covers simple usage of `uploading` and `command` usage.. there
 			"actions": [
 				{
 					"name": "Certificate provisioning",
-					"type": "etcd",
+					"type": "kubeadm/etcd",
 					"etcd" : {
 						"hostname1" : "etcd01",
 						"hostname2" : "etcd02",
@@ -80,7 +80,7 @@ The above example covers simple usage of `uploading` and `command` usage.. there
 }
 ```
 
-The action `type` of `etcd` will automate the provisioning of all of the certificates required along with building the correct `kubeadmcfg.yaml` needed for the etcd cluster to be provisioned correctly.
+The action `type` of `kubeadm/etcd` will automate the provisioning of all of the certificates required along with building the correct `kubeadmcfg.yaml` needed for the etcd cluster to be provisioned correctly.
 
 The `initCa` should be set to `true` in the event that a new certificate authority is required.
 

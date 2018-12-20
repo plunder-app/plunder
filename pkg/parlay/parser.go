@@ -174,7 +174,7 @@ func sequentialDeployment(action []Action, hostConfig ssh.HostSSHConfig) error {
 
 		case "key":
 
-		case "etcd":
+		case "kubeadm/etcd":
 			// Generate all of the actions required for ETCd deployments
 			etcdActions := action[y].ETCD.generateActions()
 			log.Debugf("About to execute [%d] actions to build the etcd cluster", len(etcdActions))
