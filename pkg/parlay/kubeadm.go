@@ -7,7 +7,7 @@ import (
 // NOTE - The functions in this particluar file will need moving to something seperate at a later
 // date. Quite possibly moving to a plugin model? TBD.
 
-// This defines the etcd kubeadm file
+// This defines the etcd kubeadm file (should use the kubernetes packages to define at a later point)
 const etcdKubeadm = `apiVersion: "kubeadm.k8s.io/%s"
 kind: ClusterConfiguration
 etcd:
