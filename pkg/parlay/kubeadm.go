@@ -43,13 +43,37 @@ type etcdMembers struct {
 	APIVersion string `json:"apiversion,omitempty"`
 }
 
+type managerMembers struct {
+	// ETCD Nodes
+	ETCDAddress1 string
+	ETCDAddress2 string
+	ETCDAddress3 string
+
+	// Manager Nodes
+	Manager01 string
+	Manager02 string
+	Manager03 string
+
+	// Load Balancer details (needed for initialising the first master)
+	loadBalancer
+
+	// Unstacked - means ETCD nodes are seperate to managers (false by default)
+	unstacked bool
+}
+
+type loadBalancer struct {
+	// Load balancer
+	LBHostname string
+	LBPort     int
+}
+
 func (e *etcdMembers) generateActions() []Action {
 	var generatedActions []Action
 	var a Action
 	if e.InitCA == true {
 		// Ensure that a new Certificate Authority is generated
 		// Create action
-		a := Action{
+		a = Action{
 			// Generate etcd server certificate
 			ActionType:  "command",
 			Command:     fmt.Sprintf("kubeadm init phase certs etcd-ca"),
@@ -82,6 +106,7 @@ func (e *etcdMembers) generateActions() []Action {
 	generatedActions = append(generatedActions, a)
 
 	// Node 2
+	a.Name = "build kubeadm config for node 2"
 	a.Command = fmt.Sprintf("echo '%s' > /tmp/%s/kubeadmcfg.yaml", e.buildKubeadm(e.APIVersion, e.Hostname3, e.Address3), e.Address3)
 	generatedActions = append(generatedActions, a)
 
@@ -132,7 +157,7 @@ func (e *etcdMembers) generateCertificateActions(hosts []string) []Action {
 		a.Name = fmt.Sprintf("Generate api-server client certificate for [%s]", v)
 		generatedActions = append(generatedActions, a)
 
-		// These steps are only required for the latter two hosts
+		// These steps are only required for the first two hosts
 		if i != (len(hosts) - 1) {
 			// Archive the certificates and the kubeadm configuration in a host specific archive name
 			a.Command = fmt.Sprintf("tar -cvzf /tmp/%s.tar.gz $(find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f) /tmp/%s/kubeadmcfg.yaml", v, v)
@@ -145,7 +170,41 @@ func (e *etcdMembers) generateCertificateActions(hosts []string) []Action {
 			a.Destination = fmt.Sprintf("/tmp/%s.tar.gz", hosts[i])
 			a.Name = fmt.Sprintf("Retrieve the certificate bundle for [%s]", v)
 			generatedActions = append(generatedActions, a)
+		} else {
+			// This is the final host, grab the certificates for use by a manager
+			a.Command = fmt.Sprintf("tar -cvzf /tmp/managercert.tar.gz /etc/kubernetes/pki/etcd/ca.crt /etc/kubernetes/pki/apiserver-etcd-client.crt /etc/kubernetes/pki/apiserver-etcd-client.key")
+			a.Name = fmt.Sprintf("Archive generated certificates [%s]", v)
+			generatedActions = append(generatedActions, a)
+
+			// Download the archive files to the local machine
+			a.ActionType = "download"
+			a.Source = "/tmp/managercert.tar.gz"
+			a.Destination = "/tmp/managercert.tar.gz"
+			a.Name = "Retrieving the Certificates for the manager nodes"
+			generatedActions = append(generatedActions, a)
 		}
 	}
+	return generatedActions
+}
+
+// At some point the functions for the various kubeadm arease will be split into seperate files to ease management
+func (m *managerMembers) generateActions() []Action {
+	var generatedActions []Action
+	var a Action
+	if m.unstacked == false {
+		// Not implemented yet TODO
+		return nil
+	}
+
+	// Upload the initial etcd certificates to the first manager node
+	a = Action{
+		// Upload etcd server certificate
+		ActionType:  "upload",
+		Source:      "/tmp/managercert.tar.gz",
+		Destination: "/tmp/managercert.tar.gz",
+		Name:        "Upload etcd server certificate to first manager",
+	}
+	generatedActions = append(generatedActions, a)
+
 	return generatedActions
 }

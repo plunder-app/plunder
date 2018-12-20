@@ -40,6 +40,7 @@ type Action struct {
 	// File based operations
 	Source      string `json:"source,omitempty"`
 	Destination string `json:"destination,omitempty"`
+	FileMove    bool   `json:"fileMove,omitempty"`
 
 	// Package manager operations
 	PkgManager   string `json:"packageManager,omitempty"`
