@@ -92,7 +92,8 @@ func (e *etcdMembers) generateActions() []Action {
 
 func (e *etcdMembers) buildKubeadm(api, host, address string) string {
 	var kubeadm string
-	kubeadm = fmt.Sprintf(etcdKubeadm, api, address, address, e.Hostname1, e.Address1, e.Hostname2, e.Address2, e.Hostname3, e.Address3, host, host, address, address, address)
+	// Generates a kubeadm for setting up the etcd yaml
+	kubeadm = fmt.Sprintf(etcdKubeadm, api, address, address, e.Hostname1, e.Address1, e.Hostname2, e.Address2, e.Hostname3, e.Address3, host, address, address, address, address)
 	return kubeadm
 }
 
@@ -100,15 +101,22 @@ func (e *etcdMembers) buildKubeadm(api, host, address string) string {
 func (e *etcdMembers) generateCertificateActions(hosts []string) []Action {
 	var generatedActions []Action
 	for i, v := range hosts {
-		// Create action
+		// Create action variable
 		a := Action{
-			// Generate etcd server certificate
+			// Tidy the certificates from the /etc/kubernetes/pki folder
 			ActionType:  "command",
-			Command:     fmt.Sprintf("kubeadm init phase certs etcd-server --config=/tmp/%s/kubeadmcfg.yaml", v),
+			Command:     fmt.Sprintf("find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f -delete"),
 			CommandSudo: "root",
-			Name:        fmt.Sprintf("Generate etcd server certificate for [%s]", v),
+			Name:        fmt.Sprintf("Remove any existing certificates before attempting to generate any new ones"),
 		}
 		generatedActions = append(generatedActions, a)
+
+		// Generate etcd server certificate
+		a.ActionType = "command"
+		a.Command = fmt.Sprintf("kubeadm init phase certs etcd-server --config=/tmp/%s/kubeadmcfg.yaml", v)
+		a.Name = fmt.Sprintf("Generate etcd server certificate for [%s]", v)
+		generatedActions = append(generatedActions, a)
+
 		// Generate peer certificate
 		a.Command = fmt.Sprintf("kubeadm init phase certs etcd-peer --config=/tmp/%s/kubeadmcfg.yaml", v)
 		a.Name = fmt.Sprintf("Generate peer certificate for [%s]", v)
@@ -136,12 +144,6 @@ func (e *etcdMembers) generateCertificateActions(hosts []string) []Action {
 			a.Source = fmt.Sprintf("/tmp/%s.tar.gz", hosts[i])
 			a.Destination = fmt.Sprintf("/tmp/%s.tar.gz", hosts[i])
 			a.Name = fmt.Sprintf("Retrieve the certificate bundle for [%s]", v)
-			generatedActions = append(generatedActions, a)
-
-			// Tidy the certificates from the /etc/kubernetes/pki folder
-			a.ActionType = "command"
-			a.Command = fmt.Sprintf("find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f -delete")
-			a.Name = fmt.Sprintf("Remove the temporary certificate bundle for [%s]", v)
 			generatedActions = append(generatedActions, a)
 		}
 	}
