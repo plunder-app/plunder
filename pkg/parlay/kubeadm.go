@@ -25,6 +25,25 @@ etcd:
             advertise-client-urls: https://%s:2379
             initial-advertise-peer-urls: https://%s:2380`
 
+// This defines the manager kubeadm file (should use the kubernetes packages to define at a later point)
+
+const managerKubeadm = `apiVersion: kubeadm.k8s.io/v1beta1
+kind: ClusterConfiguration
+kubernetesVersion: %s
+apiServer:
+  certSANs:
+  - "%s"
+controlPlaneEndpoint: "%s:%d"
+etcd:
+    external:
+        endpoints:
+        - https://%s:2379
+        - https://%s:2379
+        - https://%s:2379
+        caFile: /etc/kubernetes/pki/etcd/ca.crt
+        certFile: /etc/kubernetes/pki/apiserver-etcd-client.crt
+        keyFile: /etc/kubernetes/pki/apiserver-etcd-client.key`
+
 type etcdMembers struct {
 	// Hostnames
 	Hostname1 string `json:"hostname1,omitempty"`
@@ -53,6 +72,9 @@ type managerMembers struct {
 	Manager01 string
 	Manager02 string
 	Manager03 string
+
+	// Version of Kubernetes
+	Version string
 
 	// Load Balancer details (needed for initialising the first master)
 	loadBalancer
@@ -89,7 +111,7 @@ func (e *etcdMembers) generateActions() []Action {
 	}
 	// Generate the configuration directories
 	a.ActionType = "command"
-	a.Command = fmt.Sprintf("mkdir -p /tmp/%s/ /tmp/%s/ /tmp/%s/", e.Address1, e.Address2, e.Address3)
+	a.Command = fmt.Sprintf("mkdir -m 777 -p /tmp/%s/ /tmp/%s/ /tmp/%s/", e.Address1, e.Address2, e.Address3)
 	a.Name = "Generate temporary directories"
 	generatedActions = append(generatedActions, a)
 
@@ -125,15 +147,19 @@ func (e *etcdMembers) buildKubeadm(api, host, address string) string {
 // generateCertificateActions - Hosts need adding in backward to the array i.e. host 2 -> host 1 -> host 0
 func (e *etcdMembers) generateCertificateActions(hosts []string) []Action {
 	var generatedActions []Action
+	var a Action
+
+	a.Command = "mkdir -p /etc/kubernetes/pki"
+	a.CommandSudo = "root"
+	a.Name = "Ensure that PKI directory exists"
+	a.ActionType = "command"
+	generatedActions = append(generatedActions, a)
+
 	for i, v := range hosts {
-		// Create action variable
-		a := Action{
-			// Tidy the certificates from the /etc/kubernetes/pki folder
-			ActionType:  "command",
-			Command:     fmt.Sprintf("find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f -delete"),
-			CommandSudo: "root",
-			Name:        fmt.Sprintf("Remove any existing certificates before attempting to generate any new ones"),
-		}
+		// Tidy any existing client certificates
+		a.ActionType = "command"
+		a.Command = "find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f -delete"
+		a.Name = "Remove any existing client certificates before attempting to generate any new ones"
 		generatedActions = append(generatedActions, a)
 
 		// Generate etcd server certificate
@@ -160,7 +186,7 @@ func (e *etcdMembers) generateCertificateActions(hosts []string) []Action {
 		// These steps are only required for the first two hosts
 		if i != (len(hosts) - 1) {
 			// Archive the certificates and the kubeadm configuration in a host specific archive name
-			a.Command = fmt.Sprintf("tar -cvzf /tmp/%s.tar.gz $(find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f) /tmp/%s/kubeadmcfg.yaml", v, v)
+			a.Command = fmt.Sprintf("tar -cvzf /tmp/%s.tar.gz $(find /etc/kubernetes/pki -type f) /tmp/%s/kubeadmcfg.yaml", v, v)
 			a.Name = fmt.Sprintf("Archive generated certificates [%s]", v)
 			generatedActions = append(generatedActions, a)
 
@@ -206,5 +232,24 @@ func (m *managerMembers) generateActions() []Action {
 	}
 	generatedActions = append(generatedActions, a)
 
+	// Install the certificates for etcd
+	a.Name = "Installing the etcd certificates"
+	a.ActionType = "command"
+	a.CommandSudo = "root"
+	a.Command = fmt.Sprintf("tar -xvzf /tmp/managercert.tar.gz -C /")
+	generatedActions = append(generatedActions, a)
+
+	// Generate the kubeadm configuration file
+	a.Name = "Generating the Kubeadm file for the first manager node"
+	a.Command = fmt.Sprintf("echo '%s' > /tmp/kubeadmcfg.yaml", m.buildKubeadm())
+	generatedActions = append(generatedActions, a)
+
 	return generatedActions
+}
+
+func (m *managerMembers) buildKubeadm() string {
+	var kubeadm string
+	// Generates a kubeadm for setting up the etcd yaml
+	kubeadm = fmt.Sprintf(managerKubeadm, m.Version, m.LBHostname, m.LBHostname, m.LBPort, m.ETCDAddress1, m.ETCDAddress2, m.ETCDAddress3)
+	return kubeadm
 }
