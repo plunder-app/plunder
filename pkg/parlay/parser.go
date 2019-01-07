@@ -37,7 +37,7 @@ func (m *TreasureMap) FindDeployment(deployment, action, host, logFile string, r
 							}
 							// If this is zero it means that no actions have been found
 							if len(foundMap.Deployments[0].Actions) == 0 {
-								fmt.Printf("No actions have been found, looking for action [%s]", action)
+								return fmt.Errorf("No actions have been found, looking for action [%s]", action)
 							}
 						}
 					}
@@ -51,14 +51,14 @@ func (m *TreasureMap) FindDeployment(deployment, action, host, logFile string, r
 					}
 					// If this is zero it means that no hosts have been found
 					if len(foundMap.Deployments[0].Hosts) == 0 {
-						fmt.Printf("No host has been found, looking for host [%s]", host)
+						return fmt.Errorf("No host has been found, looking for host [%s]", host)
 					}
 				}
 			}
 		}
 		// If this is zero it means that no actions have been found
 		if len(foundMap.Deployments) == 0 {
-			fmt.Printf("No deployment has been found, looking for deployment [%s]", deployment)
+			return fmt.Errorf("No deployment has been found, looking for deployment [%s]", deployment)
 		}
 	} else {
 		return fmt.Errorf("No deployment was specified")
