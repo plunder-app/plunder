@@ -22,7 +22,7 @@ var resume *bool
 func init() {
 	// SSH Deployment flags
 	logFile = plunderAutomateSSH.Flags().String("logfile", "", "Patht to where plunder will write automation logs")
-	deploymentSSH = plunderAutomateSSH.Flags().String("config", "", "Path to a plunder deployment configuration")
+	deploymentSSH = plunderAutomateSSH.Flags().String("deployconfig", "", "Path to a plunder deployment configuration")
 	mapFile = plunderAutomateSSH.Flags().String("map", "", "Path to a plunder map")
 
 	// Deployment control flags
@@ -63,16 +63,18 @@ var plunderAutomateSSH = &cobra.Command{
 			log.Infof("Reading deployment configuration from [%s]", *deploymentSSH)
 			err := ssh.ImportHostsFromDeployment(*deploymentSSH)
 			if err != nil {
+				cmd.Help()
 				log.Fatalf("%v", err)
 			}
 		} else {
-			log.Warnln("No Deployment information imported")
+			cmd.Help()
+			log.Fatalf("No Deployment information imported")
 		}
 		log.Infof("Found [%d] ssh configurations", len(ssh.Hosts))
 
 		if *mapFile != "" {
 			log.Infof("Reading deployment configuration from [%s]", *mapFile)
-			//var err error
+
 			var deployment parlay.TreasureMap
 			// // Check the actual path from the string
 			if _, err := os.Stat(*mapFile); !os.IsNotExist(err) {
