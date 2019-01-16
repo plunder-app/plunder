@@ -189,6 +189,19 @@ func sequentialDeployment(action []Action, hostConfig ssh.HostSSHConfig) error {
 				// Return error
 				return err
 			}
+		case "kubeadm/mgmt":
+			mgmtActions := action[y].MGMT.generateActions()
+			log.Debugf("About to execute [%d] actions to build the management cluster", len(mgmtActions))
+			err = sequentialDeployment(mgmtActions, hostConfig)
+			if err != nil {
+				// Set checkpoint
+				restore.Action = action[y].Name
+				restore.Host = hostConfig.Host
+				restore.createCheckpoint()
+
+				// Return error
+				return err
+			}
 		default:
 			// Set checkpoint (the actiontype may be modified or spelling issue)
 			restore.Action = action[y].Name

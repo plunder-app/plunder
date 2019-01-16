@@ -28,8 +28,21 @@ func restoreFilePath() (string, error) {
 }
 
 func (r *Restore) createCheckpoint() error {
+	// This function will create a checkpoint file that will allow Plunder to restart in the event of failure
+	path, err := restoreFilePath()
+	if err != nil {
+		return err
+	}
 
-	return nil
+	// Marshall the struct to a byte array
+	b, err := json.Marshal(r)
+	if err != nil {
+		return err
+	}
+	// Write the checkpoint file
+	err = ioutil.WriteFile(path, b, 0644)
+
+	return err
 }
 
 //RestoreFromCheckpoint will attempt to find a restoration checkpoint file

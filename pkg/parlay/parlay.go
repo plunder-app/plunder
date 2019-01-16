@@ -58,6 +58,10 @@ type Action struct {
 	KeyFile string `json:"keyFile,omitempty"`
 	KeyName string `json:"keyName,omitempty"`
 
+	// Kubernetes Specific configuration
+
+	// management plane configuration
+	MGMT managerMembers `json:"mgmt,omitempty"`
 	// etcd configuration
 	ETCD etcdMembers `json:"etcd,omitempty"`
 }
