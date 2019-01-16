@@ -68,6 +68,7 @@ popularity-contest popularity-contest/participate boolean false
 ### GRUB
 grub-pc grub-pc/hidden_timeout  boolean true
 grub-pc grub-pc/timeout string  0
+d-i grub-installer/bootdev string /dev/sda
 
 ### Regular, primary partitions
 d-i partman-auto/disk string /dev/sda
@@ -116,7 +117,7 @@ d-i passwd/root-login boolean false
 d-i passwd/make-user boolean true
 d-i passwd/user-fullname string %s
 d-i passwd/username string %s
-# TODO probably you need some decent password
+
 d-i passwd/user-password password %s
 d-i passwd/user-password-again password %s
 d-i user-setup/allow-password-weak boolean true

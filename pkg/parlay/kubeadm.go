@@ -64,29 +64,24 @@ type etcdMembers struct {
 
 type managerMembers struct {
 	// ETCD Nodes
-	ETCDAddress1 string
-	ETCDAddress2 string
-	ETCDAddress3 string
-
-	// Manager Nodes
-	Manager01 string
-	Manager02 string
-	Manager03 string
+	ETCDAddress1 string `json:"etcd01,omitempty"`
+	ETCDAddress2 string `json:"etcd02,omitempty"`
+	ETCDAddress3 string `json:"etcd03,omitempty"`
 
 	// Version of Kubernetes
-	Version string
+	Version string `json:"kubeVersion,omitempty"`
 
 	// Load Balancer details (needed for initialising the first master)
 	loadBalancer
 
 	// Unstacked - means ETCD nodes are seperate to managers (false by default)
-	unstacked bool
+	Unstacked bool `json:"unstacked,omitempty"`
 }
 
 type loadBalancer struct {
 	// Load balancer
-	LBHostname string
-	LBPort     int
+	LBHostname string `json:"lbHostname,omitempty"`
+	LBPort     int    `json:"lbPort,omitempty"`
 }
 
 func (e *etcdMembers) generateActions() []Action {
@@ -217,7 +212,7 @@ func (e *etcdMembers) generateCertificateActions(hosts []string) []Action {
 func (m *managerMembers) generateActions() []Action {
 	var generatedActions []Action
 	var a Action
-	if m.unstacked == false {
+	if m.Unstacked == false {
 		// Not implemented yet TODO
 		return nil
 	}
@@ -242,6 +237,11 @@ func (m *managerMembers) generateActions() []Action {
 	// Generate the kubeadm configuration file
 	a.Name = "Generating the Kubeadm file for the first manager node"
 	a.Command = fmt.Sprintf("echo '%s' > /tmp/kubeadmcfg.yaml", m.buildKubeadm())
+	generatedActions = append(generatedActions, a)
+
+	// Initialise the first node
+	a.Name = "Initialise the first control plane node"
+	a.Command = "kubeadm init --config /tmp/kubeadmcfg.yaml"
 	generatedActions = append(generatedActions, a)
 
 	return generatedActions
