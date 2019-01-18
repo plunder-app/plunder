@@ -74,14 +74,8 @@ type managerMembers struct {
 	// Load Balancer details (needed for initialising the first master)
 	loadBalancer
 
-	// Unstacked - means ETCD nodes are seperate to managers (false by default)
-	Unstacked bool `json:"unstacked,omitempty"`
-}
-
-type loadBalancer struct {
-	// Load balancer
-	LBHostname string `json:"lbHostname,omitempty"`
-	LBPort     int    `json:"lbPort,omitempty"`
+	// Stacked - means ETCD nodes are stacked on managers (false by default)
+	Stacked bool `json:"stacked,omitempty"`
 }
 
 func (e *etcdMembers) generateActions() []Action {
@@ -212,7 +206,7 @@ func (e *etcdMembers) generateCertificateActions(hosts []string) []Action {
 func (m *managerMembers) generateActions() []Action {
 	var generatedActions []Action
 	var a Action
-	if m.Unstacked == false {
+	if m.Stacked == false {
 		// Not implemented yet TODO
 		return nil
 	}
