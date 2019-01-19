@@ -37,6 +37,8 @@ func init() {
 	// Automate SSH Flags
 	plunderAutomate.AddCommand(plunderAutomateValidate)
 	plunderAutomate.AddCommand(plunderAutomateSSH)
+	plunderAutomate.AddCommand(plunderAutomatePlugins)
+
 	plunderCmd.AddCommand(plunderAutomate)
 }
 
@@ -47,6 +49,17 @@ var plunderAutomate = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 		cmd.Help()
+		return
+	},
+}
+
+// plunderAutomatePlugins
+var plunderAutomatePlugins = &cobra.Command{
+	Use:   "plugin",
+	Short: "Automate the deployment of a platform/application",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+		parlay.LoadPlugins()
 		return
 	},
 }
