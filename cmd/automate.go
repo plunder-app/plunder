@@ -11,10 +11,14 @@ import (
 	"github.com/thebsdbox/plunder/pkg/ssh"
 )
 
+// These flags are used to determine a deployment
 var deploymentSSH, mapFile, mapFileValidate, logFile *string
 
 // These flags are used to determine if a particular deployment, action and specific host need to be used.
 var deploymentName, actionName, host *string
+
+// These flags are used for management of plugins
+var pluginPath, pluginAction *string
 
 // This flag determines if a singular action should occur or wheter to resume all actions from this point
 var resume *bool
@@ -31,8 +35,14 @@ func init() {
 	host = plunderAutomateSSH.Flags().String("host", "", "Automate the deployment for a specific host")
 	resume = plunderAutomateSSH.Flags().Bool("resume", false, "Resume all actions after the one specified by --action")
 
-	// Validation flags
+	// Path to a map for validation TODO:// break to seperate subcommand
 	mapFileValidate = plunderAutomateValidate.Flags().String("map", "", "Path to a plunder map")
+
+	// Plugin Flags
+	pluginPath = plunderAutomatePluginUsage.Flags().String("plugin", "", "Path to a specific plugin typically ~./plugin/[X].plugin")
+	pluginAction = plunderAutomatePluginUsage.Flags().String("action", "", "Action to retrieve the usage of")
+
+	plunderAutomatePlugins.AddCommand(plunderAutomatePluginUsage)
 
 	// Automate SSH Flags
 	plunderAutomate.AddCommand(plunderAutomateValidate)
@@ -59,7 +69,18 @@ var plunderAutomatePlugins = &cobra.Command{
 	Short: "Automate the deployment of a platform/application",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
-		parlay.LoadPlugins()
+		parlay.ListPlugins()
+		return
+	},
+}
+
+// plunderAutomatePlugins
+var plunderAutomatePluginUsage = &cobra.Command{
+	Use:   "usage",
+	Short: "Display the usage of a plugin action",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+		parlay.UsagePlugin(*pluginPath, *pluginAction)
 		return
 	},
 }
