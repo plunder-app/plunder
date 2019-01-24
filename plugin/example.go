@@ -2,13 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/thebsdbox/plunder/pkg/parlay"
 )
 
-const info = `
-This example plugin is used to demonstrate the structure of a plugin
-`
+const pluginInfo = `This example plugin is used to demonstrate the structure of a plugin`
 
 // Action defines a custom action
 type Action struct {
@@ -22,14 +21,28 @@ type testAction struct {
 	Address     string `json:"address"`
 }
 
-// ParlayActionList - This should return a list of
+// Dummy main function
+func main() {}
+
+// ParlayActionList - This should return an array of actions
 func ParlayActionList() []string {
-	return []string{"exampleAction/test", "exampleAction/demo", "exampleAction/example"}
+	return []string{
+		"exampleAction/test",
+		"exampleAction/demo",
+		"exampleAction/example"}
+}
+
+// ParlayActionDetails - This should return an array of action descriptions
+func ParlayActionDetails() []string {
+	return []string{
+		"This action handles the testing part of the example plugin",
+		"This action handles the demonstration of the example plugin",
+		"This action handles an example of the example plugin!"}
 }
 
 // ParlayPluginInfo - returns information about the plugin
 func ParlayPluginInfo() string {
-	return info
+	return pluginInfo
 }
 
 //ParlayActions -
@@ -43,7 +56,7 @@ func ParlayActions(action string, iface interface{}) []parlay.Action {
 }
 
 // ParlayUsage -
-func ParlayUsage(action string) string {
+func ParlayUsage(action string) (string, error) {
 	var usageJSON string
 	switch action {
 	case "exampleAction/test":
@@ -56,11 +69,8 @@ func ParlayUsage(action string) string {
 			},
 		}
 		b, _ := json.MarshalIndent(a, "", "\t")
-		return string(b)
+		return string(b), nil
 	default:
-		return usageJSON
+		return usageJSON, fmt.Errorf("Action [%s] could not be found", action)
 	}
 }
-
-// Dummy main function
-func main() {}

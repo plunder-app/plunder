@@ -8,6 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/thebsdbox/plunder/pkg/parlay"
+	"github.com/thebsdbox/plunder/pkg/parlay/plugin"
 	"github.com/thebsdbox/plunder/pkg/ssh"
 )
 
@@ -18,7 +19,7 @@ var deploymentSSH, mapFile, mapFileValidate, logFile *string
 var deploymentName, actionName, host *string
 
 // These flags are used for management of plugins
-var pluginPath, pluginAction *string
+var pluginPath, pluginAction, pluginActions *string
 
 // This flag determines if a singular action should occur or wheter to resume all actions from this point
 var resume *bool
@@ -42,8 +43,10 @@ func init() {
 	pluginPath = plunderAutomatePluginUsage.Flags().String("plugin", "", "Path to a specific plugin typically ~./plugin/[X].plugin")
 	pluginAction = plunderAutomatePluginUsage.Flags().String("action", "", "Action to retrieve the usage of")
 
-	plunderAutomatePlugins.AddCommand(plunderAutomatePluginUsage)
+	pluginActions = plunderAutomatePluginActions.Flags().String("plugin", "", "Path to a specific plugin typically ~./plugin/[X].plugin")
 
+	plunderAutomatePlugins.AddCommand(plunderAutomatePluginUsage)
+	plunderAutomatePlugins.AddCommand(plunderAutomatePluginActions)
 	// Automate SSH Flags
 	plunderAutomate.AddCommand(plunderAutomateValidate)
 	plunderAutomate.AddCommand(plunderAutomateSSH)
@@ -69,7 +72,7 @@ var plunderAutomatePlugins = &cobra.Command{
 	Short: "Automate the deployment of a platform/application",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
-		parlay.ListPlugins()
+		parlayplugin.ListPlugins()
 		return
 	},
 }
@@ -80,7 +83,18 @@ var plunderAutomatePluginUsage = &cobra.Command{
 	Short: "Display the usage of a plugin action",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
-		parlay.UsagePlugin(*pluginPath, *pluginAction)
+		parlayplugin.UsagePlugin(*pluginPath, *pluginAction)
+		return
+	},
+}
+
+// plunderAutomatePlugins
+var plunderAutomatePluginActions = &cobra.Command{
+	Use:   "actions",
+	Short: "Display the actions of a particular plugin",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+		parlayplugin.ListPluginActions(*pluginActions)
 		return
 	},
 }
