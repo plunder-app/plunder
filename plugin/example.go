@@ -9,6 +9,13 @@ import (
 
 const pluginInfo = `This example plugin is used to demonstrate the structure of a plugin`
 
+//Test -
+type Test struct {
+	test  string
+	test1 int
+	test2 bool
+}
+
 // Action defines a custom action
 type Action struct {
 	Name       string     `json:"name"`
@@ -73,4 +80,13 @@ func ParlayUsage(action string) (string, error) {
 	default:
 		return usageJSON, fmt.Errorf("Action [%s] could not be found", action)
 	}
+}
+
+// ParlayExec -
+func ParlayExec(action string, iface interface{}) ([]parlay.Action, error) {
+	//fmt.Printf("%v", iface.(Test).test1)
+	// bob := iface.(*Test)
+	// fmt.Printf("%v\n%v\n", bob, iface)
+	fmt.Printf("%s", iface["test1"])
+	return nil, nil
 }

@@ -47,6 +47,8 @@ func init() {
 
 	plunderAutomatePlugins.AddCommand(plunderAutomatePluginUsage)
 	plunderAutomatePlugins.AddCommand(plunderAutomatePluginActions)
+	plunderAutomatePlugins.AddCommand(plunderAutomatePluginTest)
+
 	// Automate SSH Flags
 	plunderAutomate.AddCommand(plunderAutomateValidate)
 	plunderAutomate.AddCommand(plunderAutomateSSH)
@@ -95,6 +97,25 @@ var plunderAutomatePluginActions = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 		parlayplugin.ListPluginActions(*pluginActions)
+		return
+	},
+}
+
+// plunderAutomatePlugins
+var plunderAutomatePluginTest = &cobra.Command{
+	Use:   "test",
+	Short: "Test the actions of the example plugin",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+
+		test := `{ "name": "Test", "action":"example/test", "plugin": { "test":"hello", "test1": 12345, "test2": true } }`
+		var action parlay.Action
+		_ = json.Unmarshal([]byte(test), &action)
+
+		_, err := parlayplugin.ExecuteActionInPlugin("./plugin/example.plugin", "example/test", action.Plugin)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
 		return
 	},
 }
