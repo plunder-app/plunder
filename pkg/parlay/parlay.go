@@ -64,6 +64,9 @@ type Action struct {
 	MGMT managerMembers `json:"mgmt,omitempty"`
 	// etcd configuration
 	ETCD etcdMembers `json:"etcd,omitempty"`
+
+	//Plugin Spec
+	Plugin map[string]interface{} `json:"plugin,omitempty"`
 }
 
 // KeyMap

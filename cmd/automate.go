@@ -8,13 +8,18 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/thebsdbox/plunder/pkg/parlay"
+	"github.com/thebsdbox/plunder/pkg/parlay/plugin"
 	"github.com/thebsdbox/plunder/pkg/ssh"
 )
 
+// These flags are used to determine a deployment
 var deploymentSSH, mapFile, mapFileValidate, logFile *string
 
 // These flags are used to determine if a particular deployment, action and specific host need to be used.
 var deploymentName, actionName, host *string
+
+// These flags are used for management of plugins
+var pluginPath, pluginAction, pluginActions *string
 
 // This flag determines if a singular action should occur or wheter to resume all actions from this point
 var resume *bool
@@ -31,12 +36,24 @@ func init() {
 	host = plunderAutomateSSH.Flags().String("host", "", "Automate the deployment for a specific host")
 	resume = plunderAutomateSSH.Flags().Bool("resume", false, "Resume all actions after the one specified by --action")
 
-	// Validation flags
+	// Path to a map for validation TODO:// break to seperate subcommand
 	mapFileValidate = plunderAutomateValidate.Flags().String("map", "", "Path to a plunder map")
+
+	// Plugin Flags
+	pluginPath = plunderAutomatePluginUsage.Flags().String("plugin", "", "Path to a specific plugin typically ~./plugin/[X].plugin")
+	pluginAction = plunderAutomatePluginUsage.Flags().String("action", "", "Action to retrieve the usage of")
+
+	pluginActions = plunderAutomatePluginActions.Flags().String("plugin", "", "Path to a specific plugin typically ~./plugin/[X].plugin")
+
+	plunderAutomatePlugins.AddCommand(plunderAutomatePluginUsage)
+	plunderAutomatePlugins.AddCommand(plunderAutomatePluginActions)
+	plunderAutomatePlugins.AddCommand(plunderAutomatePluginTest)
 
 	// Automate SSH Flags
 	plunderAutomate.AddCommand(plunderAutomateValidate)
 	plunderAutomate.AddCommand(plunderAutomateSSH)
+	plunderAutomate.AddCommand(plunderAutomatePlugins)
+
 	plunderCmd.AddCommand(plunderAutomate)
 }
 
@@ -47,6 +64,58 @@ var plunderAutomate = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 		cmd.Help()
+		return
+	},
+}
+
+// plunderAutomatePlugins
+var plunderAutomatePlugins = &cobra.Command{
+	Use:   "plugin",
+	Short: "Automate the deployment of a platform/application",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+		parlayplugin.ListPlugins()
+		return
+	},
+}
+
+// plunderAutomatePlugins
+var plunderAutomatePluginUsage = &cobra.Command{
+	Use:   "usage",
+	Short: "Display the usage of a plugin action",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+		parlayplugin.UsagePlugin(*pluginPath, *pluginAction)
+		return
+	},
+}
+
+// plunderAutomatePlugins
+var plunderAutomatePluginActions = &cobra.Command{
+	Use:   "actions",
+	Short: "Display the actions of a particular plugin",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+		parlayplugin.ListPluginActions(*pluginActions)
+		return
+	},
+}
+
+// plunderAutomatePlugins
+var plunderAutomatePluginTest = &cobra.Command{
+	Use:   "test",
+	Short: "Test the actions of the example plugin",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+
+		test := `{ "name": "Test", "action":"example/test", "plugin": { "test":"hello", "test1": 12345, "test2": true } }`
+		var action parlay.Action
+		_ = json.Unmarshal([]byte(test), &action)
+
+		_, err := parlayplugin.ExecuteActionInPlugin("./plugin/example.plugin", "example/test", action.Plugin)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
 		return
 	},
 }
