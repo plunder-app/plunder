@@ -9,21 +9,8 @@ import (
 
 const pluginInfo = `This example plugin is used to demonstrate the structure of a plugin`
 
-//Test -
-type Test struct {
-	test  string
-	test1 int
-	test2 bool
-}
-
-// Action defines a custom action
-type Action struct {
-	Name       string     `json:"name"`
-	Type       string     `json:"type"`
-	TestAction testAction `json:"testDetails,omitempty"`
-}
-
-type testAction struct {
+// pluginAction - defines the struct that is unique to the
+type pluginTestAction struct {
 	Credentials string `json:"credentials"`
 	Address     string `json:"address"`
 }
@@ -62,31 +49,41 @@ func ParlayActions(action string, iface interface{}) []parlay.Action {
 	return actions
 }
 
-// ParlayUsage -
-func ParlayUsage(action string) (string, error) {
-	var usageJSON string
+// ParlayUsage - Returns the json that matches the specific action
+// <- action is a string that defines which action the usage information should be
+// -> iface is a map[string]interface{} that maps to the internal struct
+// -> err is any error that has been generated
+func ParlayUsage(action string) (iface map[string]interface{}, err error) {
 	switch action {
 	case "exampleAction/test":
-		a := Action{
-			Name: "Example of test action",
-			Type: "exampleAction/test",
-			TestAction: testAction{
-				Credentials: "AAABBBCCCCDDEEEE",
-				Address:     "172.0.0.1",
-			},
+		a := pluginTestAction{
+			Credentials: "AAABBBCCCCDDEEEE",
+			Address:     "172.0.0.1",
 		}
-		b, _ := json.MarshalIndent(a, "", "\t")
-		return string(b), nil
+		// In order to turn a struct into an map[string]interface we need to turn it into JSON
+		inStruct, _ := json.Marshal(a)
+		json.Unmarshal(inStruct, &iface)
+		return
 	default:
-		return usageJSON, fmt.Errorf("Action [%s] could not be found", action)
+		return iface, fmt.Errorf("Action [%s] could not be found", action)
 	}
 }
 
-// ParlayExec -
-func ParlayExec(action string, iface interface{}) ([]parlay.Action, error) {
-	//fmt.Printf("%v", iface.(Test).test1)
-	// bob := iface.(*Test)
-	// fmt.Printf("%v\n%v\n", bob, iface)
-	fmt.Printf("%s", iface["test1"])
+// ParlayExec - Parses the action and the data that the action will consume
+// <- action a string that details the action to be executed
+// <- iface - map[string]interface that will be manipulated into a correct struct that matches the action
+// -> actions are an array of generated actions that the parser will then execute
+// -> err is any error that has been generated
+func ParlayExec(action string, iface interface{}) (actions []parlay.Action, err error) {
+
+	// Turn the interface into JSON
+	b, _ := json.Marshal(iface)
+
+	var t pluginTestAction
+	// Unmarshall the JSON into the struct
+	json.Unmarshal(b, &t)
+	// We can now use the fields as part of the struct
+	fmt.Printf("Address = %s\nCredentials = %s\n", t.Address, t.Credentials)
+
 	return nil, nil
 }

@@ -1,6 +1,7 @@
 package parlayplugin
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -152,7 +153,7 @@ func UsagePlugin(pluginPath, action string) {
 		return
 	}
 
-	pluginExec, ok := symbol.(func(string) (string, error))
+	pluginExec, ok := symbol.(func(string) (map[string]interface{}, error))
 	if !ok {
 		log.Errorf("Unable to read functions from Plugin [%s]", pluginPath)
 		return
@@ -162,7 +163,14 @@ func UsagePlugin(pluginPath, action string) {
 		log.Errorf("%v", err)
 		return
 	}
-	fmt.Printf("%s\n", result)
+
+	a := parlay.Action{
+		Name:       fmt.Sprintf("Example name for action [%s]", action),
+		ActionType: action,
+		Plugin:     result,
+	}
+	b, _ := json.MarshalIndent(a, "", "\t")
+	fmt.Printf("%s\n", b)
 }
 
 // ExecuteAction uses the cache to find an action/plugin mapping
