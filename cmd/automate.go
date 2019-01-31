@@ -108,7 +108,7 @@ var plunderAutomatePluginTest = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 
-		test := `{ "name": "Test", "action":"example/test", "plugin": { "test":"hello", "test1": 12345, "test2": true } }`
+		test := `{ "name": "Example of test action", "type": "exampleAction/test", "plugin": { "credentials": "AAABBBCCCCDDEEEE", "address": "172.0.0.1" }	}`
 		var action parlay.Action
 		_ = json.Unmarshal([]byte(test), &action)
 

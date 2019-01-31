@@ -1,6 +1,7 @@
 package parlayplugin
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -152,7 +153,7 @@ func UsagePlugin(pluginPath, action string) {
 		return
 	}
 
-	pluginExec, ok := symbol.(func(string) (string, error))
+	pluginExec, ok := symbol.(func(string) (json.RawMessage, error))
 	if !ok {
 		log.Errorf("Unable to read functions from Plugin [%s]", pluginPath)
 		return
@@ -162,20 +163,27 @@ func UsagePlugin(pluginPath, action string) {
 		log.Errorf("%v", err)
 		return
 	}
-	fmt.Printf("%s\n", result)
+
+	a := parlay.Action{
+		Name:       fmt.Sprintf("Example name for action [%s]", action),
+		ActionType: action,
+		Plugin:     result,
+	}
+	b, _ := json.MarshalIndent(a, "", "\t")
+	fmt.Printf("%s\n", b)
 }
 
 // ExecuteAction uses the cache to find an action/plugin mapping
-func ExecuteAction(action string, iface interface{}) ([]parlay.Action, error) {
+func ExecuteAction(action string, raw json.RawMessage) ([]parlay.Action, error) {
 	if pluginCache[action] == "" {
 		// No KeyMap meaning that the action doesn't map to a plugin
 		return nil, fmt.Errorf("Action [%s] does not exist or has no plugin associated with it", action)
 	}
-	return ExecuteActionInPlugin(pluginCache[action], action, iface)
+	return ExecuteActionInPlugin(pluginCache[action], action, raw)
 }
 
 // ExecuteActionInPlugin specifies the plugin and action directly
-func ExecuteActionInPlugin(pluginPath, action string, iface interface{}) ([]parlay.Action, error) {
+func ExecuteActionInPlugin(pluginPath, action string, raw json.RawMessage) ([]parlay.Action, error) {
 
 	// Check a function with the name ParlayExec exists
 	symbol, err := findFunctionInPlugin(pluginPath, "ParlayExec")
@@ -184,11 +192,11 @@ func ExecuteActionInPlugin(pluginPath, action string, iface interface{}) ([]parl
 	}
 
 	// Check the function has the correct parameters
-	pluginExec, ok := symbol.(func(string, interface{}) ([]parlay.Action, error))
+	pluginExec, ok := symbol.(func(string, json.RawMessage) ([]parlay.Action, error))
 	if !ok {
 		return nil, fmt.Errorf("Unable to read functions from Plugin [%s]", pluginPath)
 	}
 
 	// Pass the action type and the interface to the plugin
-	return pluginExec(action, iface)
+	return pluginExec(action, raw)
 }
