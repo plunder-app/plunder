@@ -14,12 +14,13 @@ import (
 )
 
 // These strings container the generated iPXE details that are passed to the bootloader when the correct url is requested
-var preseed, kickstart, reboot string
+var preseed, kickstart, anyBoot, reboot string
 
 func (c *BootController) serveHTTP() error {
 
 	preseed = utils.IPXEPreeseed(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
 	kickstart = utils.IPXEKickstart(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
+	anyBoot = utils.IPXEAnyBoot(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
 	reboot = utils.IPXEReboot()
 	docroot, err := filepath.Abs("./")
 	if err != nil {
@@ -34,6 +35,7 @@ func (c *BootController) serveHTTP() error {
 	http.HandleFunc("/preseed.ipxe", preseedHandler)
 	http.HandleFunc("/reboot.ipxe", rebootHandler)
 	http.HandleFunc("/kickstart.ipxe", kickstartHandler)
+	http.HandleFunc("/anyboot.ipxe", anyBootHandler)
 
 	// Update Endpoints - allow the update of various configuration without restarting
 	//http.HandleFunc("/config", kickstartHandler) // TODO
@@ -54,6 +56,13 @@ func kickstartHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	// Return the kickstart content
 	io.WriteString(w, kickstart)
+}
+
+func anyBootHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "text/plain")
+	// Return the kickstart content
+	io.WriteString(w, anyBoot)
 }
 
 func rebootHandler(w http.ResponseWriter, r *http.Request) {

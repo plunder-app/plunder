@@ -66,6 +66,19 @@ boot
 	return iPXEHeader + buildScript
 }
 
+// IPXEAnyBoot - This will build an iPXE boot script for anything wanting to PXE boot
+func IPXEAnyBoot(webserverAddress string, kernel string, initrd string, cmdline string) string {
+	script := `
+kernel http://%s/%s auto=true url=http://%s/${mac:hexhyp}.cfg %s 
+initrd http://%s/%s
+boot
+`
+	// Replace the addresses inline
+	buildScript := fmt.Sprintf(script, webserverAddress, kernel, webserverAddress, cmdline, webserverAddress, initrd)
+
+	return iPXEHeader + buildScript
+}
+
 // PullPXEBooter - This will attempt to download the iPXE bootloader
 func PullPXEBooter() error {
 	log.Infoln("Beginning of iPXE download... ")
