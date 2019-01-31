@@ -31,17 +31,17 @@ This will also bind to an IP address.
 The CLI examples below don't make use of any configuration files or dynamic updates and provide a quick and easy way of exposing multiple services from Plunder.
 
 ```
-sudo ./plunder server			\
---adapter ens192					\
---enableDHCP 						\
---enableTFTP 						\
---enableHTTP 						\
---initrd initrd.gz	     		\
---kernel kernel            	\
---cmdline "console=tty0" 		\
---addressDHCP 192.168.1.1 		\
---startAddress 192.168.1.130 	\
---addressTFTP 192.1.1.1 		\
+sudo ./plunder server         \
+--adapter ens192              \
+--enableDHCP                  \
+--enableTFTP                  \
+--enableHTTP                  \
+--initrd initrd.gz	     		  \
+--kernel kernel            	  \
+--cmdline "console=tty0" 		  \
+--addressDHCP 192.168.1.1     \
+--startAddress 192.168.1.130  \
+--addressTFTP 192.1.1.1 		  \
 --addressHTTP 192.168.1.1 		\
 --anyboot  
 ```
@@ -62,17 +62,17 @@ To understand the CLI line above, we will break it down into what some of the mo
 If you're using [LinuxKit](https://github.com/linuxkit/linuxkit) images then they can be consumed in the same way as described above. We've simply copied the created OS image files from linuxkit and copied them to our deployment server in the `~/linuxkit/` folder.   
 
 ```
-sudo ./plunder server		\
---adapter ens192				\
---enableDHCP 					\
---enableTFTP 					\
---enableHTTP 					\
+sudo ./plunder server		                     \
+--adapter ens192				                     \
+--enableDHCP 			                	      	 \
+--enableTFTP 					                       \
+--enableHTTP 				                         \ 
 --initrd linuxkit/linuxkit-initrd.img        \
 --kernel linuxkit/linuxkit-kernel            \
 --cmdline $(cat ./linuxkit/linuxkit-cmdline) \
---addressDHCP 192.168.1.1 		\
---startAddress 192.168.1.130 	\
---addressTFTP 192.1.1.1 		\
---addressHTTP 192.168.1.1 		\
+--addressDHCP 192.168.1.1 		               \
+--startAddress 192.168.1.130 	               \
+--addressTFTP 192.1.1.1 		                 \
+--addressHTTP 192.168.1.1 		               \
 --anyboot  
 ```
