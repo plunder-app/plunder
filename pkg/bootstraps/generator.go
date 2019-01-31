@@ -10,6 +10,9 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+// AnyBoot - This flag when set to true will just boot any kernel/initrd/cmdline configuration
+var AnyBoot bool
+
 // DeploymentConfig - contains an accessable "current" configuration
 var DeploymentConfig DeploymentConfigurationFile
 
@@ -115,6 +118,12 @@ func UpdateConfiguration(configFile []byte) error {
 
 //FindDeployment - this will return the deployment configuration, allowing the DHCP server to return the correct DHCP options
 func FindDeployment(mac string) string {
+
+	// AnyBoot will just boot the specified kernel/initrd
+	if AnyBoot == true {
+		return "anyboot"
+	}
+
 	if len(DeploymentConfig.Deployments) == 0 {
 		// No configurations have been loaded
 		log.Warnln("Attempted to perform Mac Address lookup, however no configurations have been loaded")
