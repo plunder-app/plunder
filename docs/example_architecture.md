@@ -14,7 +14,7 @@ The adapter `ens160` is connected to a public network where a user can connect t
 
 The services that plunder can expose will bind to the existing operating system in two ways. 
 
-#### DHCP
+#### DHCP
 
 This will ultimately bind to an adapter, and this adapter should be configured with an address.
 
