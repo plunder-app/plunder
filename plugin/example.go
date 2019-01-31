@@ -51,9 +51,9 @@ func ParlayActions(action string, iface interface{}) []parlay.Action {
 
 // ParlayUsage - Returns the json that matches the specific action
 // <- action is a string that defines which action the usage information should be
-// -> iface is a map[string]interface{} that maps to the internal struct
+// <- raw - raw JSON that will be manipulated into a correct struct that matches the action
 // -> err is any error that has been generated
-func ParlayUsage(action string) (iface map[string]interface{}, err error) {
+func ParlayUsage(action string) (raw json.RawMessage, err error) {
 	switch action {
 	case "exampleAction/test":
 		a := pluginTestAction{
@@ -61,27 +61,23 @@ func ParlayUsage(action string) (iface map[string]interface{}, err error) {
 			Address:     "172.0.0.1",
 		}
 		// In order to turn a struct into an map[string]interface we need to turn it into JSON
-		inStruct, _ := json.Marshal(a)
-		json.Unmarshal(inStruct, &iface)
-		return
+
+		return json.Marshal(a)
 	default:
-		return iface, fmt.Errorf("Action [%s] could not be found", action)
+		return raw, fmt.Errorf("Action [%s] could not be found", action)
 	}
 }
 
 // ParlayExec - Parses the action and the data that the action will consume
 // <- action a string that details the action to be executed
-// <- iface - map[string]interface that will be manipulated into a correct struct that matches the action
+// <- raw - raw JSON that will be manipulated into a correct struct that matches the action
 // -> actions are an array of generated actions that the parser will then execute
 // -> err is any error that has been generated
-func ParlayExec(action string, iface interface{}) (actions []parlay.Action, err error) {
-
-	// Turn the interface into JSON
-	b, _ := json.Marshal(iface)
+func ParlayExec(action string, raw json.RawMessage) (actions []parlay.Action, err error) {
 
 	var t pluginTestAction
 	// Unmarshall the JSON into the struct
-	json.Unmarshal(b, &t)
+	json.Unmarshal(raw, &t)
 	// We can now use the fields as part of the struct
 	fmt.Printf("Address = %s\nCredentials = %s\n", t.Address, t.Credentials)
 

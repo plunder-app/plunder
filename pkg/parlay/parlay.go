@@ -1,5 +1,7 @@
 package parlay
 
+import "encoding/json"
+
 type actionType string
 
 const (
@@ -66,7 +68,7 @@ type Action struct {
 	ETCD etcdMembers `json:"etcd,omitempty"`
 
 	//Plugin Spec
-	Plugin map[string]interface{} `json:"plugin,omitempty"`
+	Plugin json.RawMessage `json:"plugin,omitempty"`
 }
 
 // KeyMap
