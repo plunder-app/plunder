@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/thebsdbox/plunder/pkg/parlay"
+	"github.com/thebsdbox/plunder/pkg/parlay/types"
 )
 
 const pluginInfo = `This example plugin is used to demonstrate the structure of a plugin`
@@ -40,9 +40,9 @@ func ParlayPluginInfo() string {
 }
 
 //ParlayActions -
-func ParlayActions(action string, iface interface{}) []parlay.Action {
-	var actions []parlay.Action
-	a := parlay.Action{
+func ParlayActions(action string, iface interface{}) []types.Action {
+	var actions []types.Action
+	a := types.Action{
 		Command: "example/test",
 	}
 	actions = append(actions, a)
@@ -54,6 +54,9 @@ func ParlayActions(action string, iface interface{}) []parlay.Action {
 // <- raw - raw JSON that will be manipulated into a correct struct that matches the action
 // -> err is any error that has been generated
 func ParlayUsage(action string) (raw json.RawMessage, err error) {
+
+	// This example plugin only has the code for "exampleAction/test" however this switch statement
+	// should handle all exposed actions from the plugin
 	switch action {
 	case "exampleAction/test":
 		a := pluginTestAction{
@@ -73,13 +76,30 @@ func ParlayUsage(action string) (raw json.RawMessage, err error) {
 // <- raw - raw JSON that will be manipulated into a correct struct that matches the action
 // -> actions are an array of generated actions that the parser will then execute
 // -> err is any error that has been generated
-func ParlayExec(action string, raw json.RawMessage) (actions []parlay.Action, err error) {
+func ParlayExec(action string, raw json.RawMessage) (actions []types.Action, err error) {
 
 	var t pluginTestAction
 	// Unmarshall the JSON into the struct
 	json.Unmarshal(raw, &t)
 	// We can now use the fields as part of the struct
-	fmt.Printf("Address = %s\nCredentials = %s\n", t.Address, t.Credentials)
 
-	return nil, nil
+	// This example plugin only has the code for "exampleAction/test" however this switch statement
+	// should handle all exposed actions from the plugin
+	switch action {
+	case "exampleAction/test":
+		a := types.Action{
+			Name:       "Echo the address",
+			ActionType: "command",
+			Command:    fmt.Sprintf("echo %s", t.Address),
+		}
+		actions = append(actions, a)
+
+		a.Name = "Echo the Credentials"
+		a.Command = fmt.Sprintf("echo %s", t.Credentials)
+		actions = append(actions, a)
+
+		return
+	default:
+		return
+	}
 }
