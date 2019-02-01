@@ -177,47 +177,20 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) e
 
 		case "key":
 
-		// case "kubeadm/etcd":
-		// 	// Generate all of the actions required for ETCd deployments
-		// 	etcdActions := action[y].ETCD.generateActions()
-		// 	log.Debugf("About to execute [%d] actions to build the etcd cluster", len(etcdActions))
-		// 	// Run these deployments
-		// 	err = sequentialDeployment(etcdActions, hostConfig)
-		// 	if err != nil {
-		// 		// Set checkpoint
-		// 		restore.Action = action[y].Name
-		// 		restore.Host = hostConfig.Host
-		// 		restore.createCheckpoint()
-
-		// 		// Return error
-		// 		return err
-		// 	}
-		// case "kubeadm/mgmt":
-		// 	mgmtActions := action[y].MGMT.generateActions()
-		// 	log.Debugf("About to execute [%d] actions to build the management cluster", len(mgmtActions))
-		// 	err = sequentialDeployment(mgmtActions, hostConfig)
-		// 	if err != nil {
-		// 		// Set checkpoint
-		// 		restore.Action = action[y].Name
-		// 		restore.Host = hostConfig.Host
-		// 		restore.createCheckpoint()
-
-		// 		// Return error
-		// 		return err
-		// 	}
 		default:
 			// Set checkpoint (the actiontype may be modified or spelling issue)
 			restore.Action = action[y].Name
 			restore.Host = hostConfig.Host
 			restore.createCheckpoint()
-			pluginActions, err := parlayplugin.ExecuteAction(action[y].Name, action[y].Plugin)
+			pluginActions, err := parlayplugin.ExecuteAction(action[y].ActionType, action[y].Plugin)
 			if err != nil {
 				return err
 			}
 			log.Debugf("About to execute [%d] actions to build the management cluster", len(pluginActions))
 			err = sequentialDeployment(pluginActions, hostConfig)
-			// Return the unknown action Type
-			return fmt.Errorf("Unknown Action [%s]", action[y].ActionType)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

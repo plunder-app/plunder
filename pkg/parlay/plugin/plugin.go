@@ -55,8 +55,7 @@ func findFunctionInPlugin(pluginPath, functionName string) (plugin.Symbol, error
 	return symbol, nil
 }
 
-//LoadPlugins -
-func LoadPlugins() {
+func init() {
 
 	pluginList := findPlugins("./plugin")
 	log.Debugf("Found [%d] plugins", len(pluginList))
