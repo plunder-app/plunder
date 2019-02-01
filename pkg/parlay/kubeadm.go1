@@ -2,6 +2,8 @@ package parlay
 
 import (
 	"fmt"
+
+	"github.com/thebsdbox/plunder/pkg/parlay/types"
 )
 
 // NOTE - The functions in this particluar file will need moving to something seperate at a later
@@ -78,7 +80,7 @@ type managerMembers struct {
 	Stacked bool `json:"stacked,omitempty"`
 }
 
-func (e *etcdMembers) generateActions() []Action {
+func (e *etcdMembers) generateActions() []types.Action {
 	var generatedActions []Action
 	var a Action
 	if e.InitCA == true {
@@ -134,7 +136,7 @@ func (e *etcdMembers) buildKubeadm(api, host, address string) string {
 }
 
 // generateCertificateActions - Hosts need adding in backward to the array i.e. host 2 -> host 1 -> host 0
-func (e *etcdMembers) generateCertificateActions(hosts []string) []Action {
+func (e *etcdMembers) generateCertificateActions(hosts []string) []types.Action {
 	var generatedActions []Action
 	var a Action
 
@@ -203,7 +205,7 @@ func (e *etcdMembers) generateCertificateActions(hosts []string) []Action {
 }
 
 // At some point the functions for the various kubeadm arease will be split into seperate files to ease management
-func (m *managerMembers) generateActions() []Action {
+func (m *managerMembers) generateActions() []types.Action {
 	var generatedActions []Action
 	var a Action
 	if m.Stacked == false {

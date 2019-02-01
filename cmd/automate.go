@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/thebsdbox/plunder/pkg/parlay"
 	"github.com/thebsdbox/plunder/pkg/parlay/plugin"
+	"github.com/thebsdbox/plunder/pkg/parlay/types"
 	"github.com/thebsdbox/plunder/pkg/ssh"
 )
 
@@ -109,7 +110,7 @@ var plunderAutomatePluginTest = &cobra.Command{
 		log.SetLevel(log.Level(logLevel))
 
 		test := `{ "name": "Example of test action", "type": "exampleAction/test", "plugin": { "credentials": "AAABBBCCCCDDEEEE", "address": "172.0.0.1" }	}`
-		var action parlay.Action
+		var action types.Action
 		_ = json.Unmarshal([]byte(test), &action)
 
 		_, err := parlayplugin.ExecuteActionInPlugin("./plugin/example.plugin", "example/test", action.Plugin)
@@ -208,7 +209,7 @@ var plunderAutomateValidate = &cobra.Command{
 					}
 					log.Infof("Validating [%d] actions", actionCount)
 					for y := range deployment.Deployments[x].Actions {
-						err := deployment.Deployments[x].Actions[y].ValidateAction()
+						err := parlay.ValidateAction(&deployment.Deployments[x].Actions[y])
 						if err != nil {
 							log.Warnf("Action [%s] Error [%v]", deployment.Deployments[x].Actions[y].Name, err)
 						}

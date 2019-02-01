@@ -2,10 +2,12 @@ package parlay
 
 import (
 	"fmt"
+
+	"github.com/thebsdbox/plunder/pkg/parlay/types"
 )
 
 // ValidateAction will parse an action to ensure it is valid
-func (action *Action) ValidateAction() error {
+func ValidateAction(action *types.Action) error {
 	switch action.ActionType {
 	case "upload":
 		// Validate the upload action
