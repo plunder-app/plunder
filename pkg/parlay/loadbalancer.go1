@@ -3,6 +3,8 @@ package parlay
 import (
 	"fmt"
 	"os/exec"
+
+	"github.com/thebsdbox/plunder/pkg/parlay/types"
 )
 
 type loadBalancer struct {
@@ -55,7 +57,7 @@ func (l *loadBalancer) buildHAProxycfg() (string, error) {
 }
 
 // This function will generate all of the required actions to configure a load balancer
-func (l *loadBalancer) generateActions() ([]Action, error) {
+func (l *loadBalancer) generateActions() ([]types.Action, error) {
 	var generatedActions []Action
 	var a Action
 	var configString, configPath string

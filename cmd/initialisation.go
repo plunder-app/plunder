@@ -6,6 +6,7 @@ import (
 
 	"github.com/thebsdbox/plunder/pkg/bootstraps"
 	"github.com/thebsdbox/plunder/pkg/parlay"
+	"github.com/thebsdbox/plunder/pkg/parlay/types"
 	"github.com/thebsdbox/plunder/pkg/utils"
 
 	log "github.com/Sirupsen/logrus"
@@ -76,7 +77,7 @@ var PlunderParlayConfig = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 
-		parlayActionPackage := parlay.Action{
+		parlayActionPackage := types.Action{
 			Name:         "Add package",
 			ActionType:   "pkg",
 			PkgManager:   "apt",
@@ -84,28 +85,28 @@ var PlunderParlayConfig = &cobra.Command{
 			Packages:     "mysql",
 		}
 
-		parlayActionCommand := parlay.Action{
+		parlayActionCommand := types.Action{
 			Name:             "Run Command",
 			ActionType:       "command",
 			Command:          "which uptime",
 			CommandSudo:      "root",
 			CommandSaveAsKey: "cmdKey",
 		}
-		parlayActionUpload := parlay.Action{
+		parlayActionUpload := types.Action{
 			Name:        "Upload File",
 			ActionType:  "upload",
 			Source:      "./my_file",
 			Destination: "/tmp/file",
 		}
 
-		parlayActionDownload := parlay.Action{
+		parlayActionDownload := types.Action{
 			Name:        "Download File",
 			ActionType:  "download",
 			Destination: "./my_file",
 			Source:      "/tmp/file",
 		}
 
-		parlayActionKey := parlay.Action{
+		parlayActionKey := types.Action{
 			Name:       "Execute key",
 			ActionType: "command",
 			KeyName:    "cmdKey",

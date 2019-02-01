@@ -9,6 +9,9 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
+	"github.com/thebsdbox/plunder/pkg/parlay/plugin"
+	"github.com/thebsdbox/plunder/pkg/parlay/types"
+
 	"github.com/thebsdbox/plunder/pkg/ssh"
 )
 
@@ -122,7 +125,7 @@ func (m *TreasureMap) DeploySSH(logFile string) error {
 }
 
 // Begin host by host deployments as part of each deployment
-func sequentialDeployment(action []Action, hostConfig ssh.HostSSHConfig) error {
+func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) error {
 	var err error
 
 	for y := range action {
@@ -152,7 +155,7 @@ func sequentialDeployment(action []Action, hostConfig ssh.HostSSHConfig) error {
 			}
 		case "command":
 			// Build out a configuration based upon the action
-			cr := action[y].parseAndExecute(&hostConfig)
+			cr := parseAndExecute(action[y], &hostConfig)
 			if cr.Error != nil {
 				// Set checkpoint
 				restore.Action = action[y].Name
@@ -174,42 +177,20 @@ func sequentialDeployment(action []Action, hostConfig ssh.HostSSHConfig) error {
 
 		case "key":
 
-		case "kubeadm/etcd":
-			// Generate all of the actions required for ETCd deployments
-			etcdActions := action[y].ETCD.generateActions()
-			log.Debugf("About to execute [%d] actions to build the etcd cluster", len(etcdActions))
-			// Run these deployments
-			err = sequentialDeployment(etcdActions, hostConfig)
-			if err != nil {
-				// Set checkpoint
-				restore.Action = action[y].Name
-				restore.Host = hostConfig.Host
-				restore.createCheckpoint()
-
-				// Return error
-				return err
-			}
-		case "kubeadm/mgmt":
-			mgmtActions := action[y].MGMT.generateActions()
-			log.Debugf("About to execute [%d] actions to build the management cluster", len(mgmtActions))
-			err = sequentialDeployment(mgmtActions, hostConfig)
-			if err != nil {
-				// Set checkpoint
-				restore.Action = action[y].Name
-				restore.Host = hostConfig.Host
-				restore.createCheckpoint()
-
-				// Return error
-				return err
-			}
 		default:
 			// Set checkpoint (the actiontype may be modified or spelling issue)
 			restore.Action = action[y].Name
 			restore.Host = hostConfig.Host
 			restore.createCheckpoint()
-
-			// Return the unknown action Type
-			return fmt.Errorf("Unknown Action [%s]", action[y].ActionType)
+			pluginActions, err := parlayplugin.ExecuteAction(action[y].ActionType, action[y].Plugin)
+			if err != nil {
+				return err
+			}
+			log.Debugf("About to execute [%d] actions to build the management cluster", len(pluginActions))
+			err = sequentialDeployment(pluginActions, hostConfig)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -218,7 +199,7 @@ func sequentialDeployment(action []Action, hostConfig ssh.HostSSHConfig) error {
 
 // Peform all of the actions in parallel on all hosts in the host array
 // this function will make use of the parallel ssh calls
-func parallelDeployment(action []Action, hosts []ssh.HostSSHConfig) error {
+func parallelDeployment(action []types.Action, hosts []ssh.HostSSHConfig) error {
 	for y := range action {
 		switch action[y].ActionType {
 		case "upload":
@@ -247,7 +228,7 @@ func parallelDeployment(action []Action, hosts []ssh.HostSSHConfig) error {
 
 		case "command":
 			logging.writeString(fmt.Sprintf("[%s] Executing command action [%s] to multiple hosts\n", time.Now().Format(time.ANSIC), action[y].Name))
-			command, err := action[y].buildCommand()
+			command, err := buildCommand(action[y])
 			if err != nil {
 				// Set checkpoint
 				restore.Action = action[y].Name
@@ -286,7 +267,7 @@ func parallelDeployment(action []Action, hosts []ssh.HostSSHConfig) error {
 	return nil
 }
 
-func (a *Action) buildCommand() (string, error) {
+func buildCommand(a types.Action) (string, error) {
 	var command string
 
 	// An executable Key takes presedence
@@ -315,12 +296,12 @@ func (a *Action) buildCommand() (string, error) {
 	return command, nil
 }
 
-func (a *Action) parseAndExecute(h *ssh.HostSSHConfig) ssh.CommandResult {
+func parseAndExecute(a types.Action, h *ssh.HostSSHConfig) ssh.CommandResult {
 	// This will parse the options passed in the action and execute the required string
 	var cr ssh.CommandResult
 	var b []byte
 
-	command, err := a.buildCommand()
+	command, err := buildCommand(a)
 	if err != nil {
 		cr.Error = err
 		return cr
