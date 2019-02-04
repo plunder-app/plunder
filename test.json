@@ -1,0 +1,69 @@
+
+{
+	"deployments": [
+		{
+			"name": "Install MySQL",
+			"hosts": [
+				"192.168.0.1",
+				"192.168.0.2"
+			],
+			"actions": [
+				{
+					"name": "Add package",
+					"type": "pkg",
+					"timeout": 0,
+					"packageManager": "apt",
+					"packageOperation": "install",
+					"packages": "mysql"
+				},
+				{
+					"name": "Run Command",
+					"type": "command",
+					"timeout": 0,
+					"command": "which uptime",
+					"CommandSaveAsKey": "cmdKey",
+					"commandSudo": "root"
+				},
+				{
+					"name": "Upload File",
+					"type": "upload",
+					"timeout": 0,
+					"source": "./my_file",
+					"destination": "/tmp/file"
+				},
+				{
+					"name": "Download File",
+					"type": "download",
+					"timeout": 0,
+					"source": "/tmp/file",
+					"destination": "./my_file"
+				},
+				{
+					"name": "Execute key",
+					"type": "command",
+					"timeout": 0,
+					"keyName": "cmdKey"
+				},
+				{
+					"name": "Deploy first control plane node",
+					"parallel": false,
+								"hosts": [
+										"192.168.1.3"
+								],
+								"actions": [
+										{
+							"name" : "Deploy first control plane node",
+							"type" : "kubeadm/mgmt",
+							"mgmt" : {
+								"etcd01" : "192.168.1.3",
+								"etcd02" : "192.168.1.3",
+								"etcd03" : "192.168.1.3",
+								"version" : "stable"
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

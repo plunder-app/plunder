@@ -50,6 +50,11 @@ docker:
 	@rm ./dockerfile/$(TARGET)
 	@echo New Docker image created
 
+plugins:
+	@echo building plugins
+	@go build -buildmode=plugin -o ./plugin/example.plugin ./plugin/example.go
+	@go build -buildmode=plugin -o ./plugin/kubeadm.plugin ./plugin/kubeadm/*
+
 release:
 	@echo Creating Darwin Build
 	@GOOS=darwin make build
