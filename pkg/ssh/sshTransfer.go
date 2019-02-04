@@ -9,6 +9,59 @@ import (
 	"github.com/pkg/sftp"
 )
 
+// ParalellDownload - Allow downloading a file over SFTP from multiple hosts in parallel
+func ParalellDownload(hosts []HostSSHConfig, source, destination string, to int) []CommandResult {
+	var cmdResults []CommandResult
+	// Run parallel ssh session (max 10)
+	results := make(chan CommandResult, 10)
+
+	var d time.Duration
+
+	// Calculate the timeout
+	if to == 0 {
+		// If no timeout then default to one year (TODO)
+		d = time.Duration(8760) * time.Hour
+	} else {
+		d = time.Duration(to) * time.Second
+	}
+
+	// Set the timeout
+	timeout := time.After(d)
+
+	// Execute command on hosts
+	for _, host := range hosts {
+		go func(host HostSSHConfig) {
+			res := new(CommandResult)
+			res.Host = host.Host
+
+			if err := host.DownloadFile(source, destination); err != nil {
+				res.Error = err
+			} else {
+				res.Result = "Download completed"
+			}
+			results <- *res
+		}(host)
+	}
+
+	for i := 0; i < len(hosts); i++ {
+		select {
+		case res := <-results:
+			// Append the results of a succesfull command
+			cmdResults = append(cmdResults, res)
+		case <-timeout:
+			// In the event that a command times out then append the details
+			failedCommand := CommandResult{
+				Host:   hosts[i].Host,
+				Error:  fmt.Errorf("Download Timed out"),
+				Result: "",
+			}
+			cmdResults = append(cmdResults, failedCommand)
+
+		}
+	}
+	return cmdResults
+}
+
 // DownloadFile -
 func (c HostSSHConfig) DownloadFile(source, destination string) error {
 	var err error

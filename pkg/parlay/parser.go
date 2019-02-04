@@ -151,8 +151,9 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) e
 				restore.createCheckpoint()
 
 				// Return the error
-				return fmt.Errorf("Upload task [%s] on host [%s] failed with error [%s]", action[y].Name, hostConfig.Host, err)
+				return fmt.Errorf("Download task [%s] on host [%s] failed with error [%s]", action[y].Name, hostConfig.Host, err)
 			}
+			log.Infof("Succesfully Downloaded [%s] to [%s] from [%s]", action[y].Source, action[y].Destination, hostConfig.Host)
 		case "command":
 			// Build out a configuration based upon the action
 			cr := parseAndExecute(action[y], &hostConfig)
@@ -225,7 +226,27 @@ func parallelDeployment(action []types.Action, hosts []ssh.HostSSHConfig) error 
 				log.Infof("Succesfully uploaded [%s] to [%s] on [%s]", action[y].Source, action[y].Destination, results[i].Host)
 			}
 		case "download":
+			logging.writeString(fmt.Sprintf("[%s] Downloading remote file [%s] to [%s] from multiple hosts\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination))
 
+			results := ssh.ParalellDownload(hosts, action[y].Source, action[y].Destination, action[y].Timeout)
+			// Unlikely that this should happen
+			if len(results) == 0 {
+				return fmt.Errorf("No results have been returned from the parallel execution")
+			}
+			// Parse the results from the parallel updates
+			for i := range results {
+				if results[i].Error != nil {
+					// Set checkpoint
+					restore.Action = action[y].Name
+					restore.createCheckpoint()
+
+					logging.writeString(fmt.Sprintf("[%s] Error downloading file [%s] to [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
+					logging.writeString(fmt.Sprintf("[%s] [%s]\n", time.Now().Format(time.ANSIC), results[i].Error))
+					return fmt.Errorf("Download task [%s] on host [%s] failed with error [%s]", action[y].Name, results[i].Host, results[i].Error)
+				}
+				logging.writeString(fmt.Sprintf("[%s] Completed uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
+				log.Infof("Succesfully uploaded [%s] to [%s] on [%s]", action[y].Source, action[y].Destination, results[i].Host)
+			}
 		case "command":
 			logging.writeString(fmt.Sprintf("[%s] Executing command action [%s] to multiple hosts\n", time.Now().Format(time.ANSIC), action[y].Name))
 			command, err := buildCommand(action[y])
