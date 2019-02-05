@@ -6,7 +6,7 @@ TARGET := plunder
 .DEFAULT_GOAL: $(TARGET)
 
 # These will be provided to the target
-VERSION := 0.2
+VERSION := 0.3
 BUILD := `git rev-parse HEAD`
 
 # Operating System Default (LINUX)
@@ -55,20 +55,22 @@ plugins:
 	@go build -buildmode=plugin -o ./plugin/example.plugin ./plugin/example.go
 	@go build -buildmode=plugin -o ./plugin/kubeadm.plugin ./plugin/kubeadm/*
 
-release:
+release_darwin:
 	@echo Creating Darwin Build
 	@GOOS=darwin make build
-	@zip -9 -r plunder-darwin-$(VERSION).zip ./plunder
+	@GOOS=darwin make plugins
+	@zip -9 -r plunder-darwin-$(VERSION).zip ./plunder ./plugin/*.plugin
 	@rm plunder
+	@rm ./plugin/*.plugin
+
+release_linux:
+
 	@echo Creating Linux Build
 	@GOOS=linux make build
-	@zip -9 -r plunder-linux-$(VERSION).zip ./plunder
+	@GOOS=linux make plugins
+	@zip -9 -r plunder-linux-$(VERSION).zip ./plunder ./plugin/*.plugin
 	@rm plunder
-	@echo Creating Windows Build
-	@GOOS=windows make build
-	@zip -9 -r plunder-win-$(VERSION).zip ./plunder
-	@rm plunder
-
+	@rm ./plugin/*.plugin
 
 simplify:
 	@gofmt -s -l -w $(SRC)
