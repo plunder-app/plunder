@@ -134,7 +134,6 @@ var plunderAutomateSSH = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 		// If deploymentPath is not blank then the flag has been used
-		// log.Infof("%s", *deploymentSSH)
 		if *deploymentSSH != "" {
 			log.Infof("Reading deployment configuration from [%s]", *deploymentSSH)
 			err := ssh.ImportHostsFromDeployment(*deploymentSSH)
@@ -189,6 +188,8 @@ var plunderAutomateValidate = &cobra.Command{
 	Use:   "validate",
 	Short: "Validate a deployment map",
 	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+
 		if *mapFile != "" {
 			log.Infof("Reading deployment configuration from [%s]", *mapFile)
 			//var err error
@@ -236,6 +237,7 @@ var plunderAutomateUI = &cobra.Command{
 	Use:   "ui",
 	Short: "Enable the user interface to manage a deployment",
 	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
 
 		var newMap *parlay.TreasureMap
 		if *mapFile != "" {
