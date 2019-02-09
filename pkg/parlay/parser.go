@@ -57,8 +57,9 @@ func (d *Deployment) findHosts(hosts []string) (*Deployment, error) {
 
 func (d *Deployment) findActions(actions []string) ([]types.Action, error) {
 	var newActionList []types.Action
+
 	for x := range actions {
-		for y := range d.Hosts {
+		for y := range d.Actions {
 			if d.Actions[y].Name == actions[x] {
 				newActionList = append(newActionList, d.Actions[y])
 			}
