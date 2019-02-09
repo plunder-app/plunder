@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -14,7 +15,7 @@ import (
 )
 
 // These flags are used to determine a deployment
-var deploymentSSH, mapFile, mapFileValidate, logFile *string
+var deploymentSSH, mapFile, logFile *string
 
 // These flags are used to determine if a particular deployment, action and specific host need to be used.
 var deploymentName, actionName, host *string
@@ -25,11 +26,17 @@ var pluginPath, pluginAction, pluginActions *string
 // This flag determines if a singular action should occur or wheter to resume all actions from this point
 var resume *bool
 
+// UI Json output only, when this is try the UI selections will just create the associated JSON
+var jsonOutput *bool
+
 func init() {
+
+	// Global flags for automation
+	logFile = plunderAutomate.PersistentFlags().String("logfile", "", "Path to where plunder will write automation logs")
+	mapFile = plunderAutomate.PersistentFlags().String("map", "", "Path to a plunder map")
+
 	// SSH Deployment flags
-	logFile = plunderAutomateSSH.Flags().String("logfile", "", "Patht to where plunder will write automation logs")
-	deploymentSSH = plunderAutomateSSH.Flags().String("deployconfig", "", "Path to a plunder deployment configuration")
-	mapFile = plunderAutomateSSH.Flags().String("map", "", "Path to a plunder map")
+	deploymentSSH = plunderAutomate.PersistentFlags().String("deployconfig", "", "Path to a plunder deployment configuration")
 
 	// Deployment control flags
 	deploymentName = plunderAutomateSSH.Flags().String("deployment", "", "Automate a specific deployment")
@@ -37,14 +44,12 @@ func init() {
 	host = plunderAutomateSSH.Flags().String("host", "", "Automate the deployment for a specific host")
 	resume = plunderAutomateSSH.Flags().Bool("resume", false, "Resume all actions after the one specified by --action")
 
-	// Path to a map for validation TODO:// break to seperate subcommand
-	mapFileValidate = plunderAutomateValidate.Flags().String("map", "", "Path to a plunder map")
-
 	// Plugin Flags
 	pluginPath = plunderAutomatePluginUsage.Flags().String("plugin", "", "Path to a specific plugin typically ~./plugin/[X].plugin")
 	pluginAction = plunderAutomatePluginUsage.Flags().String("action", "", "Action to retrieve the usage of")
-
 	pluginActions = plunderAutomatePluginActions.Flags().String("plugin", "", "Path to a specific plugin typically ~./plugin/[X].plugin")
+
+	jsonOutput = plunderAutomateUI.Flags().Bool("json", false, "Print the JSON to stdout, no execution of commands")
 
 	plunderAutomatePlugins.AddCommand(plunderAutomatePluginUsage)
 	plunderAutomatePlugins.AddCommand(plunderAutomatePluginActions)
@@ -54,6 +59,7 @@ func init() {
 	plunderAutomate.AddCommand(plunderAutomateValidate)
 	plunderAutomate.AddCommand(plunderAutomateSSH)
 	plunderAutomate.AddCommand(plunderAutomatePlugins)
+	plunderAutomate.AddCommand(plunderAutomateUI)
 
 	plunderCmd.AddCommand(plunderAutomate)
 }
@@ -183,13 +189,13 @@ var plunderAutomateValidate = &cobra.Command{
 	Use:   "validate",
 	Short: "Validate a deployment map",
 	Run: func(cmd *cobra.Command, args []string) {
-		if *mapFileValidate != "" {
-			log.Infof("Reading deployment configuration from [%s]", *mapFileValidate)
+		if *mapFile != "" {
+			log.Infof("Reading deployment configuration from [%s]", *mapFile)
 			//var err error
 			var deployment parlay.TreasureMap
 			// // Check the actual path from the string
-			if _, err := os.Stat(*mapFileValidate); !os.IsNotExist(err) {
-				b, err := ioutil.ReadFile(*mapFileValidate)
+			if _, err := os.Stat(*mapFile); !os.IsNotExist(err) {
+				b, err := ioutil.ReadFile(*mapFile)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
@@ -221,6 +227,60 @@ var plunderAutomateValidate = &cobra.Command{
 		} else {
 			cmd.Help()
 			log.Fatalln("No Deployment map specified")
+		}
+	},
+}
+
+// plunderAutomateUI
+var plunderAutomateUI = &cobra.Command{
+	Use:   "ui",
+	Short: "Enable the user interface to manage a deployment",
+	Run: func(cmd *cobra.Command, args []string) {
+
+		var newMap *parlay.TreasureMap
+		if *mapFile != "" {
+			log.Infof("Reading deployment configuration from [%s]", *mapFile)
+			//var err error
+			var deployment parlay.TreasureMap
+			// // Check the actual path from the string
+			if _, err := os.Stat(*mapFile); !os.IsNotExist(err) {
+				b, err := ioutil.ReadFile(*mapFile)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+				err = json.Unmarshal(b, &deployment)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+				newMap, err = deployment.StartUI()
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+
+			}
+		}
+
+		if *jsonOutput == true {
+			b, _ := json.MarshalIndent(newMap, "", "\t")
+			fmt.Printf("%s\n", b)
+			return
+		}
+
+		if *deploymentSSH != "" {
+			log.Infof("Reading deployment configuration from [%s]", *deploymentSSH)
+			err := ssh.ImportHostsFromDeployment(*deploymentSSH)
+			if err != nil {
+				cmd.Help()
+				log.Fatalf("%v", err)
+			}
+		} else {
+			cmd.Help()
+			log.Fatalf("No Deployment information imported")
+		}
+
+		err := newMap.DeploySSH(*logFile)
+		if err != nil {
+			log.Fatalf("%v", err)
 		}
 	},
 }
