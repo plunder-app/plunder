@@ -245,7 +245,7 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) e
 			if err != nil {
 				return err
 			}
-			log.Debugf("About to execute [%d] actions to build the management cluster", len(pluginActions))
+			log.Debugf("About to execute [%d] actions", len(pluginActions))
 			err = sequentialDeployment(pluginActions, hostConfig)
 			if err != nil {
 				return err
@@ -387,7 +387,9 @@ func parseAndExecute(a types.Action, h *ssh.HostSSHConfig) ssh.CommandResult {
 	}
 
 	if a.CommandLocal == true {
-		b, cr.Error = exec.Command(command).Output()
+		log.Debugf("Command [%s]", command)
+		cmd := exec.Command("bash", "-c", command)
+		b, cr.Error = cmd.CombinedOutput()
 		if cr.Error != nil {
 			return cr
 		}
