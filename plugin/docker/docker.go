@@ -67,7 +67,7 @@ func ParlayExec(action, host string, raw json.RawMessage) (actions []types.Actio
 	// This example plugin only has the code for "exampleAction/test" however this switch statement
 	// should handle all exposed actions from the plugin
 	switch action {
-	case "docker image":
+	case "docker/image":
 		var img image
 		// Unmarshall the JSON into the struct
 		err = json.Unmarshal(raw, &img)
