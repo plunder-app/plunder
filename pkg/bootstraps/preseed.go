@@ -73,19 +73,27 @@ d-i grub-installer/bootdev string /dev/sda
 ### Regular, primary partitions
 d-i partman-auto/disk string /dev/sda
 
-d-i partman/alignment string cylinder
+#d-i partman/alignment string cylinder
 d-i partman/confirm_write_new_label boolean true
+
 d-i partman-basicfilesystems/choose_label string gpt
 d-i partman-basicfilesystems/default_label string gpt
+
 d-i partman-partitioning/choose_label string gpt
 d-i partman-partitioning/default_label string gpt
 d-i partman/choose_label string gpt
 d-i partman/default_label string gpt
+#d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman-basicfilesystems/no_swap boolean false
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
 
 d-i partman-auto/method string regular
-d-i partman-auto/choose_recipe select gpt-boot-root-swap
+
+d-i partman-auto/choose_recipe select parlayfs
 d-i partman-auto/expert_recipe string         \
-   gpt-boot-root-swap ::                      \
+   parlayfs ::                      \
       1 1 1 free                              \
          $bios_boot{ }                        \
          method{ biosgrub } .                 \
@@ -102,14 +110,15 @@ d-i partman-auto/expert_recipe string         \
          method{ format } format{ }           \
          use_filesystem{ } filesystem{ ext4 } \
          mountpoint{ / } .                    \
-      65536 65536 65536 linux-swap            \
-         $primary{ }                          \
-         method{ swap } format{ } .
+`
 
-d-i partman-partitioning/confirm_write_new_label boolean true
-d-i partman/choose_partition select finish
-d-i partman/confirm boolean true
-d-i partman/confirm_nooverwrite boolean true`
+const swap = `      65536 65536 65536 linux-swap            \
+$primary{ }                          \
+method{ swap } format{ } .`
+
+const noswap = `
+partman-basicfilesystems partman-basicfilesystems/no_swap boolean false
+`
 
 const preseedUsers = `
 ### Account setup
@@ -186,9 +195,16 @@ func (config *ServerConfig) BuildPreeSeedConfig() string {
 		}
 	}
 
+	var parsedDisk string
+
+	if config.SwapEnable == true {
+		parsedDisk = preseedDisk + swap
+	} else {
+		parsedDisk = preseedDisk + noswap
+	}
 	parsedNet := fmt.Sprintf(preseedNet, config.Adapter, config.Gateway, config.IPAddress, config.NameServer, config.Subnet, config.ServerName)
 	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory, config.Packages)
 	parsedCmd := fmt.Sprintf(preseedCmd, key)
 	parsedUsr := fmt.Sprintf(preseedUsers, config.Username, config.Username, config.Password, config.Password)
-	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, parsedNet, parsedPkg, parsedUsr, parsedCmd)
+	return fmt.Sprintf("%s%s%s%s%s%s", preseed, parsedDisk, parsedNet, parsedPkg, parsedUsr, parsedCmd)
 }
