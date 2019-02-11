@@ -11,8 +11,9 @@ const pluginInfo = `This plugin is used to managed docker automation`
 
 type image struct {
 	// Image details
-	ImageName string `json:"imageName"`
-	ImageFile string `json:"imageFile"`
+	ImageName  string `json:"imageName"`
+	ImageFile  string `json:"imageFile"`
+	DockerUser string `json:"username"`
 }
 
 // Dummy main function
@@ -71,6 +72,7 @@ func ParlayExec(action, host string, raw json.RawMessage) (actions []types.Actio
 		var img image
 		// Unmarshall the JSON into the struct
 		err = json.Unmarshal(raw, &img)
+		fmt.Printf("%s %v\n", host, img)
 		return img.generateActions(host), err
 	default:
 		return

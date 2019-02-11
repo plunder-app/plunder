@@ -13,7 +13,7 @@ func (i *image) generateActions(host string) []types.Action {
 		a = types.Action{
 			// Generate etcd server certificate
 			ActionType:   "command",
-			Command:      fmt.Sprintf("cat %s | ssh %s sudo docker load", i.ImageFile, host),
+			Command:      fmt.Sprintf("cat %s | ssh %s@%s sudo docker load", i.ImageFile, i.DockerUser, host),
 			CommandLocal: true,
 			Name:         "Upload file to remote docker host",
 		}
@@ -24,7 +24,7 @@ func (i *image) generateActions(host string) []types.Action {
 		a = types.Action{
 			// Generate etcd server certificate
 			ActionType:   "command",
-			Command:      fmt.Sprintf("docker save %s | ssh %s sudo docker load", i.ImageFile, host),
+			Command:      fmt.Sprintf("docker save %s | ssh %s@%s sudo docker load", i.ImageFile, i.DockerUser, host),
 			CommandLocal: true,
 			Name:         "Upload file to remote docker host",
 		}
