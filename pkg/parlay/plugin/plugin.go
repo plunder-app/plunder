@@ -178,7 +178,7 @@ func ExecuteAction(action, host string, raw json.RawMessage) ([]types.Action, er
 		// No KeyMap meaning that the action doesn't map to a plugin
 		return nil, fmt.Errorf("Action [%s] does not exist or has no plugin associated with it", action)
 	}
-	return ExecuteActionInPlugin(pluginCache[action], host, action, raw)
+	return ExecuteActionInPlugin(pluginCache[action], action, host, raw)
 }
 
 // ExecuteActionInPlugin specifies the plugin and action directly
@@ -189,7 +189,7 @@ func ExecuteActionInPlugin(pluginPath, action, host string, raw json.RawMessage)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
-
+	log.Debugf("Attempting plugin [%s]", action)
 	// Check the function has the correct parameters
 	pluginExec, ok := symbol.(func(string, string, json.RawMessage) ([]types.Action, error))
 	if !ok {
