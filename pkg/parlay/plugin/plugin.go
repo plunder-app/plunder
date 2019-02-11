@@ -173,16 +173,16 @@ func UsagePlugin(pluginPath, action string) {
 }
 
 // ExecuteAction uses the cache to find an action/plugin mapping
-func ExecuteAction(action string, raw json.RawMessage) ([]types.Action, error) {
+func ExecuteAction(action, host string, raw json.RawMessage) ([]types.Action, error) {
 	if pluginCache[action] == "" {
 		// No KeyMap meaning that the action doesn't map to a plugin
 		return nil, fmt.Errorf("Action [%s] does not exist or has no plugin associated with it", action)
 	}
-	return ExecuteActionInPlugin(pluginCache[action], action, raw)
+	return ExecuteActionInPlugin(pluginCache[action], host, action, raw)
 }
 
 // ExecuteActionInPlugin specifies the plugin and action directly
-func ExecuteActionInPlugin(pluginPath, action string, raw json.RawMessage) ([]types.Action, error) {
+func ExecuteActionInPlugin(pluginPath, action, host string, raw json.RawMessage) ([]types.Action, error) {
 
 	// Check a function with the name ParlayExec exists
 	symbol, err := findFunctionInPlugin(pluginPath, "ParlayExec")
@@ -191,11 +191,11 @@ func ExecuteActionInPlugin(pluginPath, action string, raw json.RawMessage) ([]ty
 	}
 
 	// Check the function has the correct parameters
-	pluginExec, ok := symbol.(func(string, json.RawMessage) ([]types.Action, error))
+	pluginExec, ok := symbol.(func(string, string, json.RawMessage) ([]types.Action, error))
 	if !ok {
 		return nil, fmt.Errorf("Unable to read functions from Plugin [%s]", pluginPath)
 	}
 
 	// Pass the action type and the interface to the plugin
-	return pluginExec(action, raw)
+	return pluginExec(action, host, raw)
 }

@@ -54,6 +54,7 @@ plugins:
 	@echo building plugins
 	@go build -buildmode=plugin -o ./plugin/example.plugin ./plugin/example.go
 	@go build -buildmode=plugin -o ./plugin/kubeadm.plugin ./plugin/kubeadm/*
+	@go build -buildmode=plugin -o ./plugin/docker.plugin ./plugin/docker/*
 
 release_darwin:
 	@echo Creating Darwin Build

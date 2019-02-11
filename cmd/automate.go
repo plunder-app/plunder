@@ -119,7 +119,7 @@ var plunderAutomatePluginTest = &cobra.Command{
 		var action types.Action
 		_ = json.Unmarshal([]byte(test), &action)
 
-		_, err := parlayplugin.ExecuteActionInPlugin("./plugin/example.plugin", "example/test", action.Plugin)
+		_, err := parlayplugin.ExecuteActionInPlugin("./plugin/example.plugin", "127.0.0.1", "example/test", action.Plugin)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}

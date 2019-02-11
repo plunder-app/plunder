@@ -38,6 +38,7 @@ type ServerConfig struct {
 	ServerName string `json:"hostname"`
 	NTPServer  string `json:"ntpserver"`
 	Adapter    string `json:"adapter"`
+	SwapEnable bool   `json:"swapEnabled"`
 
 	Username string `json:"username"`
 	Password string `json:"password"`

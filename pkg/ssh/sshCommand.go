@@ -78,3 +78,16 @@ func (c *HostSSHConfig) ExecuteCmd(cmd string) (string, error) {
 
 	return string(b), err
 }
+
+// ExecuteCmd -
+func (c *HostSSHConfig) ExecuteCmdWithStdin(cmd string) (string, error) {
+	if c.Session == nil {
+		if _, err := c.StartSession(); err != nil {
+			return "", err
+		}
+	}
+
+	b, err := c.Session.CombinedOutput(cmd)
+
+	return string(b), err
+}
