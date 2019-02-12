@@ -13,6 +13,7 @@ type image struct {
 	// Image details
 	ImageName          string `json:"imageName"`
 	ImageFile          string `json:"imageFile"`
+	ImageRetag         string `json:"retag"`
 	DockerUser         string `json:"username"`
 	DisableSSHSecurity bool   `json:"disableSSHSecurity"`
 }
@@ -48,8 +49,9 @@ func ParlayUsage(action string) (raw json.RawMessage, err error) {
 	switch action {
 	case "docker/image":
 		a := image{
-			ImageFile: "./my_image.tar.gz",
-			ImageName: "gcr.io/my_image:latest",
+			ImageFile:  "./my_image.tar.gz",
+			ImageName:  "gcr.io/my_image:latest",
+			ImageRetag: "k8s.gcr.io/my_image:1.0",
 		}
 		// In order to turn a struct into an map[string]interface we need to turn it into JSON
 
