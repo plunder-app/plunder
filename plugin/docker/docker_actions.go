@@ -26,9 +26,7 @@ func (i *image) generateActions(host string) []types.Action {
 			Name:         fmt.Sprintf("Upload container image %s to remote docker host", path.Base(i.ImageFile)),
 		}
 		generatedActions = append(generatedActions, a)
-		return generatedActions
-	}
-	if i.ImageName != "" {
+	} else if i.ImageName != "" {
 		a = types.Action{
 			// Generate etcd server certificate
 			ActionType:   "command",
@@ -37,7 +35,16 @@ func (i *image) generateActions(host string) []types.Action {
 			Name:         fmt.Sprintf("Upload container image %s to remote docker host", i.ImageName),
 		}
 		generatedActions = append(generatedActions, a)
-		return generatedActions
 	}
-	return nil
+
+	if i.ImageRetag != "" && i.ImageName != "" {
+		a = types.Action{
+			// Generate etcd server certificate
+			ActionType:  "command",
+			Command:     fmt.Sprintf("docker tag %s | %s", i.ImageFile, i.ImageRetag),
+			CommandSudo: "root",
+			Name:        fmt.Sprintf("Retag %s --> %s", i.ImageName, i.ImageRetag),
+		}
+	}
+	return generatedActions
 }
