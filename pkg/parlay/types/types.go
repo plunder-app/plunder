@@ -22,7 +22,7 @@ type Action struct {
 	Command          string `json:"command,omitempty"`
 	CommandLocal     bool   `json:"commandLocal,omitempty"`
 	CommandSaveFile  string `json:"commandSaveFile,omitempty"`
-	CommandSaveAsKey string `json:"CommandSaveAsKey,omitempty"`
+	CommandSaveAsKey string `json:"commandSaveAsKey,omitempty"`
 	CommandSudo      string `json:"commandSudo,omitempty"`
 
 	// Key operations
