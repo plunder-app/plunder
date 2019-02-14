@@ -315,7 +315,7 @@ func parallelDeployment(action []types.Action, hosts []ssh.HostSSHConfig) error 
 
 				return err
 			}
-			crs := ssh.ParalellExecute(command, hosts, action[y].Timeout)
+			crs := ssh.ParalellExecute(command, action[y].CommandPipeFile, hosts, action[y].Timeout)
 			var errors bool // This will only be set to true if a command fails
 			for x := range crs {
 				if crs[x].Error != nil {
@@ -396,7 +396,7 @@ func parseAndExecute(a types.Action, h *ssh.HostSSHConfig) ssh.CommandResult {
 		cr.Result = strings.TrimRight(string(b), "\r\n")
 	} else {
 		log.Debugf("Executing command [%s] on host [%s]", command, h.Host)
-		cr = ssh.SingleExecute(command, *h, a.Timeout)
+		cr = ssh.SingleExecute(command, a.CommandPipeFile, *h, a.Timeout)
 
 		cr.Result = strings.TrimRight(cr.Result, "\r\n")
 
