@@ -3,10 +3,10 @@ package parlay
 import (
 	"fmt"
 
-	"github.com/thebsdbox/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/types"
 )
 
-// NOTE - The functions in this particluar file will need moving to something seperate at a later
+// NOTE - The functions in this particular file will need moving to something separate at a later
 // date. Quite possibly moving to a plugin model? TBD.
 
 // This defines the etcd kubeadm file (should use the kubernetes packages to define at a later point)
@@ -204,7 +204,7 @@ func (e *etcdMembers) generateCertificateActions(hosts []string) []types.Action 
 	return generatedActions
 }
 
-// At some point the functions for the various kubeadm arease will be split into seperate files to ease management
+// At some point the functions for the various kubeadm arease will be split into separate files to ease management
 func (m *managerMembers) generateActions() []types.Action {
 	var generatedActions []Action
 	var a Action

@@ -13,7 +13,7 @@ import (
 // AnyBoot - This flag when set to true will just boot any kernel/initrd/cmdline configuration
 var AnyBoot bool
 
-// DeploymentConfig - contains an accessable "current" configuration
+// DeploymentConfig - contains an accessible "current" configuration
 var DeploymentConfig DeploymentConfigurationFile
 
 // DeploymentConfigurationFile - The bootstraps.Configs is used by other packages to manage use case for Mac addresses

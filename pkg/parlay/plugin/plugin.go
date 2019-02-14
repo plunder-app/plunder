@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"plugin"
 
-	"github.com/thebsdbox/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/types"
 
 	log "github.com/Sirupsen/logrus"
 )

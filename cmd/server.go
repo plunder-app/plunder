@@ -5,11 +5,11 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/thebsdbox/plunder/pkg/bootstraps"
+	"github.com/plunder-app/plunder/pkg/bootstraps"
 
-	"github.com/thebsdbox/plunder/pkg/utils"
+	"github.com/plunder-app/plunder/pkg/utils"
 
-	"github.com/thebsdbox/plunder/pkg/server"
+	"github.com/plunder-app/plunder/pkg/server"
 
 	"github.com/spf13/cobra"
 

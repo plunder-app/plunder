@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/thebsdbox/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/types"
 )
 
 type loadBalancer struct {

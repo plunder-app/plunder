@@ -1,6 +1,6 @@
 # Provisioning Configuration
 
-The provisioning works by running remote commands or uploading/downloading files to a remote system, in order for it to be configured correctly. A parsing engine called "parlay" was writted in order to provide repeatable scripting to ease deployments.
+The provisioning works by running remote commands or uploading/downloading files to a remote system, in order for it to be configured correctly. A parsing engine called "parlay" was written in order to provide repeatable scripting to ease deployments.
 
 ### Example deployment script
 
@@ -48,7 +48,7 @@ The above example covers simple usage of `uploading` and `command` usage.. there
 
 ## ETCD cluster deployment
 
-**NOTE:** A previous deployment or an action is needed to ensure that `kubectl`, `kubeadm` and `kubectl` are installed on the `hosts`. Also if these hosts aren't internet facing, then an etcd container image will be neded pushing to the hosts (again this can be done through a different deployment or through additional actions in the deployment below.
+**NOTE:** A previous deployment or an action is needed to ensure that `kubectl`, `kubeadm` and `kubectl` are installed on the `hosts`. Also if these hosts aren't internet facing, then an etcd container image will be needed pushing to the hosts (again this can be done through a different deployment or through additional actions in the deployment below.
 
 ```
 {

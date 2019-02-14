@@ -102,6 +102,6 @@ func PullPXEBooter() error {
 	if err != nil {
 		return err
 	}
-	log.Infoln("Completed\n")
+	log.Infoln("Completed")
 	return nil
 }

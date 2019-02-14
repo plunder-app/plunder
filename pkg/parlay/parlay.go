@@ -1,6 +1,6 @@
 package parlay
 
-import "github.com/thebsdbox/plunder/pkg/parlay/types"
+import "github.com/plunder-app/plunder/pkg/parlay/types"
 
 type actionType string
 

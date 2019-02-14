@@ -2,7 +2,7 @@ package bootstraps
 
 import "fmt"
 
-// This initial template will be modifyable based upon the build requirements
+// This initial template will be modifiable based upon the build requirements
 const kickstart = `
 install
 cdrom
