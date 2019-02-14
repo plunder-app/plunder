@@ -7,6 +7,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"github.com/thebsdbox/plunder/pkg/parlay"
 	"github.com/thebsdbox/plunder/pkg/parlay/plugin"
@@ -27,7 +28,7 @@ var pluginPath, pluginAction, pluginActions *string
 var resume *bool
 
 // UI Json output only, when this is try the UI selections will just create the associated JSON
-var jsonOutput *bool
+var jsonOutput, yamlOutput *bool
 
 func init() {
 
@@ -50,6 +51,7 @@ func init() {
 	pluginActions = plunderAutomatePluginActions.Flags().String("plugin", "", "Path to a specific plugin typically ~./plugin/[X].plugin")
 
 	jsonOutput = plunderAutomateUI.Flags().Bool("json", false, "Print the JSON to stdout, no execution of commands")
+	yamlOutput = plunderAutomateUI.Flags().Bool("yaml", false, "Print the YAML to stdout, no execution of commands")
 
 	plunderAutomatePlugins.AddCommand(plunderAutomatePluginUsage)
 	plunderAutomatePlugins.AddCommand(plunderAutomatePluginActions)
@@ -157,7 +159,8 @@ var plunderAutomateSSH = &cobra.Command{
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
-				err = json.Unmarshal(b, &deployment)
+
+				deployment, err = parseMapFile(b)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
@@ -200,7 +203,7 @@ var plunderAutomateValidate = &cobra.Command{
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
-				err = json.Unmarshal(b, &deployment)
+				deployment, err = parseMapFile(b)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
@@ -250,7 +253,7 @@ var plunderAutomateUI = &cobra.Command{
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
-				err = json.Unmarshal(b, &deployment)
+				deployment, err = parseMapFile(b)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
@@ -264,6 +267,12 @@ var plunderAutomateUI = &cobra.Command{
 
 		if *jsonOutput == true {
 			b, _ := json.MarshalIndent(newMap, "", "\t")
+			fmt.Printf("%s\n", b)
+			return
+		}
+
+		if *yamlOutput == true {
+			b, _ := yaml.Marshal(newMap)
 			fmt.Printf("%s\n", b)
 			return
 		}
@@ -285,4 +294,26 @@ var plunderAutomateUI = &cobra.Command{
 			log.Fatalf("%v", err)
 		}
 	},
+}
+
+func parseMapFile(b []byte) (deployment parlay.TreasureMap, err error) {
+
+	jsonBytes, err := yaml.YAMLToJSON(b)
+	if err == nil {
+		// If there were no errors then the YAML => JSON was succesful, no attempt to unmarshall
+		err = json.Unmarshal(jsonBytes, &deployment)
+		if err != nil {
+			return deployment, fmt.Errorf("Unable to parse [%s] as either yaml or json", *mapFile)
+		}
+
+	} else {
+		// Couldn't parse the yaml to JSON
+		// Attempt to parse it as JSON
+		err = json.Unmarshal(b, &deployment)
+		if err != nil {
+			return deployment, fmt.Errorf("Unable to parse [%s] as either yaml or json", *mapFile)
+		}
+	}
+	return deployment, nil
+
 }
