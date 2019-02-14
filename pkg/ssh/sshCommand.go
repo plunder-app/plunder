@@ -102,17 +102,12 @@ func (c *HostSSHConfig) ExecuteCmdWithStdinFile(cmd, filePath string) (string, e
 		}
 	}
 
-	// Start a command on our remote session, this should be something that is expecting stdin
-	if err := c.Session.Start(cmd); err != nil {
-		return "", err
-	}
-
 	// get a stdin pipe
 	si, err := c.Session.StdinPipe()
 	if err != nil {
 		return "", err
 	}
-	defer si.Close()
+	//defer si.Close()
 
 	// get a stdout pipe
 	so, err := c.Session.StdoutPipe()
@@ -126,11 +121,18 @@ func (c *HostSSHConfig) ExecuteCmdWithStdinFile(cmd, filePath string) (string, e
 		return "", err
 	}
 
+	// Start a command on our remote session, this should be something that is expecting stdin
+	if err := c.Session.Start(cmd); err != nil {
+		return "", err
+	}
+
 	// do the actual work
 	n, err := io.Copy(si, file)
 	if err != nil {
 		return "", err
 	}
+	// Close the stdin as we've finised transmitting the data
+	si.Close()
 
 	log.Debugf("Copied %d bytes over the stdin pipe", n)
 	// wait for process to finishe
