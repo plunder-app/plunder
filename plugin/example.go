@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/thebsdbox/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/types"
 )
 
 const pluginInfo = `This example plugin is used to demonstrate the structure of a plugin`

@@ -9,10 +9,10 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/thebsdbox/plunder/pkg/parlay/plugin"
-	"github.com/thebsdbox/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/plugin"
+	"github.com/plunder-app/plunder/pkg/parlay/types"
 
-	"github.com/thebsdbox/plunder/pkg/ssh"
+	"github.com/plunder-app/plunder/pkg/ssh"
 )
 
 var restore Restore

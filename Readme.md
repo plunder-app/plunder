@@ -21,14 +21,14 @@ This combined functionality provides the capability to bootstrap bare-metal (and
 
 ## Getting Plunder
 
-Prebuilt binaries for Darwin(MacOS)/Linux and Windows can be found on the [releases](https://github.com/thebsdbox/plunder/releases) page.
+Prebuilt binaries for Darwin(MacOS)/Linux and Windows can be found on the [releases](https://github.com/plunder-app/plunder/releases) page.
 
 ### Building
 
 If you wish to build the code yourself then this can be done simply by running:
 
 ```
-go get github.com/thebsdbox/plunder
+go get github.com/plunder-app/plunder
 ```
 Alternatively clone the repository and either `go build` or `make build`, note that using the makefile will ensure that the current git commit and version number are returned by `plunder version`.
 

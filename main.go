@@ -1,6 +1,6 @@
 package main
 
-import "github.com/thebsdbox/plunder/cmd"
+import "github.com/plunder-app/plunder/cmd"
 
 // Version is populated from the Makefile and is tied to the release TAG
 var Version string

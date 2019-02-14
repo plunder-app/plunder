@@ -8,11 +8,11 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/ghodss/yaml"
+	"github.com/plunder-app/plunder/pkg/parlay"
+	"github.com/plunder-app/plunder/pkg/parlay/plugin"
+	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/ssh"
 	"github.com/spf13/cobra"
-	"github.com/thebsdbox/plunder/pkg/parlay"
-	"github.com/thebsdbox/plunder/pkg/parlay/plugin"
-	"github.com/thebsdbox/plunder/pkg/parlay/types"
-	"github.com/thebsdbox/plunder/pkg/ssh"
 )
 
 // These flags are used to determine a deployment
@@ -24,7 +24,7 @@ var deploymentName, actionName, host *string
 // These flags are used for management of plugins
 var pluginPath, pluginAction, pluginActions *string
 
-// This flag determines if a singular action should occur or wheter to resume all actions from this point
+// This flag determines if a singular action should occur or whether to resume all actions from this point
 var resume *bool
 
 // UI Json output only, when this is try the UI selections will just create the associated JSON

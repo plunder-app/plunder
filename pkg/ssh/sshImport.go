@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/thebsdbox/plunder/pkg/bootstraps"
+	"github.com/plunder-app/plunder/pkg/bootstraps"
 	"golang.org/x/crypto/ssh"
 )
 

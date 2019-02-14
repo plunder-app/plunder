@@ -7,7 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	dhcp "github.com/krolaw/dhcp4"
-	"github.com/thebsdbox/plunder/pkg/bootstraps"
+	"github.com/plunder-app/plunder/pkg/bootstraps"
 )
 
 type lease struct {

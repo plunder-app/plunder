@@ -32,7 +32,7 @@ At this point you'll have the images as part of the local docker repository and 
 
 ## Offline Ubuntu packages
 
-One liner to get teh packages needed for the kubernetes hosts to run `kubelet`
+One liner to get the packages needed for the kubernetes hosts to run `kubelet`
 
 ```
 apt-get download socat ethtool ebtables; tar -cvzf ubuntu_pkg.tar.gz socat* ethtool* ebtables*; rm socat* ethtool* ebtables*

@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/thebsdbox/plunder/pkg/bootstraps"
-	"github.com/thebsdbox/plunder/pkg/parlay"
-	"github.com/thebsdbox/plunder/pkg/parlay/types"
-	"github.com/thebsdbox/plunder/pkg/utils"
+	"github.com/plunder-app/plunder/pkg/bootstraps"
+	"github.com/plunder-app/plunder/pkg/parlay"
+	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/utils"
 
 	log "github.com/Sirupsen/logrus"
 

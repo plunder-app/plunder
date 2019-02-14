@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/thebsdbox/plunder/pkg/bootstraps"
+	"github.com/plunder-app/plunder/pkg/bootstraps"
 
-	"github.com/thebsdbox/plunder/pkg/utils"
+	"github.com/plunder-app/plunder/pkg/utils"
 )
 
 // These strings container the generated iPXE details that are passed to the bootloader when the correct url is requested
