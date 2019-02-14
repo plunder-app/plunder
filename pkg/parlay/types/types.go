@@ -24,6 +24,7 @@ type Action struct {
 	CommandSaveFile  string `json:"commandSaveFile,omitempty"`
 	CommandSaveAsKey string `json:"commandSaveAsKey,omitempty"`
 	CommandSudo      string `json:"commandSudo,omitempty"`
+	CommandPipeFile  string `json:"commandPipeFile,omitempty"`
 
 	// Key operations
 	KeyFile string `json:"keyFile,omitempty"`

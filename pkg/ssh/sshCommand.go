@@ -2,19 +2,24 @@ package ssh
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // SingleExecute - This will execute a command on a single host
-func SingleExecute(cmd string, host HostSSHConfig, to int) CommandResult {
+func SingleExecute(cmd, pipefile string, host HostSSHConfig, to int) CommandResult {
 	var configs []HostSSHConfig
 	configs = append(configs, host)
-	result := ParalellExecute(cmd, configs, to)
+	result := ParalellExecute(cmd, pipefile, configs, to)
 	return result[0]
 }
 
 //ParalellExecute - This will execute the same command in paralell across multiple hosts
-func ParalellExecute(cmd string, hosts []HostSSHConfig, to int) []CommandResult {
+func ParalellExecute(cmd, pipefile string, hosts []HostSSHConfig, to int) []CommandResult {
 	var cmdResults []CommandResult
 	// Run parallel ssh session (max 10)
 	results := make(chan CommandResult, 10)
@@ -36,12 +41,22 @@ func ParalellExecute(cmd string, hosts []HostSSHConfig, to int) []CommandResult 
 			res := new(CommandResult)
 			res.Host = host.Host
 
-			if text, err := host.ExecuteCmd(cmd); err != nil {
-				// Report any returned values
-				res.Error = err
-				res.Result = text
+			if pipefile != "" {
+				if text, err := host.ExecuteCmdWithStdinFile(cmd, pipefile); err != nil {
+					// Report any returned values
+					res.Error = err
+					res.Result = text
+				} else {
+					res.Result = text
+				}
 			} else {
-				res.Result = text
+				if text, err := host.ExecuteCmd(cmd); err != nil {
+					// Report any returned values
+					res.Error = err
+					res.Result = text
+				} else {
+					res.Result = text
+				}
 			}
 			results <- *res
 		}(host)
@@ -79,15 +94,56 @@ func (c *HostSSHConfig) ExecuteCmd(cmd string) (string, error) {
 	return string(b), err
 }
 
-// ExecuteCmd -
-func (c *HostSSHConfig) ExecuteCmdWithStdin(cmd string) (string, error) {
+// ExecuteCmdWithStdinFile -
+func (c *HostSSHConfig) ExecuteCmdWithStdinFile(cmd, filePath string) (string, error) {
 	if c.Session == nil {
 		if _, err := c.StartSession(); err != nil {
 			return "", err
 		}
 	}
 
-	b, err := c.Session.CombinedOutput(cmd)
+	// Start a command on our remote session, this should be something that is expecting stdin
+	if err := c.Session.Start(cmd); err != nil {
+		return "", err
+	}
 
-	return string(b), err
+	// get a stdin pipe
+	si, err := c.Session.StdinPipe()
+	if err != nil {
+		return "", err
+	}
+	defer si.Close()
+
+	// get a stdout pipe
+	so, err := c.Session.StdoutPipe()
+	if err != nil {
+		return "", err
+	}
+
+	// open file as an io.reader
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	// do the actual work
+	n, err := io.Copy(si, file)
+	if err != nil {
+		return "", err
+	}
+
+	log.Debugf("Copied %d bytes over the stdin pipe", n)
+	// wait for process to finishe
+	if err := c.Session.Wait(); err != nil {
+		return "", err
+	}
+
+	// Read all the data from the bu
+	var b []byte
+	if b, err = ioutil.ReadAll(so); err != nil {
+		return "", err
+
+	}
+	return string(b), nil
+
 }
