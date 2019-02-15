@@ -7,10 +7,10 @@ import (
 	"github.com/plunder-app/plunder/pkg/parlay/types"
 )
 
-func (i *image) generateActions(host string) []types.Action {
+func (i *image) generateImageActions(host string) []types.Action {
 	var generatedActions []types.Action
 	var a types.Action
-	var sshString, dockerRemoteString, dockerLocalString string
+	var dockerRemoteString, dockerLocalString string
 
 	// This should be set to true if sudo (NOPASSWD) is enabled and required on the local host
 	if i.DockerLocalSudo == true {
@@ -26,44 +26,59 @@ func (i *image) generateActions(host string) []types.Action {
 		dockerRemoteString = "docker"
 	}
 
-	if i.DisableSSHSecurity == true {
-		sshString = fmt.Sprintf("ssh -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no %s@%s ", i.DockerUser, host)
-	} else {
-		sshString = fmt.Sprintf("ssh %s@%s %s", i.DockerUser, host, dockerRemoteString)
-	}
-
-	if i.ImageFile != "" {
+	if len(i.ImageFiles) != 0 {
 		// If we've specified a file (tarball, or tar+gzip) we cat then pipe over SSH to a docker load
-		// TODO - Look at using the crypto/ssh library with a stdin pipe
-		a = types.Action{
-			ActionType:   "command",
-			Command:      fmt.Sprintf("cat %s | %s %s load ", i.ImageFile, sshString, dockerRemoteString),
-			CommandLocal: true,
-			Name:         fmt.Sprintf("Upload container image %s to remote docker host", path.Base(i.ImageFile)),
+
+		for y := range i.ImageFiles {
+			a = types.Action{
+				ActionType:      "command",
+				Command:         fmt.Sprintf("%s load ", dockerRemoteString),
+				CommandPipeFile: i.ImageFiles[y],
+				Name:            fmt.Sprintf("Upload container image %s to remote docker host", path.Base(i.ImageFiles[y])),
+			}
+			generatedActions = append(generatedActions, a)
 		}
-		generatedActions = append(generatedActions, a)
-	} else if i.ImageName != "" {
+	} else if len(i.ImageNames) != 0 {
 
 		// If we've specified a an existing image from the local docker image store then we "save" it (pipe to stdin)
 		// then we can cat then pipe over SSH to a docker load
-		a = types.Action{
-			ActionType:   "command",
-			Command:      fmt.Sprintf("%s %s | %s %s load", dockerLocalString, i.ImageName, sshString, dockerRemoteString),
-			CommandLocal: true,
-			Name:         fmt.Sprintf("Upload container image %s to remote docker host", i.ImageName),
+		for y := range i.ImageNames {
+
+			a = types.Action{
+				ActionType:     "command",
+				Command:        fmt.Sprintf("%s load", dockerRemoteString),
+				CommandPipeCmd: fmt.Sprintf("%s %s", dockerLocalString, i.ImageNames[y]),
+				Name:           fmt.Sprintf("Upload container image %s to remote docker host", i.ImageNames[y]),
+			}
+			generatedActions = append(generatedActions, a)
 		}
-		generatedActions = append(generatedActions, a)
 	}
 
 	// If the downloaded tarball contains a bizarre repo/tag then we can rename/(retag) the image locally
-	if i.ImageRetag != "" && i.ImageName != "" {
-		a = types.Action{
-			ActionType:  "command",
-			Command:     fmt.Sprintf("%s tag %s %s", dockerRemoteString, i.ImageName, i.ImageRetag),
-			CommandSudo: "root",
-			Name:        fmt.Sprintf("Retag %s --> %s", i.ImageName, i.ImageRetag),
-		}
-		generatedActions = append(generatedActions, a)
+	// if i.ImageRetag != "" && i.ImageName != "" {
+	// 	a = types.Action{
+	// 		ActionType:  "command",
+	// 		Command:     fmt.Sprintf("%s tag %s %s", dockerRemoteString, i.ImageName, i.ImageRetag),
+	// 		CommandSudo: "root",
+	// 		Name:        fmt.Sprintf("Retag %s --> %s", i.ImageName, i.ImageRetag),
+	// 	}
+	// 	generatedActions = append(generatedActions, a)
+	// }
+	return generatedActions
+}
+
+func (t *tag) generateTagActions(host string) []types.Action {
+	var generatedActions []types.Action
+
+	// Generate the retag action
+	var a = types.Action{
+		ActionType:  "command",
+		Command:     fmt.Sprintf("sudo docker tag %s %s", t.SourceName, t.TargetName),
+		CommandSudo: "root",
+		Name:        fmt.Sprintf("Retag %s --> %s", t.SourceName, t.TargetName),
 	}
+
+	generatedActions = append(generatedActions, a)
+
 	return generatedActions
 }

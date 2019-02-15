@@ -24,7 +24,10 @@ type Action struct {
 	CommandSaveFile  string `json:"commandSaveFile,omitempty"`
 	CommandSaveAsKey string `json:"commandSaveAsKey,omitempty"`
 	CommandSudo      string `json:"commandSudo,omitempty"`
-	CommandPipeFile  string `json:"commandPipeFile,omitempty"`
+
+	// Piping commands, read in a file and send over stdin, or capture stdout from a local command
+	CommandPipeFile string `json:"commandPipeFile,omitempty"`
+	CommandPipeCmd  string `json:"commandPipeCmd,omitempty"`
 
 	// Key operations
 	KeyFile string `json:"keyFile,omitempty"`
