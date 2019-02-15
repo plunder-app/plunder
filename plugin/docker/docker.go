@@ -11,13 +11,23 @@ const pluginInfo = `This plugin is used to managed docker automation`
 
 type image struct {
 	// Image details
-	ImageName          string `json:"imageName"`
-	ImageFile          string `json:"imageFile"`
-	ImageRetag         string `json:"imageRetag"`
-	DockerUser         string `json:"username"`
-	DockerLocalSudo    bool   `json:"localSudo"`
-	DockerRemoteSudo   bool   `json:"remoteSudo"`
-	DisableSSHSecurity bool   `json:"disableSSHSecurity"`
+	ImageNames []string `json:"imageName"`
+	ImageFiles []string `json:"imageFile"`
+	//ImageRetag         string   `json:"imageRetag"`
+	//DockerUser         string   `json:"username"`
+	DockerLocalSudo  bool `json:"localSudo"`
+	DockerRemoteSudo bool `json:"remoteSudo"`
+	//DisableSSHSecurity bool     `json:"disableSSHSecurity"`
+}
+
+type tag struct {
+	// Image tag effectively takes an image and will retag it
+	SourceName string `json:"sourceName"`
+	TargetName string `json:"targetName"`
+
+	// These two fields are used to change out a tag (e.g. version number) or the repository itself
+	TargetTag  string `json:"imageTag,omitempty"`
+	TargetRepo string `json:"imageRepo,omitempty"`
 }
 
 // Dummy main function
@@ -26,13 +36,15 @@ func main() {}
 // ParlayActionList - This should return an array of actions
 func ParlayActionList() []string {
 	return []string{
-		"docker/image"}
+		"docker/image",
+		"docker/tag"}
 }
 
 // ParlayActionDetails - This should return an array of action descriptions
 func ParlayActionDetails() []string {
 	return []string{
-		"This action automates the management of docker images"}
+		"This action automates the management of docker images",
+		"This action manages the tagging of docker images"}
 }
 
 // ParlayPluginInfo - returns information about the plugin
@@ -51,11 +63,16 @@ func ParlayUsage(action string) (raw json.RawMessage, err error) {
 	switch action {
 	case "docker/image":
 		a := image{
-			ImageFile:        "./my_image.tar.gz",
-			ImageName:        "gcr.io/my_image:latest",
-			ImageRetag:       "k8s.gcr.io/my_image:1.0",
-			DockerLocalSudo:  true,
-			DockerRemoteSudo: true,
+			ImageFiles: []string{"./my_image.tar.gz", "./my__other_image.tar.gz"},
+			ImageNames: []string{"gcr.io/my_image:latest", "gcr.io/my_other_image:latest"},
+		}
+		// In order to turn a struct into an map[string]interface we need to turn it into JSON
+
+		return json.Marshal(a)
+	case "docker/tag":
+		a := tag{
+			SourceName: "gcr.io/my_image:latest",
+			TargetName: "internal_repo/my_image:1.0",
 		}
 		// In order to turn a struct into an map[string]interface we need to turn it into JSON
 
@@ -79,7 +96,12 @@ func ParlayExec(action, host string, raw json.RawMessage) (actions []types.Actio
 		var img image
 		// Unmarshall the JSON into the struct
 		err = json.Unmarshal(raw, &img)
-		return img.generateActions(host), err
+		return img.generateImageActions(host), err
+	case "docker/tag":
+		var t tag
+		// Unmarshall the JSON into the struct
+		err = json.Unmarshal(raw, &t)
+		return t.generateTagActions(host), err
 	default:
 		return
 	}
