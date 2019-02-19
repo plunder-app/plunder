@@ -10,20 +10,20 @@ import (
 const pluginInfo = `This plugin is used to managed docker automation`
 
 type image struct {
+
 	// Image details
 	ImageNames []string `json:"imageName"`
 	ImageFiles []string `json:"imageFile"`
-	//ImageRetag         string   `json:"imageRetag"`
-	//DockerUser         string   `json:"username"`
+
 	DockerLocalSudo  bool `json:"localSudo"`
 	DockerRemoteSudo bool `json:"remoteSudo"`
-	//DisableSSHSecurity bool     `json:"disableSSHSecurity"`
 }
 
 type tag struct {
-	// Image tag effectively takes an image and will retag it
-	SourceName string `json:"sourceName"`
-	TargetName string `json:"targetName"`
+
+	// A list of sources and target tags
+	SourceNames []string `json:"sourceNames,omitempty"`
+	TargetNames []string `json:"targetNames,omitempty"`
 
 	// These two fields are used to change out a tag (e.g. version number) or the repository itself
 	TargetTag  string `json:"imageTag,omitempty"`
@@ -71,8 +71,8 @@ func ParlayUsage(action string) (raw json.RawMessage, err error) {
 		return json.Marshal(a)
 	case "docker/tag":
 		a := tag{
-			SourceName: "gcr.io/my_image:latest",
-			TargetName: "internal_repo/my_image:1.0",
+			SourceNames: []string{"gcr.io/my_image:latest"},
+			TargetNames: []string{"internal_repo/my_image:1.0"},
 		}
 		// In order to turn a struct into an map[string]interface we need to turn it into JSON
 
@@ -101,7 +101,7 @@ func ParlayExec(action, host string, raw json.RawMessage) (actions []types.Actio
 		var t tag
 		// Unmarshall the JSON into the struct
 		err = json.Unmarshal(raw, &t)
-		return t.generateTagActions(host), err
+		return t.generateTagActions(host)
 	default:
 		return
 	}
