@@ -54,31 +54,27 @@ func (i *image) generateImageActions(host string) []types.Action {
 		}
 	}
 
-	// If the downloaded tarball contains a bizarre repo/tag then we can rename/(retag) the image locally
-	// if i.ImageRetag != "" && i.ImageName != "" {
-	// 	a = types.Action{
-	// 		ActionType:  "command",
-	// 		Command:     fmt.Sprintf("%s tag %s %s", dockerRemoteString, i.ImageName, i.ImageRetag),
-	// 		CommandSudo: "root",
-	// 		Name:        fmt.Sprintf("Retag %s --> %s", i.ImageName, i.ImageRetag),
-	// 	}
-	// 	generatedActions = append(generatedActions, a)
-	// }
 	return generatedActions
 }
 
-func (t *tag) generateTagActions(host string) []types.Action {
+func (t *tag) generateTagActions(host string) ([]types.Action, error) {
+
+	if len(t.SourceNames) != len(t.TargetNames) {
+		return nil, fmt.Errorf("The number of images to retag doesn't match the number of tags")
+	}
 	var generatedActions []types.Action
 
-	// Generate the retag action
-	var a = types.Action{
-		ActionType:  "command",
-		Command:     fmt.Sprintf("sudo docker tag %s %s", t.SourceName, t.TargetName),
-		CommandSudo: "root",
-		Name:        fmt.Sprintf("Retag %s --> %s", t.SourceName, t.TargetName),
+	// Iterate through all of the images and create retagging actions
+	for y := range t.SourceNames {
+		// Generate the retag action
+		var a = types.Action{
+			ActionType:  "command",
+			Command:     fmt.Sprintf("sudo docker tag %s %s", t.SourceNames[y], t.TargetNames[y]),
+			CommandSudo: "root",
+			Name:        fmt.Sprintf("Retag %s --> %s", t.SourceNames[y], t.TargetNames[y]),
+		}
+
+		generatedActions = append(generatedActions, a)
 	}
-
-	generatedActions = append(generatedActions, a)
-
-	return generatedActions
+	return generatedActions, nil
 }

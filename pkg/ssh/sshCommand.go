@@ -117,7 +117,6 @@ func (c *HostSSHConfig) ExecuteCmdWithStdinFile(cmd, filePath string) (string, e
 	if err != nil {
 		return "", err
 	}
-	//defer si.Close()
 
 	// get a stdout pipe
 	so, err := c.Session.StdoutPipe()
@@ -225,7 +224,6 @@ func (c *HostSSHConfig) ExecuteCmdWithStdinCmd(cmd, localCmd string) (string, er
 	var b []byte
 	if b, err = ioutil.ReadAll(so); err != nil {
 		return "", err
-
 	}
 	return string(b), nil
 
