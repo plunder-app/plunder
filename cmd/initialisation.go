@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/plunder-app/plunder/pkg/bootstraps"
 	"github.com/plunder-app/plunder/pkg/parlay"
 	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/server"
 	"github.com/plunder-app/plunder/pkg/utils"
 
 	log "github.com/Sirupsen/logrus"
@@ -58,8 +58,8 @@ var plunderDeploymentConfig = &cobra.Command{
 	Short: "Initialise a server configuration",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
-		var configuration bootstraps.DeploymentConfigurationFile
-		configuration.Deployments = append(configuration.Deployments, bootstraps.DeploymentConfigurations{})
+		var configuration server.DeploymentConfigurationFile
+		configuration.Deployments = append(configuration.Deployments, server.DeploymentConfigurations{})
 		// Indent (or pretty-print) the configuration output
 		b, err := json.MarshalIndent(configuration, "", "\t")
 		if err != nil {

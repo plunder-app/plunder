@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/plunder-app/plunder/pkg/bootstraps"
-
 	"github.com/plunder-app/plunder/pkg/utils"
 
 	"github.com/plunder-app/plunder/pkg/server"
@@ -70,7 +68,7 @@ var PlunderServer = &cobra.Command{
 	Short: "Start Plunder Services",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
-
+		var deployment []byte
 		// If deploymentPath is not blank then the flag has been used
 		if *deploymentPath != "" {
 			if *anyboot == true {
@@ -78,11 +76,7 @@ var PlunderServer = &cobra.Command{
 			}
 			log.Infof("Reading deployment configuration from [%s]", *deploymentPath)
 			if _, err := os.Stat(*deploymentPath); !os.IsNotExist(err) {
-				deployment, err := ioutil.ReadFile(*deploymentPath)
-				if err != nil {
-					log.Fatalf("%v", err)
-				}
-				err = bootstraps.UpdateConfiguration(deployment)
+				deployment, err = ioutil.ReadFile(*deploymentPath)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
@@ -90,7 +84,7 @@ var PlunderServer = &cobra.Command{
 		}
 
 		if *anyboot == true {
-			bootstraps.AnyBoot = true
+			server.AnyBoot = true
 		}
 
 		// If configPath is not blank then the flag has been used
@@ -122,7 +116,7 @@ var PlunderServer = &cobra.Command{
 			log.Fatalln("At least one available lease is required")
 		}
 
-		controller.StartServices()
+		controller.StartServices(deployment)
 		return
 	},
 }
