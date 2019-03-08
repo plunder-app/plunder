@@ -8,20 +8,23 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/plunder-app/plunder/pkg/bootstraps"
-
+	log "github.com/Sirupsen/logrus"
 	"github.com/plunder-app/plunder/pkg/utils"
 )
 
 // These strings container the generated iPXE details that are passed to the bootloader when the correct url is requested
 var preseed, kickstart, anyBoot, reboot string
 
-func (c *BootController) serveHTTP() error {
+//
+var httpPaths map[string]string
 
+func (c *BootController) serveHTTP() error {
+	// Set this so that other functions that build iPXE files can populate the http server details
 	preseed = utils.IPXEPreeseed(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
 	kickstart = utils.IPXEKickstart(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
 	anyBoot = utils.IPXEAnyBoot(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
 	reboot = utils.IPXEReboot()
+
 	docroot, err := filepath.Abs("./")
 	if err != nil {
 		return err
@@ -29,7 +32,6 @@ func (c *BootController) serveHTTP() error {
 
 	//httpRoot := http.FileServer(http.Dir(docroot)).ServeHTTP()
 	http.Handle("/", http.FileServer(http.Dir(docroot)))
-	//http.HandleFunc("/", httpRoot)
 
 	http.HandleFunc("/health", HealthCheckHandler)
 	http.HandleFunc("/preseed.ipxe", preseedHandler)
@@ -42,6 +44,16 @@ func (c *BootController) serveHTTP() error {
 	http.HandleFunc("/deployment", deploymentHandler)
 
 	return http.ListenAndServe(":80", nil)
+}
+
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	log.Debugf("Requested URL [%s]", r.RequestURI)
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "text/plain")
+	// Return the preseed content
+	log.Debugf("Requested URL [%s]", r.URL.Host)
+	io.WriteString(w, httpPaths[r.URL.Path])
 }
 
 func preseedHandler(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +100,7 @@ func deploymentHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	switch r.Method {
 	case "GET":
-		b, err := json.MarshalIndent(bootstraps.DeploymentConfig, "", "\t")
+		b, err := json.MarshalIndent(DeploymentConfig, "", "\t")
 		if err != nil {
 			io.WriteString(w, "<b>Unable to Parse Deployment configuration</b>")
 		}
@@ -99,7 +111,7 @@ func deploymentHandler(w http.ResponseWriter, r *http.Request) {
 				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
 				io.WriteString(w, errorHTML)
 			}
-			err := bootstraps.UpdateConfiguration(b)
+			err := UpdateConfiguration(b)
 			if err != nil {
 				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
 				io.WriteString(w, errorHTML)

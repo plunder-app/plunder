@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/plunder-app/plunder/pkg/bootstraps"
+	"github.com/plunder-app/plunder/pkg/server"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -18,7 +18,7 @@ var cachedGlobalKey ssh.AuthMethod
 // ImportHostsFromDeployment - This will import a list of hosts from a file
 func ImportHostsFromDeployment(configFile string) error {
 
-	var deployment bootstraps.DeploymentConfigurationFile
+	var deployment server.DeploymentConfigurationFile
 	var err error
 	// Check the actual path from the string
 	if _, err := os.Stat(configFile); !os.IsNotExist(err) {

@@ -1,61 +1,22 @@
-package bootstraps
+package server
 
 import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/plunder-app/plunder/pkg/utils"
 )
 
 // AnyBoot - This flag when set to true will just boot any kernel/initrd/cmdline configuration
 var AnyBoot bool
 
-// DeploymentConfig - contains an accessible "current" configuration
-var DeploymentConfig DeploymentConfigurationFile
-
-// DeploymentConfigurationFile - The bootstraps.Configs is used by other packages to manage use case for Mac addresses
-type DeploymentConfigurationFile struct {
-	GlobalServerConfig ServerConfig               `json:"globalConfig"`
-	Deployments        []DeploymentConfigurations `json:"deployments"`
-}
-
-// DeploymentConfigurations - is used to parse the files containing all server configurations
-type DeploymentConfigurations struct {
-	MAC        string       `json:"mac"`
-	Deployment string       `json:"deployment"` // Either preseed or kickstart
-	Config     ServerConfig `json:"config"`
-}
-
-// ServerConfig - Defines how a server will be configured by plunder
-type ServerConfig struct {
-	Gateway    string `json:"gateway"`
-	IPAddress  string `json:"address"`
-	Subnet     string `json:"subnet"`
-	NameServer string `json:"nameserver"`
-	ServerName string `json:"hostname"`
-	NTPServer  string `json:"ntpserver"`
-	Adapter    string `json:"adapter"`
-	SwapEnable bool   `json:"swapEnabled"`
-
-	Username string `json:"username"`
-	Password string `json:"password"`
-
-	RepositoryAddress string `json:"repoaddress"`
-	// MirrorDirectory is an Ubuntu specific config
-	MirrorDirectory string `json:"mirrordir"`
-
-	// SSHKeyPath will typically be loaded from a file ~/.ssh/id_rsa.pub
-	SSHKeyPath string `json:"sshkeypath"`
-
-	// Packages to be installed
-	Packages string `json:"packages"`
-}
-
 // ReadKeyFromFile - will attempt to read an sshkey from a file and populate the struct
-func (config *ServerConfig) ReadKeyFromFile(sshKeyPath string) (string, error) {
+func (config *HostConfig) ReadKeyFromFile(sshKeyPath string) (string, error) {
 	var buffer []byte
 	if _, err := os.Stat(sshKeyPath); !os.IsNotExist(err) {
 		buffer, err = ioutil.ReadFile(sshKeyPath)
@@ -75,21 +36,37 @@ func (config *ServerConfig) ReadKeyFromFile(sshKeyPath string) (string, error) {
 
 // UpdateConfiguration will read a configuration string and build the iPXE files needed
 func UpdateConfiguration(configFile []byte) error {
-	log.Infoln("Updating the Deployment Configuration")
-	json.Unmarshal(configFile, &DeploymentConfig)
 
+	log.Infoln("Updating the Deployment Configuration")
+	err := json.Unmarshal(configFile, &DeploymentConfig)
+	if err != nil {
+		return err
+	}
 	if len(DeploymentConfig.Deployments) == 0 {
 		log.Warnln("No deployment configurations found")
 	}
-
+	httpPaths = make(map[string]string)
 	for i := range DeploymentConfig.Deployments {
-		var newConfig string
+		var newConfig, ipxeConfig string
+
+		// We need to move all ":" to "-" to make life a little easier for filesystems and internet standards
+		dashMac := strings.Replace(DeploymentConfig.Deployments[i].MAC, ":", "-", -1)
+
 		switch DeploymentConfig.Deployments[i].Deployment {
 		case "preseed":
+			// If a kernel and initrd are submitted then Create an .ipxe file
+			if DeploymentConfig.Deployments[i].Kernel != "" && DeploymentConfig.Deployments[i].Initrd != "" {
+				ipxeConfig = utils.IPXEPreeseed(httpAddress, DeploymentConfig.Deployments[i].Kernel, DeploymentConfig.Deployments[i].Initrd, DeploymentConfig.Deployments[i].Cmdline)
+				log.Debugf("Generating ipxeConfig for [%s]", dashMac)
+			}
 			// Build a preseed configuration and write it to disk
 			newConfig = DeploymentConfig.Deployments[i].Config.BuildPreeSeedConfig()
 
 		case "kickstart":
+			// If a kernel and initrd are submitted then Create an .ipxe file
+			if DeploymentConfig.Deployments[i].Kernel != "" && DeploymentConfig.Deployments[i].Initrd != "" {
+				ipxeConfig = utils.IPXEKickstart(httpAddress, DeploymentConfig.Deployments[i].Kernel, DeploymentConfig.Deployments[i].Initrd, DeploymentConfig.Deployments[i].Cmdline)
+			}
 			// Build a kickstart configuration and write it to disk
 			newConfig = DeploymentConfig.Deployments[i].Config.BuildKickStartConfig()
 
@@ -97,22 +74,28 @@ func UpdateConfiguration(configFile []byte) error {
 			return fmt.Errorf("Unknown deployment method [%s]", DeploymentConfig.Deployments[i].Deployment)
 		}
 
-		// We need to move all ":" to "-" to make life a little easier for filesystems and internet standards
-		dashMac := strings.Replace(DeploymentConfig.Deployments[i].MAC, ":", "-", -1)
+		if ipxeConfig != "" {
+			path := fmt.Sprintf("/%s.ipxe", dashMac)
+			http.HandleFunc(path, rootHandler)
+			httpPaths[path] = ipxeConfig
+		}
+		path := fmt.Sprintf("/%s.cfg", dashMac)
+		http.HandleFunc(path, rootHandler)
+		httpPaths[path] = newConfig
 
-		// Create a filename from the updated name
-		filename := fmt.Sprintf("%s.cfg", dashMac)
-		f, err := os.Create(filename)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		byteCount, err := f.WriteString(newConfig)
-		if err != nil {
-			return err
-		}
-		log.Infof("Written %d bytes to file [%s]", byteCount, filename)
-		f.Sync()
+		// // Create a filename from the updated name
+		// filename := fmt.Sprintf("%s.cfg", dashMac)
+		// f, err := os.Create(filename)
+		// if err != nil {
+		// 	return err
+		// }
+		// defer f.Close()
+		// byteCount, err := f.WriteString(newConfig)
+		// if err != nil {
+		// 	return err
+		// }
+		// log.Infof("Written %d bytes to file [%s]", byteCount, filename)
+		// f.Sync()
 	}
 	return nil
 }
@@ -140,7 +123,7 @@ func FindDeployment(mac string) string {
 }
 
 // PopulateConfiguration - This will read a deployment configuration and attempt to fill any missing fields from the global config
-func (config *ServerConfig) PopulateConfiguration() {
+func (config *HostConfig) PopulateConfiguration() {
 	// NETWORK CONFIGURATION
 
 	// Inherit the global Gateway

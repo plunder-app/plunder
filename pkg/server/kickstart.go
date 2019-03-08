@@ -1,9 +1,9 @@
-package bootstraps
+package server
 
 import "fmt"
 
 // This initial template will be modifiable based upon the build requirements
-const kickstart = `
+const kickstartFile = `
 install
 cdrom
 lang en_US.UTF-8
@@ -166,6 +166,6 @@ yum clean all
 `
 
 // BuildKickStartConfig - Creates a new presseed configuration using the passed data
-func (config *ServerConfig) BuildKickStartConfig() string {
+func (config *HostConfig) BuildKickStartConfig() string {
 	return fmt.Sprintf("%s%s%s%s%s%s", preseed, preseedDisk, preseedNet, preseedPkg, preseedUsers, preseedCmd)
 }

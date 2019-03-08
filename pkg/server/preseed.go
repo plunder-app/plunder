@@ -1,4 +1,4 @@
-package bootstraps
+package server
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 )
 
 // Preseed const, this is the basis for the configuration that will be modified per use-case
-const preseed = `
+const preseedHead = `
 # Force debconf priority to critical.
 debconf debconf/priority select critical
 # Override default frontend to Noninteractive
@@ -180,7 +180,7 @@ d-i preseed/late_command string \
 `
 
 //BuildPreeSeedConfig - Creates a new presseed configuration using the passed data
-func (config *ServerConfig) BuildPreeSeedConfig() string {
+func (config *HostConfig) BuildPreeSeedConfig() string {
 
 	var key string
 	var err error
@@ -206,5 +206,5 @@ func (config *ServerConfig) BuildPreeSeedConfig() string {
 	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory, config.Packages)
 	parsedCmd := fmt.Sprintf(preseedCmd, key)
 	parsedUsr := fmt.Sprintf(preseedUsers, config.Username, config.Username, config.Password, config.Password)
-	return fmt.Sprintf("%s%s%s%s%s%s", preseed, parsedDisk, parsedNet, parsedPkg, parsedUsr, parsedCmd)
+	return fmt.Sprintf("%s%s%s%s%s%s", preseedHead, parsedDisk, parsedNet, parsedPkg, parsedUsr, parsedCmd)
 }

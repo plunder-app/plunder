@@ -10,6 +10,9 @@ import (
 	"github.com/krolaw/dhcp4/conn"
 )
 
+// This is needed by other functions to build strings
+var httpAddress string
+
 // BootController contains the settings that define how the remote boot will
 // behave
 type BootController struct {
@@ -40,8 +43,55 @@ type BootController struct {
 	handler *DHCPSettings
 }
 
+// DeploymentConfig - contains an accessible "current" configuration
+var DeploymentConfig DeploymentConfigurationFile
+
+// DeploymentConfigurationFile - The bootstraps.Configs is used by other packages to manage use case for Mac addresses
+type DeploymentConfigurationFile struct {
+	GlobalServerConfig HostConfig                 `json:"globalConfig"`
+	Deployments        []DeploymentConfigurations `json:"deployments"`
+}
+
+// DeploymentConfigurations - is used to parse the files containing all server configurations
+type DeploymentConfigurations struct {
+	MAC string `json:"mac"`
+
+	// iPXE file settings - exported
+	Kernel  string `json:"kernelPath"`
+	Initrd  string `json:"initrdPath"`
+	Cmdline string `json:"cmdline"`
+
+	Deployment string     `json:"deployment"` // Either preseed or kickstart
+	Config     HostConfig `json:"config"`
+}
+
+// HostConfig - Defines how a server will be configured by plunder
+type HostConfig struct {
+	Gateway    string `json:"gateway"`
+	IPAddress  string `json:"address"`
+	Subnet     string `json:"subnet"`
+	NameServer string `json:"nameserver"`
+	ServerName string `json:"hostname"`
+	NTPServer  string `json:"ntpserver"`
+	Adapter    string `json:"adapter"`
+	SwapEnable bool   `json:"swapEnabled"`
+
+	Username string `json:"username"`
+	Password string `json:"password"`
+
+	RepositoryAddress string `json:"repoaddress"`
+	// MirrorDirectory is an Ubuntu specific config
+	MirrorDirectory string `json:"mirrordir"`
+
+	// SSHKeyPath will typically be loaded from a file ~/.ssh/id_rsa.pub
+	SSHKeyPath string `json:"sshkeypath"`
+
+	// Packages to be installed
+	Packages string `json:"packages"`
+}
+
 // StartServices - This will start all of the enabled services
-func (c *BootController) StartServices() {
+func (c *BootController) StartServices(deployment []byte) {
 	log.Infof("Starting Remote Boot Services, press CTRL + c to stop")
 
 	if *c.EnableDHCP == true {
@@ -94,6 +144,12 @@ func (c *BootController) StartServices() {
 			log.Warn("No Initrd specified in configuration")
 		}
 
+		httpAddress = *c.HTTPAddress
+
+		err := UpdateConfiguration(deployment)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
 		go func() {
 			log.Println("RemoteBoot => Starting HTTP")
 			err := c.serveHTTP()
