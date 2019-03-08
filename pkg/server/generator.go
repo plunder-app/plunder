@@ -45,7 +45,6 @@ func UpdateConfiguration(configFile []byte) error {
 	if len(DeploymentConfig.Deployments) == 0 {
 		log.Warnln("No deployment configurations found")
 	}
-	httpPaths = make(map[string]string)
 	for i := range DeploymentConfig.Deployments {
 		var newConfig, ipxeConfig string
 
@@ -76,26 +75,18 @@ func UpdateConfiguration(configFile []byte) error {
 
 		if ipxeConfig != "" {
 			path := fmt.Sprintf("/%s.ipxe", dashMac)
-			http.HandleFunc(path, rootHandler)
+			// Only add handler if one didn't exist before
+			if httpPaths[path] == "" {
+				http.HandleFunc(path, rootHandler)
+			}
 			httpPaths[path] = ipxeConfig
 		}
 		path := fmt.Sprintf("/%s.cfg", dashMac)
-		http.HandleFunc(path, rootHandler)
+		// Only add handler if one didn't exist before
+		if httpPaths[path] == "" {
+			http.HandleFunc(path, rootHandler)
+		}
 		httpPaths[path] = newConfig
-
-		// // Create a filename from the updated name
-		// filename := fmt.Sprintf("%s.cfg", dashMac)
-		// f, err := os.Create(filename)
-		// if err != nil {
-		// 	return err
-		// }
-		// defer f.Close()
-		// byteCount, err := f.WriteString(newConfig)
-		// if err != nil {
-		// 	return err
-		// }
-		// log.Infof("Written %d bytes to file [%s]", byteCount, filename)
-		// f.Sync()
 	}
 	return nil
 }

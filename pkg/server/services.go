@@ -145,6 +145,7 @@ func (c *BootController) StartServices(deployment []byte) {
 		}
 
 		httpAddress = *c.HTTPAddress
+		httpPaths = make(map[string]string)
 
 		err := UpdateConfiguration(deployment)
 		if err != nil {
