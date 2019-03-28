@@ -11,7 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var controller server.BootController

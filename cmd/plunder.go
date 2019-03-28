@@ -7,7 +7,7 @@ import (
 
 	"github.com/plunder-app/plunder/pkg/utils"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 

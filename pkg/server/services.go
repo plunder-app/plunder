@@ -3,8 +3,8 @@ package server
 import (
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/plunder-app/plunder/pkg/utils"
+	log "github.com/sirupsen/logrus"
 
 	dhcp "github.com/krolaw/dhcp4"
 	"github.com/krolaw/dhcp4/conn"

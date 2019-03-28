@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	dhcp "github.com/krolaw/dhcp4"
+	log "github.com/sirupsen/logrus"
 )
 
 type lease struct {

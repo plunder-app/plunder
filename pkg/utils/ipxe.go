@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Static URL for retrieving the bootloader

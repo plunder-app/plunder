@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // SingleExecute - This will execute a command on a single host
