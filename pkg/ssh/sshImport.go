@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -16,19 +15,13 @@ import (
 var cachedGlobalKey ssh.AuthMethod
 
 // ImportHostsFromDeployment - This will import a list of hosts from a file
-func ImportHostsFromDeployment(configFile string) error {
+func ImportHostsFromDeployment(config []byte) error {
 
 	var deployment server.DeploymentConfigurationFile
-	var err error
-	// Check the actual path from the string
-	if _, err := os.Stat(configFile); !os.IsNotExist(err) {
-		configFile, err := ioutil.ReadFile(configFile)
-		if err != nil {
-			return err
-		}
-		json.Unmarshal(configFile, &deployment)
-	} else {
-		return fmt.Errorf("Unable to open [%s]", configFile)
+
+	err := json.Unmarshal(config, &deployment)
+	if err != nil {
+		return err
 	}
 
 	if len(deployment.Deployments) == 0 {

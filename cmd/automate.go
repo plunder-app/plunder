@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/ghodss/yaml"
@@ -16,7 +18,7 @@ import (
 )
 
 // These flags are used to determine a deployment
-var deploymentSSH, mapFile, logFile *string
+var deploymentSSH, mapFile, logFile, deploymentEndpoint *string
 
 // These flags are used to determine if a particular deployment, action and specific host need to be used.
 var deploymentName, actionName, host *string
@@ -38,6 +40,9 @@ func init() {
 
 	// SSH Deployment flags
 	deploymentSSH = plunderAutomate.PersistentFlags().String("deployconfig", "", "Path to a plunder deployment configuration")
+
+	// Plunder endpoing Deployment flags
+	deploymentEndpoint = plunderAutomate.PersistentFlags().String("deployendpoint", "", "URL of plunder server to pull the deployment configuration")
 
 	// Deployment control flags
 	deploymentName = plunderAutomateSSH.Flags().String("deployment", "", "Automate a specific deployment")
@@ -138,12 +143,46 @@ var plunderAutomateSSH = &cobra.Command{
 		// If deploymentPath is not blank then the flag has been used
 		if *deploymentSSH != "" {
 			log.Infof("Reading deployment configuration from [%s]", *deploymentSSH)
-			err := ssh.ImportHostsFromDeployment(*deploymentSSH)
+
+			// Check the actual path from the string
+			if _, err := os.Stat(*deploymentSSH); !os.IsNotExist(err) {
+				config, err := ioutil.ReadFile(*deploymentSSH)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+				err = ssh.ImportHostsFromDeployment(config)
+				if err != nil {
+					cmd.Help()
+					log.Fatalf("%v", err)
+				}
+			} else {
+				log.Fatalf("Unable to open [%s]", *deploymentSSH)
+			}
+
+		} else if *deploymentEndpoint != "" {
+			u, err := url.Parse(*deploymentEndpoint)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+			u.Path = "/deployment"
+
+			resp, err := http.Get(u.String())
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+
+			//var config server.DeploymentConfigurationFile
+			defer resp.Body.Close()
+			config, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+			err = ssh.ImportHostsFromDeployment(config)
 			if err != nil {
 				cmd.Help()
 				log.Fatalf("%v", err)
 			}
-		} else {
+		} else if *deploymentEndpoint == "" && *deploymentSSH == "" {
 			cmd.Help()
 			log.Fatalf("No Deployment information imported")
 		}
@@ -279,12 +318,44 @@ var plunderAutomateUI = &cobra.Command{
 
 		if *deploymentSSH != "" {
 			log.Infof("Reading deployment configuration from [%s]", *deploymentSSH)
-			err := ssh.ImportHostsFromDeployment(*deploymentSSH)
+			// Check the actual path from the string
+			if _, err := os.Stat(*deploymentSSH); !os.IsNotExist(err) {
+				config, err := ioutil.ReadFile(*deploymentSSH)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+				err = ssh.ImportHostsFromDeployment(config)
+				if err != nil {
+					cmd.Help()
+					log.Fatalf("%v", err)
+				}
+			} else {
+				log.Fatalf("Unable to open [%s]", *deploymentSSH)
+			}
+		} else if *deploymentEndpoint != "" {
+			u, err := url.Parse(*deploymentEndpoint)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+			u.Path = "/deployment"
+
+			resp, err := http.Get(u.String())
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+
+			//var config server.DeploymentConfigurationFile
+			defer resp.Body.Close()
+			config, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+			err = ssh.ImportHostsFromDeployment(config)
 			if err != nil {
 				cmd.Help()
 				log.Fatalf("%v", err)
 			}
-		} else {
+		} else if *deploymentEndpoint == "" && *deploymentSSH == "" {
 			cmd.Help()
 			log.Fatalf("No Deployment information imported")
 		}
