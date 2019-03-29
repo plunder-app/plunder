@@ -147,10 +147,14 @@ func (c *BootController) StartServices(deployment []byte) {
 		httpAddress = *c.HTTPAddress
 		httpPaths = make(map[string]string)
 
-		err := UpdateConfiguration(deployment)
-		if err != nil {
-			log.Fatalf("%v", err)
+		// If a Deployment file is set then update the configuration
+		if len(deployment) != 0 {
+			err := UpdateConfiguration(deployment)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
 		}
+
 		go func() {
 			log.Println("RemoteBoot => Starting HTTP")
 			err := c.serveHTTP()
