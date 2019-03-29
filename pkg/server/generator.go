@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/plunder-app/plunder/pkg/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 // AnyBoot - This flag when set to true will just boot any kernel/initrd/cmdline configuration

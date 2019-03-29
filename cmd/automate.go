@@ -6,12 +6,12 @@ import (
 	"io/ioutil"
 	"os"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/ghodss/yaml"
 	"github.com/plunder-app/plunder/pkg/parlay"
 	"github.com/plunder-app/plunder/pkg/parlay/plugin"
 	"github.com/plunder-app/plunder/pkg/parlay/types"
 	"github.com/plunder-app/plunder/pkg/ssh"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 

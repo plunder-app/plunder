@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Preseed const, this is the basis for the configuration that will be modified per use-case

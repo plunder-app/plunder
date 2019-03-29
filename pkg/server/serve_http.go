@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/plunder-app/plunder/pkg/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 // These strings container the generated iPXE details that are passed to the bootloader when the correct url is requested

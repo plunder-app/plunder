@@ -3,8 +3,8 @@ package server
 import (
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/plunder-app/plunder/pkg/utils"
+	log "github.com/sirupsen/logrus"
 
 	dhcp "github.com/krolaw/dhcp4"
 	"github.com/krolaw/dhcp4/conn"
@@ -147,10 +147,14 @@ func (c *BootController) StartServices(deployment []byte) {
 		httpAddress = *c.HTTPAddress
 		httpPaths = make(map[string]string)
 
-		err := UpdateConfiguration(deployment)
-		if err != nil {
-			log.Fatalf("%v", err)
+		// If a Deployment file is set then update the configuration
+		if len(deployment) != 0 {
+			err := UpdateConfiguration(deployment)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
 		}
+
 		go func() {
 			log.Println("RemoteBoot => Starting HTTP")
 			err := c.serveHTTP()

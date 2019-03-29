@@ -9,7 +9,7 @@ import (
 
 	"github.com/plunder-app/plunder/pkg/parlay/types"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // The pluginCache contains a map of action->plugin
