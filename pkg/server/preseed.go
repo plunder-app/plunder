@@ -176,7 +176,8 @@ d-i preseed/late_command string \
     in-target mkdir -p /home/ubuntu/.ssh; \
     in-target /bin/sh -c "echo '%s' >> /home/ubuntu/.ssh/authorized_keys"; \
     in-target chown -R ubuntu:ubuntu /home/ubuntu/; \
-	in-target chmod -R go-rwx /home/ubuntu/.ssh/authorized_keys;
+	in-target chmod -R go-rwx /home/ubuntu/.ssh/authorized_keys; \
+	in-target sudo sed -i '/ swap / s/^/#/' /etc/fstab
 `
 
 //BuildPreeSeedConfig - Creates a new presseed configuration using the passed data
