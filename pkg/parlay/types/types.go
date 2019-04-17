@@ -19,15 +19,19 @@ type Action struct {
 	Packages     string `json:"packages,omitempty"`
 
 	// Command operations
-	Command          string `json:"command,omitempty"`
-	CommandLocal     bool   `json:"commandLocal,omitempty"`
-	CommandSaveFile  string `json:"commandSaveFile,omitempty"`
-	CommandSaveAsKey string `json:"commandSaveAsKey,omitempty"`
-	CommandSudo      string `json:"commandSudo,omitempty"`
+	Command          string   `json:"command,omitempty"`
+	Commands         []string `json:"commands,omitempty"`
+	CommandLocal     bool     `json:"commandLocal,omitempty"`
+	CommandSaveFile  string   `json:"commandSaveFile,omitempty"`
+	CommandSaveAsKey string   `json:"commandSaveAsKey,omitempty"`
+	CommandSudo      string   `json:"commandSudo,omitempty"`
 
 	// Piping commands, read in a file and send over stdin, or capture stdout from a local command
 	CommandPipeFile string `json:"commandPipeFile,omitempty"`
 	CommandPipeCmd  string `json:"commandPipeCmd,omitempty"`
+
+	// Ignore any failures
+	IgnoreFailure bool `json:"ignoreFail,omitempty"`
 
 	// Key operations
 	KeyFile string `json:"keyFile,omitempty"`

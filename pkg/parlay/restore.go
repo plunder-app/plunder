@@ -57,7 +57,7 @@ func RestoreFromCheckpoint() *Restore {
 			return nil
 		}
 		var r Restore
-		err = json.Unmarshal(b, r)
+		err = json.Unmarshal(b, &r)
 		if err != nil {
 			return nil
 		}
