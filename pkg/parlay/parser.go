@@ -215,7 +215,8 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) e
 		case "command":
 			// Build out a configuration based upon the action
 			cr := parseAndExecute(action[y], &hostConfig)
-			if cr.Error != nil {
+			// This will end command execution and print the error
+			if cr.Error != nil && action[y].IgnoreFailure == false {
 				// Set checkpoint
 				restore.Action = action[y].Name
 				restore.Host = hostConfig.Host
@@ -226,12 +227,23 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) e
 				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
 				return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", action[y].Name, hostConfig.Host, cr.Error, cr.Result)
 			}
-			// Output success Messages
-			log.Infof("Command Task [%s] on node [%s] completed successfully", action[y].Name, hostConfig.Host)
-			log.Debugf("Command Results ->\n%s", cr.Result)
-			logging.writeString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
-			logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
 
+			// if there is an error and we're set to ignore it then process accordingly
+			if cr.Error != nil && action[y].IgnoreFailure == true {
+				log.Warnf("Command Task [%s] on node [%s] failed (execution will continute)", action[y].Name, hostConfig.Host)
+				log.Debugf("Command Results ->\n%s", cr.Result)
+				logging.writeString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has failed (execution will continute)\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
+				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
+			}
+
+			// No error, task was completed correctly
+			if cr.Error == nil {
+				// Output success Messages
+				log.Infof("Command Task [%s] on node [%s] completed successfully", action[y].Name, hostConfig.Host)
+				log.Debugf("Command Results ->\n%s", cr.Result)
+				logging.writeString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
+				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
+			}
 		case "pkg":
 
 		case "key":
