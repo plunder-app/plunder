@@ -14,6 +14,47 @@ import (
 // cachedGlobalKey caches the content of the gloal SSH key to save on excessing file operations
 var cachedGlobalKey ssh.AuthMethod
 
+// cachedUsername caches the content of the gloal Username on the basis that a lot of key based ops will share the same user
+var cachedUsername string
+
+// AddHost will append additional hosts to the host array that the ssh package will use
+func AddHost(address, keypath, username string) error {
+	sshHost := HostSSHConfig{
+		Host: address,
+	}
+
+	// If a username exists use that, alternatively use the cached entry
+	if username != "" {
+		sshHost.User = username
+	} else if cachedUsername != "" {
+		sshHost.User = cachedUsername
+	} else {
+		return fmt.Errorf("No username data for SSH authentication has been entered or loaded")
+	}
+
+	// Find additional keys that may exist in the same location
+	var keys []ssh.AuthMethod
+
+	if keypath != "" {
+		key, err := findPrivateKey(keypath)
+		if err != nil {
+			return err
+		}
+		keys = append(keys, key)
+	} else {
+		if cachedGlobalKey != nil {
+			keys = append(keys, cachedGlobalKey)
+		} else {
+			return fmt.Errorf("Host [%s] has no key specified", address)
+		}
+	}
+	sshHost.ClientConfig = &ssh.ClientConfig{User: sshHost.User, Auth: keys, HostKeyCallback: ssh.InsecureIgnoreHostKey()}
+
+	Hosts = append(Hosts, sshHost)
+
+	return nil
+}
+
 // ImportHostsFromDeployment - This will import a list of hosts from a file
 func ImportHostsFromDeployment(config []byte) error {
 
@@ -35,6 +76,11 @@ func ImportHostsFromDeployment(config []byte) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// Find a global username to use, in place of an empty config
+	if deployment.GlobalServerConfig.Username != "" {
+		cachedUsername = deployment.GlobalServerConfig.Username
 	}
 
 	// Parse the deployments

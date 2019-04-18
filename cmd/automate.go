@@ -20,6 +20,9 @@ import (
 // These flags are used to determine a deployment
 var deploymentSSH, mapFile, logFile, deploymentEndpoint *string
 
+// These flags are used to override SSH configuration
+var usernameSSH, keypathSSH, addressSSH *string
+
 // These flags are used to determine if a particular deployment, action and specific host need to be used.
 var deploymentName, actionName, host *string
 
@@ -40,6 +43,9 @@ func init() {
 
 	// SSH Deployment flags
 	deploymentSSH = plunderAutomate.PersistentFlags().String("deployconfig", "", "Path to a plunder deployment configuration")
+	usernameSSH = plunderAutomate.PersistentFlags().String("overrideUsername", "", "(optional) Override Username")
+	keypathSSH = plunderAutomate.PersistentFlags().String("overrideKeypath", "", "(Optional) Override path to a key")
+	addressSSH = plunderAutomate.PersistentFlags().String("overrideAddress", "", "(Optional) Override address to automate against")
 
 	// Plunder endpoing Deployment flags
 	deploymentEndpoint = plunderAutomate.PersistentFlags().String("deployendpoint", "", "URL of plunder server to pull the deployment configuration")
@@ -182,10 +188,20 @@ var plunderAutomateSSH = &cobra.Command{
 				cmd.Help()
 				log.Fatalf("%v", err)
 			}
-		} else if *deploymentEndpoint == "" && *deploymentSSH == "" {
+		}
+
+		// Add a host from the override flags
+		err := ssh.AddHost(*addressSSH, *keypathSSH, *usernameSSH)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+
+		// If there are zero hosts in the ssh Host array then we have no authentication information
+		if len(ssh.Hosts) == 0 {
 			cmd.Help()
 			log.Fatalf("No Deployment information imported")
 		}
+
 		log.Infof("Found [%d] ssh configurations", len(ssh.Hosts))
 
 		if *mapFile != "" {
@@ -304,6 +320,7 @@ var plunderAutomateUI = &cobra.Command{
 			}
 		}
 
+		// If we're using the UI to build a new map then print to stdout(in either format)
 		if *jsonOutput == true {
 			b, _ := json.MarshalIndent(newMap, "", "\t")
 			fmt.Printf("%s\n", b)
@@ -324,6 +341,8 @@ var plunderAutomateUI = &cobra.Command{
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
+
+				// Parse all of the hosts in the deployment configuration and update the ssh package with their details
 				err = ssh.ImportHostsFromDeployment(config)
 				if err != nil {
 					cmd.Help()
@@ -333,6 +352,7 @@ var plunderAutomateUI = &cobra.Command{
 				log.Fatalf("Unable to open [%s]", *deploymentSSH)
 			}
 		} else if *deploymentEndpoint != "" {
+			// Parse the endpoint, this will attempt to pull all of the configuration information and pass it to the SSH package
 			u, err := url.Parse(*deploymentEndpoint)
 			if err != nil {
 				log.Fatalf("%v", err)
@@ -344,7 +364,6 @@ var plunderAutomateUI = &cobra.Command{
 				log.Fatalf("%v", err)
 			}
 
-			//var config server.DeploymentConfigurationFile
 			defer resp.Body.Close()
 			config, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
@@ -355,12 +374,21 @@ var plunderAutomateUI = &cobra.Command{
 				cmd.Help()
 				log.Fatalf("%v", err)
 			}
-		} else if *deploymentEndpoint == "" && *deploymentSSH == "" {
+		}
+
+		// Add a host from the override flags
+		err := ssh.AddHost(*addressSSH, *keypathSSH, *usernameSSH)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+
+		// If there are zero hosts in the ssh Host array then we have no authentication information
+		if len(ssh.Hosts) == 0 {
 			cmd.Help()
 			log.Fatalf("No Deployment information imported")
 		}
 
-		err := newMap.DeploySSH(*logFile)
+		err = newMap.DeploySSH(*logFile)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
