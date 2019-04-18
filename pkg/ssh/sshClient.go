@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -15,7 +16,8 @@ func (c *HostSSHConfig) StartConnection() (*ssh.Client, error) {
 	if !strings.ContainsAny(c.Host, ":") {
 		host = host + ":22"
 	}
-	//log.Printf("%v", c)
+
+	log.Debugf("Beginning connection to [%s] with user [%s]", c.Host, c.User)
 	c.Connection, err = ssh.Dial("tcp", host, c.ClientConfig)
 	if err != nil {
 		return nil, err
