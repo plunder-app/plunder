@@ -4,11 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os/user"
 	"path/filepath"
 	"strings"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/plunder-app/plunder/pkg/server"
 	"golang.org/x/crypto/ssh"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // cachedGlobalKey caches the content of the gloal SSH key to save on excessing file operations
@@ -16,6 +20,25 @@ var cachedGlobalKey ssh.AuthMethod
 
 // cachedUsername caches the content of the gloal Username on the basis that a lot of key based ops will share the same user
 var cachedUsername string
+
+// The init function will look for the default key and the default user
+
+func init() {
+	u, err := user.Current()
+	if err != nil {
+		log.Warnf("Failed to find current user, if this is overridden by a deployment configuration this error can be ignored")
+	}
+
+	// If the above call hasn't errored, then u shouldn't be nil
+	if u != nil {
+		cachedUsername = u.Username
+	}
+
+	cachedGlobalKey, err = findDefaultKey()
+	if err != nil {
+		log.Warnf("Failed to find default key, if this is overridden by a deployment configuration this error can be ignored")
+	}
+}
 
 // AddHost will append additional hosts to the host array that the ssh package will use
 func AddHost(address, keypath, username string) error {
@@ -48,6 +71,7 @@ func AddHost(address, keypath, username string) error {
 			return fmt.Errorf("Host [%s] has no key specified", address)
 		}
 	}
+
 	sshHost.ClientConfig = &ssh.ClientConfig{User: sshHost.User, Auth: keys, HostKeyCallback: ssh.InsecureIgnoreHostKey()}
 
 	Hosts = append(Hosts, sshHost)
@@ -55,7 +79,7 @@ func AddHost(address, keypath, username string) error {
 	return nil
 }
 
-// ImportHostsFromDeployment - This will import a list of hosts from a file
+// ImportHostsFromDeployment - This will parse a deployment (either file or HTTP post)
 func ImportHostsFromDeployment(config []byte) error {
 
 	var deployment server.DeploymentConfigurationFile
@@ -76,11 +100,15 @@ func ImportHostsFromDeployment(config []byte) error {
 		if err != nil {
 			return err
 		}
+	} else {
+		log.Debugln("No global configuration has been loaded, will default to local users keys")
 	}
 
 	// Find a global username to use, in place of an empty config
 	if deployment.GlobalServerConfig.Username != "" {
 		cachedUsername = deployment.GlobalServerConfig.Username
+	} else {
+		log.Debugf("No global configuration has been loaded, default to user [%s]", cachedUsername)
 	}
 
 	// Parse the deployments
@@ -117,6 +145,15 @@ func ImportHostsFromDeployment(config []byte) error {
 	}
 
 	return nil
+}
+
+// findDefaultKey - This will look in the users $HOME/.ssh/ for a key to add
+func findDefaultKey() (ssh.AuthMethod, error) {
+	home, err := homedir.Dir()
+	if err != nil {
+		return nil, err
+	}
+	return findPrivateKey(fmt.Sprintf("%s/.ssh/id_rsa", home))
 }
 
 // readKeyFile - Reads a public key from a file
