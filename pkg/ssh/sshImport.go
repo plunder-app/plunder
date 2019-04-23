@@ -36,7 +36,7 @@ func init() {
 
 	cachedGlobalKey, err = findDefaultKey()
 	if err != nil {
-		log.Warnf("Failed to find default key, if this is overridden by a deployment configuration this error can be ignored")
+		log.Warnf("Failed to find default ssh key, if this is overridden by a deployment configuration this error can be ignored")
 	}
 }
 
