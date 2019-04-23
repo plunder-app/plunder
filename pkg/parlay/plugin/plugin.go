@@ -21,10 +21,13 @@ func init() {
 }
 
 // Find plugins returns an array of all .plugin files
-func findPlugins(pluginDir string) []string {
+func findPlugins(pluginDir string) ([]string, error) {
 	var plugins []string
 	// This function will look for all files in a specified directory (defaults to PWD/plugin)
-	filepath.Walk(pluginDir, func(path string, f os.FileInfo, _ error) error {
+	filepath.Walk(pluginDir, func(path string, f os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if !f.IsDir() {
 			if filepath.Ext(path) == ".plugin" {
 				absPath, _ := filepath.Abs(path)
@@ -34,7 +37,7 @@ func findPlugins(pluginDir string) []string {
 		}
 		return nil
 	})
-	return plugins
+	return plugins, nil
 }
 
 func findFunctionInPlugin(pluginPath, functionName string) (plugin.Symbol, error) {
@@ -57,26 +60,30 @@ func findFunctionInPlugin(pluginPath, functionName string) (plugin.Symbol, error
 
 func init() {
 
-	pluginList := findPlugins("./plugin")
-	log.Debugf("Found [%d] plugins", len(pluginList))
-	for x := range pluginList {
-		symbol, err := findFunctionInPlugin(pluginList[x], "ParlayActionList")
-		if err != nil {
-			log.Errorf("%v", err)
-			continue
-		}
+	pluginList, err := findPlugins("./plugin")
+	if err != nil {
+		log.Errorf("%v", err)
+	} else {
+		log.Debugf("Found [%d] plugins", len(pluginList))
+		for x := range pluginList {
+			symbol, err := findFunctionInPlugin(pluginList[x], "ParlayActionList")
+			if err != nil {
+				log.Errorf("%v", err)
+				continue
+			}
 
-		pluginExec, ok := symbol.(func() []string)
-		if !ok {
-			log.Errorf("Unable to read functions from Plugin [%s]", pluginList[x])
-			continue
-		}
+			pluginExec, ok := symbol.(func() []string)
+			if !ok {
+				log.Errorf("Unable to read functions from Plugin [%s]", pluginList[x])
+				continue
+			}
 
-		actions := pluginExec()
+			actions := pluginExec()
 
-		for z := range actions {
-			// This will give us a mapping of "action" => plugin
-			pluginCache[actions[z]] = pluginList[x]
+			for z := range actions {
+				// This will give us a mapping of "action" => plugin
+				pluginCache[actions[z]] = pluginList[x]
+			}
 		}
 	}
 }
@@ -84,22 +91,26 @@ func init() {
 //ListPlugins -
 func ListPlugins() {
 
-	pluginList := findPlugins("./plugin")
-	log.Debugf("Found [%d] plugins", len(pluginList))
-	for x := range pluginList {
-		symbol, err := findFunctionInPlugin(pluginList[x], "ParlayPluginInfo")
-		if err != nil {
-			log.Errorf("%v", err)
-			continue
-		}
+	pluginList, err := findPlugins("./plugin")
+	if err != nil {
+		log.Errorf("%v", err)
+	} else {
+		log.Debugf("Found [%d] plugins", len(pluginList))
+		for x := range pluginList {
+			symbol, err := findFunctionInPlugin(pluginList[x], "ParlayPluginInfo")
+			if err != nil {
+				log.Errorf("%v", err)
+				continue
+			}
 
-		pluginExec, ok := symbol.(func() string)
-		if !ok {
-			log.Errorf("Unable to read functions from Plugin [%s]", pluginList[x])
-			continue
+			pluginExec, ok := symbol.(func() string)
+			if !ok {
+				log.Errorf("Unable to read functions from Plugin [%s]", pluginList[x])
+				continue
+			}
+			sanitizedPath := filepath.Base(pluginList[x])
+			fmt.Printf("%s\t%s\n", sanitizedPath, pluginExec())
 		}
-		sanitizedPath := filepath.Base(pluginList[x])
-		fmt.Printf("%s\t%s\n", sanitizedPath, pluginExec())
 	}
 }
 
