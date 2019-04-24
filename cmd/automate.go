@@ -191,9 +191,11 @@ var plunderAutomateSSH = &cobra.Command{
 		}
 
 		// Add a host from the override flags
-		err := ssh.AddHost(*addressSSH, *keypathSSH, *usernameSSH)
-		if err != nil {
-			log.Fatalf("%v", err)
+		if *addressSSH != "" {
+			err := ssh.AddHost(*addressSSH, *keypathSSH, *usernameSSH)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
 		}
 
 		// If there are zero hosts in the ssh Host array then we have no authentication information
@@ -377,9 +379,11 @@ var plunderAutomateUI = &cobra.Command{
 		}
 
 		// Add a host from the override flags
-		err := ssh.AddHost(*addressSSH, *keypathSSH, *usernameSSH)
-		if err != nil {
-			log.Fatalf("%v", err)
+		if *addressSSH != "" {
+			err := ssh.AddHost(*addressSSH, *keypathSSH, *usernameSSH)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
 		}
 
 		// If there are zero hosts in the ssh Host array then we have no authentication information
@@ -388,7 +392,7 @@ var plunderAutomateUI = &cobra.Command{
 			log.Fatalf("No Deployment information imported")
 		}
 
-		err = newMap.DeploySSH(*logFile)
+		err := newMap.DeploySSH(*logFile)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
