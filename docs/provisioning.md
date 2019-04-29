@@ -2,13 +2,19 @@
 
 The provisioning works by running remote commands or uploading/downloading files to a remote system, in order for it to be configured correctly. A parsing engine called "parlay" was written in order to provide repeatable scripting to ease deployments.
 
-### Example deployment script
+A Deployment map can contain multiple **deployments**, which in turn will contain one or more **actions** that will be performed on one or more **hosts**.
+
+Also a deployment map can be parsed as either **JSON** or as **YAML** (yaml being somewhat easier to read as a human and creating much smaller files).
+
+### Example deployment map
 
 This script below (for offline installations) will upload a tarball containing the docker packages and then install them on all remote systems listed under `hosts`.
 
 **Note** the tarball was created by `apt-get download docker-ce=18.06.1~ce~3-0~ubuntu; tar -cvzf docker_pkg.tar.gz ./docker-ce_18.06.1~ce~3-0~ubuntu_amd64.deb`
 
-```
+#### JSON Example
+
+```json
 {
 	"deployments": [
 		{
@@ -32,7 +38,7 @@ This script below (for offline installations) will upload a tarball containing t
 					"type": "command",
 					"command": "tar -C /tmp -xvzf /tmp/docker_pkg.tar.gz"
 				},
-             {
+        {
 					"name": "Install Docker packages",
 					"type": "command",
 					"command": "dpkg -i /tmp/docker/*",
@@ -44,50 +50,37 @@ This script below (for offline installations) will upload a tarball containing t
 }
                                 
 ```
-The above example covers simple usage of `uploading` and `command` usage.. there are some custom actions to ease Kubernetes deployment (with more coming).
+#### YAML Example
 
-## ETCD cluster deployment
-
-**NOTE:** A previous deployment or an action is needed to ensure that `kubectl`, `kubeadm` and `kubectl` are installed on the `hosts`. Also if these hosts aren't internet facing, then an etcd container image will be needed pushing to the hosts (again this can be done through a different deployment or through additional actions in the deployment below.
-
-```
-{
-	"deployments": [
-		{
-			"name": "Provision initial etcd cluster",
-			"parallel": false,
-			"sessions": 0,
-			"hosts": [
-				"192.168.1.3"
-			],
-			"actions": [
-				{
-					"name": "Certificate provisioning",
-					"type": "kubeadm/etcd",
-					"etcd" : {
-						"hostname1" : "etcd01",
-						"hostname2" : "etcd02",
-						"hostname3" : "etcd03",
-						"address1" : "192.168.1.3",
-						"address2" : "192.168.1.4",
-						"address3" : "192.168.1.5",
-						"initCa" : false
-					}
-				}
-			]
-		}
-	]
-}
+```yaml
+deployments:
+- actions:
+  - destination: /tmp/docker_pkg.tar.gz
+    name: Upload Docker Packages
+    source: ./docker_pkg.tar.gz
+    timeout: 0
+    type: upload
+  - command: tar -C /tmp -xvzf /tmp/docker_pkg.tar.gz
+    name: Extract Docker packages
+    timeout: 0
+    type: command
+  - command: dpkg -i /tmp/docker/*
+    commandSudo: root
+    name: Install Docker packages
+    timeout: 0
+    type: command
+  hosts:
+  - 192.168.1.3
+  - 192.168.1.4
+  - 192.168.1.5
+  name: Upload Docker Packages
+  parallel: false
+  parallelSessions: 0
 ```
 
-The action `type` of `kubeadm/etcd` will automate the provisioning of all of the certificates required along with building the correct `kubeadmcfg.yaml` needed for the etcd cluster to be provisioned correctly.
+The above example only covers simple usage of `uploading` and `command` usages.
 
-The `initCa` should be set to `true` in the event that a new certificate authority is required.
 
-It will finally download all of the certificates for `etcd02` and `etcd03` in a tarballs to the machine where `plunder` is running. 
-
-An additional deployment would then `upload` these tarballs to the correct hosts and for example
-run the command `kubeadm init phase etcd local --config=/tmp/192.168.1.4/kubeadmcfg.yaml`.
 
 ## Usage
 

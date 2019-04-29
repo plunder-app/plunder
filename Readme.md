@@ -5,19 +5,24 @@ The complete tool for finding kubernetes gold amongst bits of bare-metal!
 
 ![Plunder Captain](./image/plunder_captain.png)
 
-Plunder is a single-binary service that provides the following services:
+Plunder is a single-binary application that is all designed in order to make the provisioning of servers, platforms and applications easier. 
 
-- `DHCP`
-- `TFTP` 
-- `HTTP`
-- `OS Provisioning`
-- `Remote command execution`
-- `Scripting engine`
+It provides a provisioning service based upon:
 
-This combined functionality provides the capability to bootstrap bare-metal (and virtual) servers, deploy an operating system through:
+- `DHCP` - Allocating an IP addressing and pointing to a TFTP server
+- `TFTP` - Bootstrapping an Operating system install (uses iPXE)
+- `HTTP` - Provides a services where the bootstrap can pull the components needed for the OS install.
 
-- Ubuntu/Debian preseed
-- CentOS kickstart (still WIP)
+An operating system can be easily performed using either **preseed** or **kickstart**, alternatively custom kernels and init ramdisks can be specified to be used based upon Mac address.
+
+
+
+Further more once the operating system has been provisioned there are usually post-deployment tasks in order to complete an installation. Plunder has the capability to do the following:
+
+- `Remote command execution` - Over SSH (key configured above)
+- `Scripting engine` - A JSON/YAML language that also supports plugins to extend the capablities of the automation engine.
+
+A small repository of existing deployment maps has been created https://github.com/plunder-app/maps
 
 ## Getting Plunder
 
@@ -52,8 +57,16 @@ PXE booting provides very little feedback when things aren't working, but usuall
 
 # Roadmap
 
-Fix the templating of Preseed and Kickstart files, automate the entire process end-to-end. May have `plunder` keep all configurations internally and use http handlers to expose them as urls to the boot loader (TBD)
+- Ability to automate deployments over VMware VMTools
 
-TL;DR make better.
+- Windows deployments
+
+- Tidier logging
+
+- Stability enhancements
+
+- Additional plugins
+
+  
 
 Created on 2018-11-14 17:30:01

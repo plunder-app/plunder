@@ -5,27 +5,46 @@ A `./plunder config deployment > deployment.json` will create a blank deployment
 
 A configured deployment should resemble something like the example below:
 
-```
+```yaml
 {
 	"globalConfig": {
-		"gateway": "192.168.1.1",
-		"subnet": "255.255.255.0",
-		"nameserver": "8.8.8.8",
-		"username": "ubuntu",
-		"password": "secret",
-		"repoaddress": "192.168.1.1",
-		"mirrordir": "/ubuntu",
-		"sshkeypath": "/home/dan/.ssh/id_rsa.pub",
-		"packages": "openssh-server iptables libltdl7"
+		"gateway": "",
+		"address": "",
+		"subnet": "",
+		"nameserver": "",
+		"hostname": "",
+		"ntpserver": "",
+		"adapter": "",
+		"swapEnabled": false,
+		"username": "",
+		"password": "",
+		"repoaddress": "",
+		"mirrordir": "",
+		"sshkeypath": "",
+		"packages": ""
 	},
 	"deployments": [
 		{
-			"mac": "00:50:56:a3:64:a2",
-			"deployment": "preseed",
+			"mac": "",
+			"kernelPath": "",
+			"initrdPath": "",
+			"cmdline": "",
+			"deployment": "",
 			"config": {
-				"address": "192.168.1.3",
-				"hostname": "etcd01",
-				[...]
+				"gateway": "",
+				"address": "",
+				"subnet": "",
+				"nameserver": "",
+				"hostname": "",
+				"ntpserver": "",
+				"adapter": "",
+				"swapEnabled": false,
+				"username": "",
+				"password": "",
+				"repoaddress": "",
+				"mirrordir": "",
+				"sshkeypath": "",
+				"packages": ""
 			}
 		}
 	]
@@ -38,11 +57,57 @@ The *globalConfig* is the configuration that is inherited by any of the deployme
 
 Placing the same information into an actual deployment will **override** the configuration inherited from the `globalConfig`.
 
+### Shared Configuration overview
+
+- `gateway` - The gateway a server will be configured to use as default router
+- `subnet` - The network range server will be configured to use
+- `nameserver` - DNS server to resolve hostnames
+- `ntpserver` - The address of a timeserver
+- `adapter` - Which specific adapter will be configured
+- `swapEnabled` - Build the Operating system without swap being created
+- `username` - A default user that will be created
+- `password` - A password for the above user
+- `repoaddress` - The hostname/ip address of the server where the OS packages reside
+- `sshkeypath` - The path to an ssh key that will be added to the image for authenticating
+
+
+
+### Deployment specific
+
+- `address` - A unique network address that will be added to the server
+- `hostname` - A unique hostname to be added to the provisioned server
+
+
+
+As mentioned above, a lot of fields can be ignored and the entry from the `globalConfig` will be used.
+
+
+
+### Deployments
+
+The deployment contains things that will make a server unique!
+
+- `mac` - The unqique HW mac address of a server to configure
+
+- `kernelPath` - If a specific kernel should be used (for things like LinuxKit)
+
+- `initrdPath` - If a specific init ramdisk should be used
+
+- `cmdline` - Any arguments that should be passed to the kernel ramdisk
+
+  
+
 The `deployment` specifies how the server will be provisioned, there are three options:
 
 - `preseed` Ubuntu/Debian pressed deployment
 - `kickstart` CentOS/RHEL deployment
 - `reboot` This is for servers that need to be kept on a reboot loop.
+
+
+
+The remaining `config` allows updates or overrides to the global confgiguration detailed above.
+
+ 
 
 ### Online updates of deployment configuration
 The webserver exposes a `/deployment` end point that can be used to provide an online update of the configuration, this has the following benefits:
