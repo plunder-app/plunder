@@ -1,4 +1,4 @@
-###  Actions
+#  Actions
 
 When a deployment is executed against a host(s) typically one or more **actions** will be performed against that host in order to configure as expected. This document details the **built-in** actions, however to extend the functionality of [plunder](github.com/plunder-app/plunder) there is the capability to extend the available actions through the use of plugins. 
 
