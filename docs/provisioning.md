@@ -12,7 +12,7 @@ This script below (for offline installations) will upload a tarball containing t
 
 **Note** the tarball was created by `apt-get download docker-ce=18.06.1~ce~3-0~ubuntu; tar -cvzf docker_pkg.tar.gz ./docker-ce_18.06.1~ce~3-0~ubuntu_amd64.deb`
 
-#### JSON Example
+#### JSON Example
 
 ```json
 {
