@@ -5,7 +5,7 @@ A `./plunder config deployment > deployment.json` will create a blank deployment
 
 A configured deployment should resemble something like the example below:
 
-```yaml
+```json
 {
 	"globalConfig": {
 		"gateway": "",
