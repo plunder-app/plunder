@@ -73,7 +73,7 @@ The below example will create a command Key under the name `joinKey` (JSON forma
 
 ```json
 {
-	"name" : "Generate a join token",
+  "name" : "Generate a join token",
   "type" : "command",
   "command" : "kubeadm token create --print-join-command 2>/dev/null",
   "commandSaveAsKey" : "joinKey" 
