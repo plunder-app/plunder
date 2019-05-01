@@ -6,7 +6,7 @@ TARGET := plunder
 .DEFAULT_GOAL: $(TARGET)
 
 # These will be provided to the target
-VERSION := 0.4
+VERSION := 0.4.5
 BUILD := `git rev-parse HEAD`
 
 # Operating System Default (LINUX)
