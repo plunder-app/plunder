@@ -16,6 +16,9 @@ type Restore struct {
 	Hosts      []string `json:"hosts"`      // Restart operation on a number of hosts
 }
 
+// restore is an interal struct used for execution restoration
+var restore Restore
+
 const restoreFile = ".parlay_restore"
 
 // restoreFilePath will build a path where a file will be read/writted
