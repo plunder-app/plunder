@@ -68,9 +68,10 @@ func init() {
 	plunderAutomatePlugins.AddCommand(plunderAutomatePluginActions)
 	plunderAutomatePlugins.AddCommand(plunderAutomatePluginTest)
 
-	// Automate SSH Flags
+	// Automate Subcommands
 	plunderAutomate.AddCommand(plunderAutomateValidate)
 	plunderAutomate.AddCommand(plunderAutomateSSH)
+	plunderAutomate.AddCommand(plunderAutomateVMware)
 	plunderAutomate.AddCommand(plunderAutomatePlugins)
 	plunderAutomate.AddCommand(plunderAutomateUI)
 
@@ -288,6 +289,46 @@ var plunderAutomateValidate = &cobra.Command{
 		} else {
 			cmd.Help()
 			log.Fatalln("No Deployment map specified")
+		}
+	},
+}
+
+// plunderAutomateVMware
+var plunderAutomateVMware = &cobra.Command{
+	Use:   "vmw",
+	Short: "Automate over VMware tools protocol",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+		//var newMap *parlay.TreasureMap
+		if *mapFile != "" {
+			log.Infof("Reading deployment configuration from [%s]", *mapFile)
+			//var err error
+			var deployment parlay.TreasureMap
+			// // Check the actual path from the string
+			if _, err := os.Stat(*mapFile); !os.IsNotExist(err) {
+				b, err := ioutil.ReadFile(*mapFile)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+				deployment, err = parseMapFile(b)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+				// If a specific deployment is being used then find it's details
+				if *deploymentName != "" {
+					log.Infof("Looking for deployment [%s]", *deploymentName)
+
+					err = deployment.FindDeployment(*deploymentName, *actionName, *host, *logFile, *resume)
+				} else {
+					// Parse the entire deployment
+					err = deployment.DeploySSH(*logFile)
+				}
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+			} else {
+				log.Fatalf("%v", err)
+			}
 		}
 	},
 }
