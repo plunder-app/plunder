@@ -18,6 +18,11 @@ var preseed, kickstart, anyBoot, reboot string
 //
 var httpPaths map[string]string
 
+//APIPath returns the URI that is used to interact with the plunder API
+func APIPath() string {
+	return "/deployment"
+}
+
 func (c *BootController) serveHTTP() error {
 	// Set this so that other functions that build iPXE files can populate the http server details
 	preseed = utils.IPXEPreeseed(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
@@ -41,7 +46,7 @@ func (c *BootController) serveHTTP() error {
 
 	// Update Endpoints - allow the update of various configuration without restarting
 	//http.HandleFunc("/config", kickstartHandler) // TODO
-	http.HandleFunc("/deployment", deploymentHandler)
+	http.HandleFunc(APIPath(), deploymentHandler)
 
 	return http.ListenAndServe(":80", nil)
 }
