@@ -24,10 +24,30 @@ func APIPath() string {
 }
 
 func (c *BootController) serveHTTP() error {
-	// Set this so that other functions that build iPXE files can populate the http server details
-	preseed = utils.IPXEPreeseed(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
-	kickstart = utils.IPXEKickstart(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
-	anyBoot = utils.IPXEAnyBoot(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
+
+	// Find the default configuration
+	defaultConfig := c.findBootConfig("default")
+	if defaultConfig != nil {
+		preseed = utils.IPXEPreeseed(*c.HTTPAddress, *defaultConfig.Kernel, *defaultConfig.Initrd, *defaultConfig.Cmdline)
+	} else {
+		log.Warnf("Found [%d] configurations and no \"default\" configuration", len(c.BootConfigs))
+	}
+
+	// If a preeseed configuration has been configured then add it, and create a HTTP endpoint
+	preeseedConfig := c.findBootConfig("preeseed")
+	if preeseedConfig != nil {
+		preseed = utils.IPXEPreeseed(*c.HTTPAddress, *preeseedConfig.Kernel, *preeseedConfig.Initrd, *preeseedConfig.Cmdline)
+		http.HandleFunc("/preseed.ipxe", preseedHandler)
+	}
+
+	// If a kickstart configuration has been configured then add it, and create a HTTP endpoint
+	kickstartConfig := c.findBootConfig("kickstart")
+	if kickstartConfig != nil {
+		preseed = utils.IPXEPreeseed(*c.HTTPAddress, *kickstartConfig.Kernel, *kickstartConfig.Initrd, *kickstartConfig.Cmdline)
+		http.HandleFunc("/kickstart.ipxe", kickstartHandler)
+	}
+
+	//anyBoot = utils.IPXEAnyBoot(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
 	reboot = utils.IPXEReboot()
 
 	docroot, err := filepath.Abs("./")
@@ -39,9 +59,7 @@ func (c *BootController) serveHTTP() error {
 	http.Handle("/", http.FileServer(http.Dir(docroot)))
 
 	http.HandleFunc("/health", HealthCheckHandler)
-	http.HandleFunc("/preseed.ipxe", preseedHandler)
 	http.HandleFunc("/reboot.ipxe", rebootHandler)
-	http.HandleFunc("/kickstart.ipxe", kickstartHandler)
 	http.HandleFunc("/anyboot.ipxe", anyBootHandler)
 
 	// Update Endpoints - allow the update of various configuration without restarting

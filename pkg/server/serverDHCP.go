@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// lease defines a lease that is allocated to a client
 type lease struct {
 	nic    string    // Client's Addr
 	expiry time.Time // When the lease expires
