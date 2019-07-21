@@ -17,7 +17,7 @@ import (
 var controller server.BootController
 var dhcpSettings server.DHCPSettings
 
-var gateway, dns, startAddress, configPath, deploymentPath *string
+var gateway, dns, startAddress, configPath, deploymentPath, defaultKernel, defaultInitrd, defaultCmdLine *string
 
 var leasecount *int
 
@@ -34,7 +34,6 @@ func init() {
 	// Prepopulate the flags with the found nic information
 	controller.AdapterName = PlunderServer.Flags().String("adapter", nicName, "Name of adapter to use e.g eth0, en0")
 
-	controller.DHCPAddress = PlunderServer.Flags().String("addressDHCP", nicAddr, "Address to advertise leases from, ideally will be the IP address of --adapter")
 	controller.HTTPAddress = PlunderServer.Flags().String("addressHTTP", nicAddr, "Address of HTTP to use, if blank will default to [addressDHCP]")
 	controller.TFTPAddress = PlunderServer.Flags().String("addressTFTP", nicAddr, "Address of TFTP to use, if blank will default to [addressDHCP]")
 
@@ -45,15 +44,16 @@ func init() {
 	controller.PXEFileName = PlunderServer.Flags().String("iPXEPath", "undionly.kpxe", "Path to an iPXE bootloader")
 
 	// DHCP Settings
-	controller.DHCPGateway = PlunderServer.Flags().String("gateway", nicAddr, "Address of Gateway to use, if blank will default to [addressDHCP]")
-	controller.DHCPDNS = PlunderServer.Flags().String("dns", nicAddr, "Address of DNS to use, if blank will default to [addressDHCP]")
-	controller.DHCPLeasePool = PlunderServer.Flags().Int("leasecount", 20, "Amount of leases to advertise")
-	controller.DHCPStartAddress = PlunderServer.Flags().String("startAddress", "", "Start advertised address [REQUIRED]")
+	controller.DHCPConfig.DHCPAddress = PlunderServer.Flags().String("addressDHCP", nicAddr, "Address to advertise leases from, ideally will be the IP address of --adapter")
+	controller.DHCPConfig.DHCPGateway = PlunderServer.Flags().String("gateway", nicAddr, "Address of Gateway to use, if blank will default to [addressDHCP]")
+	controller.DHCPConfig.DHCPDNS = PlunderServer.Flags().String("dns", nicAddr, "Address of DNS to use, if blank will default to [addressDHCP]")
+	controller.DHCPConfig.DHCPLeasePool = PlunderServer.Flags().Int("leasecount", 20, "Amount of leases to advertise")
+	controller.DHCPConfig.DHCPStartAddress = PlunderServer.Flags().String("startAddress", "", "Start advertised address [REQUIRED]")
 
 	//HTTP Settings
-	controller.Kernel = PlunderServer.Flags().String("kernel", "", "Path to a kernel to boot from")
-	controller.Initrd = PlunderServer.Flags().String("initrd", "", "Path to an initrd to boot from")
-	controller.Cmdline = PlunderServer.Flags().String("cmdline", "", "Additional command line to pass to the kernel")
+	defaultKernel = PlunderServer.Flags().String("kernel", "", "Path to a kernel to set as the *default* kernel")
+	defaultInitrd = PlunderServer.Flags().String("initrd", "", "Path to a ramdisk to set as the *default* ramdisk")
+	defaultKernel = PlunderServer.Flags().String("cmdline", "", "Additional command line to pass to the *default* kernel")
 
 	// Config File
 	configPath = PlunderServer.Flags().String("config", "", "Path to a plunder server configuration")
@@ -108,11 +108,11 @@ var PlunderServer = &cobra.Command{
 		}
 
 		// If we've enabled DHCP, then we need to ensure a start address for the range is populated
-		if *controller.EnableDHCP && *controller.DHCPStartAddress == "" {
+		if *controller.EnableDHCP && *controller.DHCPConfig.DHCPStartAddress == "" {
 			log.Fatalln("A DHCP Start address is required")
 		}
 
-		if *controller.DHCPLeasePool == 0 {
+		if *controller.DHCPConfig.DHCPLeasePool == 0 {
 			log.Fatalln("At least one available lease is required")
 		}
 
