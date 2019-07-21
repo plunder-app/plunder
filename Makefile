@@ -37,6 +37,12 @@ install:
 	@echo Building and Installing project
 	@go install $(LDFLAGS)
 
+install_plugin:
+	@make plugins
+	@echo Installing plugins
+	-mkdir ~/plugin
+	-cp -pr ./plugin/*.plugin ~/plugin/
+
 uninstall: clean
 	@rm -f $$(which ${TARGET})
 
@@ -51,7 +57,7 @@ docker:
 	@echo New Docker image created
 
 plugins:
-	@echo building plugins
+	@echo Building plugins
 	@go build -buildmode=plugin -o ./plugin/example.plugin ./plugin/example.go
 	@go build -buildmode=plugin -o ./plugin/kubeadm.plugin ./plugin/kubeadm/*
 	@go build -buildmode=plugin -o ./plugin/docker.plugin ./plugin/docker/*
@@ -65,7 +71,6 @@ release_darwin:
 	@rm ./plugin/*.plugin
 
 release_linux:
-
 	@echo Creating Linux Build
 	@GOOS=linux make build
 	@GOOS=linux make plugins
