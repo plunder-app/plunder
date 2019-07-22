@@ -15,12 +15,20 @@ import (
 // These strings container the generated iPXE details that are passed to the bootloader when the correct url is requested
 var preseed, kickstart, anyBoot, reboot string
 
-//
+// This stores the mapping for a mac adress key to it's pxe data
 var httpPaths map[string]string
 
-//APIPath returns the URI that is used to interact with the plunder API
-func APIPath() string {
+// controller Pointer for the config API endpoint handler
+var controller *BootController
+
+//DeploymentAPIPath returns the URI that is used to interact with the plunder Deployment API
+func DeploymentAPIPath() string {
 	return "/deployment"
+}
+
+//ConfigAPIPath returns the URI that is used to interact with the plunder Configuration API
+func ConfigAPIPath() string {
+	return "/config"
 }
 
 func (c *BootController) serveHTTP() error {
@@ -62,9 +70,12 @@ func (c *BootController) serveHTTP() error {
 	http.HandleFunc("/reboot.ipxe", rebootHandler)
 	http.HandleFunc("/anyboot.ipxe", anyBootHandler)
 
-	// Update Endpoints - allow the update of various configuration without restarting
-	//http.HandleFunc("/config", kickstartHandler) // TODO
-	http.HandleFunc(APIPath(), deploymentHandler)
+	// API Endpoints - allow the update of various configuration without restarting
+	http.HandleFunc(DeploymentAPIPath(), deploymentHandler)
+
+	// Set the pointer to the boot config
+	controller = c
+	http.HandleFunc(ConfigAPIPath(), configHandler)
 
 	return http.ListenAndServe(":80", nil)
 }
@@ -120,7 +131,7 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 
 func deploymentHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Content-Type", "application/json")
 	switch r.Method {
 	case "GET":
 		b, err := json.MarshalIndent(DeploymentConfig, "", "\t")
@@ -139,6 +150,31 @@ func deploymentHandler(w http.ResponseWriter, r *http.Request) {
 				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
 				io.WriteString(w, errorHTML)
 			}
+		}
+	default:
+		// Unknown HTTP Method for this endpoint
+	}
+}
+
+func configHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	switch r.Method {
+	case "GET":
+		b, err := json.MarshalIndent(controller, "", "\t")
+		if err != nil {
+			io.WriteString(w, "<b>Unable to Parse configuration</b>")
+		}
+		io.WriteString(w, string(b))
+	case "POST":
+		if b, err := ioutil.ReadAll(r.Body); err == nil {
+			if err != nil {
+				errorHTML := fmt.Sprintf("<b>Unable to Parse configuration</b>\n Error: %s", err.Error())
+				io.WriteString(w, errorHTML)
+			}
+
+			// TODO - (thebsdbox) add updating of BootController
+
 		}
 	default:
 		// Unknown HTTP Method for this endpoint
