@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/ghodss/yaml"
 	"io/ioutil"
+	"net"
 	"os"
 
 	"github.com/plunder-app/plunder/pkg/utils"
@@ -30,6 +33,14 @@ func init() {
 	if err != nil {
 		log.Warnf("%v", err)
 	}
+	//
+	ip := net.ParseIP(nicAddr)
+	ip = ip.To4()
+	if ip == nil {
+		log.Fatalf("error parsing IP address of adapter [%s]", nicName)
+	}
+
+	ip[3]++
 
 	// Prepopulate the flags with the found nic information
 	controller.AdapterName = PlunderServer.Flags().String("adapter", nicName, "Name of adapter to use e.g eth0, en0")
@@ -48,7 +59,7 @@ func init() {
 	controller.DHCPConfig.DHCPGateway = PlunderServer.Flags().String("gateway", nicAddr, "Address of Gateway to use, if blank will default to [addressDHCP]")
 	controller.DHCPConfig.DHCPDNS = PlunderServer.Flags().String("dns", nicAddr, "Address of DNS to use, if blank will default to [addressDHCP]")
 	controller.DHCPConfig.DHCPLeasePool = PlunderServer.Flags().Int("leasecount", 20, "Amount of leases to advertise")
-	controller.DHCPConfig.DHCPStartAddress = PlunderServer.Flags().String("startAddress", "", "Start advertised address [REQUIRED]")
+	controller.DHCPConfig.DHCPStartAddress = PlunderServer.Flags().String("startAddress", ip.String(), "Start advertised address [REQUIRED]")
 
 	//HTTP Settings
 	defaultKernel = PlunderServer.Flags().String("kernel", "", "Path to a kernel to set as the *default* kernel")
@@ -97,7 +108,13 @@ var PlunderServer = &cobra.Command{
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
-				json.Unmarshal(configFile, &controller)
+
+				// Read the controller from either a yaml or json format
+				controller, err = parseControllerFile(configFile)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+
 			} else {
 				log.Fatalf("Unable to open [%s]", *configPath)
 			}
@@ -119,4 +136,26 @@ var PlunderServer = &cobra.Command{
 		controller.StartServices(deployment)
 		return
 	},
+}
+
+func parseControllerFile(b []byte) (controller server.BootController, err error) {
+
+	jsonBytes, err := yaml.YAMLToJSON(b)
+	if err == nil {
+		// If there were no errors then the YAML => JSON was succesful, no attempt to unmarshall
+		err = json.Unmarshal(jsonBytes, &controller)
+		if err != nil {
+			return controller, fmt.Errorf("Unable to parse [%s] as either yaml or json", *mapFile)
+		}
+
+	} else {
+		// Couldn't parse the yaml to JSON
+		// Attempt to parse it as JSON
+		err = json.Unmarshal(b, &controller)
+		if err != nil {
+			return controller, fmt.Errorf("Unable to parse [%s] as either yaml or json", *mapFile)
+		}
+	}
+	return controller, nil
+
 }

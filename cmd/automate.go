@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/plunder-app/plunder/pkg/server"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -171,7 +172,7 @@ var plunderAutomateSSH = &cobra.Command{
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
-			u.Path = "/deployment"
+			u.Path = server.DeploymentAPIPath()
 
 			resp, err := http.Get(u.String())
 			if err != nil {

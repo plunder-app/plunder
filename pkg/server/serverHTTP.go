@@ -167,7 +167,7 @@ func configHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		io.WriteString(w, string(b))
 	case "POST":
-		if b, err := ioutil.ReadAll(r.Body); err == nil {
+		if _, err := ioutil.ReadAll(r.Body); err == nil {
 			if err != nil {
 				errorHTML := fmt.Sprintf("<b>Unable to Parse configuration</b>\n Error: %s", err.Error())
 				io.WriteString(w, errorHTML)
