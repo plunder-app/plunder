@@ -1,10 +1,8 @@
 package server
 
-// This is needed by other functions to build strings
-var httpAddress string
+// TYPE DEFINITIONS Below
 
 // BootController contains the settings that define how the remote boot will
-// behave
 type BootController struct {
 	AdapterName *string `json:"adapter"` // A physical adapter to bind to e.g. en0, eth0
 
@@ -23,7 +21,7 @@ type BootController struct {
 	PXEFileName *string `json:"pxePath"` // undionly.kpxe
 
 	// Boot Configuration
-	BootConfigs []bootConfig `json:"bootConfigs"` // Array of kernel configurations
+	BootConfigs []BootConfig `json:"bootConfigs"` // Array of kernel configurations
 
 	handler *DHCPSettings
 }
@@ -36,34 +34,27 @@ type dhcpConfig struct {
 	DHCPDNS          *string `json:"nameserverDHCP"` // DNS server to advertise
 }
 
-type bootConfig struct {
-	ConfigName *string `json:"configName"`
-	// iPXE file settings - exported
-	Kernel  *string `json:"kernelPath"`
-	Initrd  *string `json:"initrdPath"`
-	Cmdline *string `json:"cmdline"`
-}
-
-// DeploymentConfig - contains an accessible "current" configuration
-var DeploymentConfig DeploymentConfigurationFile
-
-// DeploymentConfigurationFile - The bootstraps.Configs is used by other packages to manage use case for Mac addresses
-type DeploymentConfigurationFile struct {
-	GlobalServerConfig HostConfig                 `json:"globalConfig"`
-	Deployments        []DeploymentConfigurations `json:"deployments"`
-}
-
-// DeploymentConfigurations - is used to parse the files containing all server configurations
-type DeploymentConfigurations struct {
-	MAC string `json:"mac"`
-
+// BootConfig defines a named configuration for booting
+type BootConfig struct {
+	ConfigName string `json:"configName"`
 	// iPXE file settings - exported
 	Kernel  string `json:"kernelPath"`
 	Initrd  string `json:"initrdPath"`
 	Cmdline string `json:"cmdline"`
+}
 
-	Deployment string     `json:"deployment"` // Either preseed or kickstart
-	Config     HostConfig `json:"config"`
+// DeploymentConfigurationFile - The bootstraps.Configs is used by other packages to manage use case for Mac addresses
+type DeploymentConfigurationFile struct {
+	GlobalServerConfig HostConfig         `json:"globalConfig"`
+	Configs            []DeploymentConfig `json:"deployments"`
+}
+
+// DeploymentConfig - is used to parse the files containing all server configurations
+type DeploymentConfig struct {
+	MAC        string     `json:"mac"`
+	ConfigName string     `json:"bootConfigName,omitempty"` // To be discovered in the controller BootConfig array
+	ConfigBoot BootConfig `json:"bootConfig,omitempty"`     // Array of kernel configurations
+	ConfigHost HostConfig `json:"config"`
 }
 
 // HostConfig - Defines how a server will be configured by plunder

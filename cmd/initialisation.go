@@ -41,9 +41,15 @@ var plunderServerConfig = &cobra.Command{
 	Short: "Initialise a plunder configuration",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
-
 		// Indent (or pretty-print) the configuration output
-		b, err := json.MarshalIndent(controller, "", "\t")
+		bc := &server.BootConfig{
+			Kernel:     "/kernelPath",
+			Initrd:     "/initPath",
+			Cmdline:    "cmd=options",
+			ConfigName: "default",
+		}
+		server.Controller.BootConfigs = append(server.Controller.BootConfigs, *bc)
+		b, err := json.MarshalIndent(server.Controller, "", "\t")
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -59,7 +65,7 @@ var plunderDeploymentConfig = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 		var configuration server.DeploymentConfigurationFile
-		configuration.Deployments = append(configuration.Deployments, server.DeploymentConfigurations{})
+		configuration.Configs = append(configuration.Configs, server.DeploymentConfig{})
 		// Indent (or pretty-print) the configuration output
 		b, err := json.MarshalIndent(configuration, "", "\t")
 		if err != nil {

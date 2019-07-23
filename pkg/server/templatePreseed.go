@@ -186,9 +186,6 @@ func (config *HostConfig) BuildPreeSeedConfig() string {
 	var key string
 	var err error
 
-	// This will populate anything missing from the global configuration
-	config.PopulateConfiguration()
-
 	if config.SSHKeyPath != "" {
 		key, err = config.ReadKeyFromFile(config.SSHKeyPath)
 		if err != nil {

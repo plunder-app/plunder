@@ -34,45 +34,58 @@ func (config *HostConfig) ReadKeyFromFile(sshKeyPath string) (string, error) {
 	return singleLine, nil
 }
 
-// UpdateConfiguration will read a configuration string and build the iPXE files needed
-func UpdateConfiguration(configFile []byte) error {
+// UpdateControllerConfig will read a configuration string and build the iPXE files needed
+func UpdateControllerConfig(configFile []byte) error {
+
+	// Separate configuration until everything is processes correctly
+	var updateConfig DeploymentConfigurationFile
 
 	log.Infoln("Updating the Deployment Configuration")
-	err := json.Unmarshal(configFile, &DeploymentConfig)
+	err := json.Unmarshal(configFile, &updateConfig)
 	if err != nil {
 		return err
 	}
-	if len(DeploymentConfig.Deployments) == 0 {
-		log.Warnln("No deployment configurations found")
-	}
-	for i := range DeploymentConfig.Deployments {
+
+	log.Debugf("Parsing [%d] Configurations", len(updateConfig.Configs))
+	for i := range updateConfig.Configs {
 		var newConfig, ipxeConfig string
 
 		// We need to move all ":" to "-" to make life a little easier for filesystems and internet standards
-		dashMac := strings.Replace(DeploymentConfig.Deployments[i].MAC, ":", "-", -1)
+		dashMac := strings.Replace(updateConfig.Configs[i].MAC, ":", "-", -1)
 
-		switch DeploymentConfig.Deployments[i].Deployment {
-		case "preseed":
-			// If a kernel and initrd are submitted then Create an .ipxe file
-			if DeploymentConfig.Deployments[i].Kernel != "" && DeploymentConfig.Deployments[i].Initrd != "" {
-				ipxeConfig = utils.IPXEPreeseed(httpAddress, DeploymentConfig.Deployments[i].Kernel, DeploymentConfig.Deployments[i].Initrd, DeploymentConfig.Deployments[i].Cmdline)
-				log.Debugf("Generating ipxeConfig for [%s]", dashMac)
-			}
-			// Build a preseed configuration and write it to disk
-			newConfig = DeploymentConfig.Deployments[i].Config.BuildPreeSeedConfig()
+		// Find the deployment configuration for this host, either custom or inherit from the controller
+		bootConfig := findBootConfigForDeployment(updateConfig.Configs[i])
 
-		case "kickstart":
-			// If a kernel and initrd are submitted then Create an .ipxe file
-			if DeploymentConfig.Deployments[i].Kernel != "" && DeploymentConfig.Deployments[i].Initrd != "" {
-				ipxeConfig = utils.IPXEKickstart(httpAddress, DeploymentConfig.Deployments[i].Kernel, DeploymentConfig.Deployments[i].Initrd, DeploymentConfig.Deployments[i].Cmdline)
-			}
-			// Build a kickstart configuration and write it to disk
-			newConfig = DeploymentConfig.Deployments[i].Config.BuildKickStartConfig()
-
-		default:
-			return fmt.Errorf("Unknown deployment method [%s]", DeploymentConfig.Deployments[i].Deployment)
+		// If there is no deployment configuration under this name return an error
+		if bootConfig == nil {
+			errorString := fmt.Errorf("The configuration for host [%s] uses unknown config [%s]", updateConfig.Configs[i].MAC, updateConfig.Configs[i].ConfigName)
+			return errorString
 		}
 
+		// Ensure this entry has the correct mapping
+		updateConfig.Configs[i].ConfigBoot = *bootConfig
+
+		// This will populate anything missing from the global configuration
+		updateConfig.Configs[i].ConfigHost.PopulateConfiguration()
+
+		// Look for understood config types
+		switch updateConfig.Configs[i].ConfigName {
+		case "preseed":
+			ipxeConfig = utils.IPXEPreeseed(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
+			log.Debugf("Generating preseed ipxeConfig for [%s]", dashMac)
+			newConfig = updateConfig.Configs[i].ConfigHost.BuildPreeSeedConfig()
+
+		case "kickstart":
+			ipxeConfig = utils.IPXEKickstart(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
+			log.Debugf("Generating kickstart ipxeConfig for [%s]", dashMac)
+			newConfig = updateConfig.Configs[i].ConfigHost.BuildKickStartConfig()
+
+		default:
+			log.Debugf("Building configuration for configName [%s]", updateConfig.Configs[i].ConfigBoot.ConfigName)
+			ipxeConfig = utils.IPXEAnyBoot(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
+		}
+
+		// If we've specified an iPXE configuration then we add it
 		if ipxeConfig != "" {
 			path := fmt.Sprintf("/%s.ipxe", dashMac)
 			// Only add handler if one didn't exist before
@@ -80,14 +93,26 @@ func UpdateConfiguration(configFile []byte) error {
 				http.HandleFunc(path, rootHandler)
 			}
 			httpPaths[path] = ipxeConfig
+
 		}
-		path := fmt.Sprintf("/%s.cfg", dashMac)
-		// Only add handler if one didn't exist before
-		if httpPaths[path] == "" {
-			http.HandleFunc(path, rootHandler)
+		if newConfig != "" {
+			path := fmt.Sprintf("/%s.cfg", dashMac)
+			// Only add handler if one didn't exist before
+			if httpPaths[path] == "" {
+				http.HandleFunc(path, rootHandler)
+			}
+			httpPaths[path] = newConfig
 		}
-		httpPaths[path] = newConfig
 	}
+	if len(updateConfig.Configs) == 0 {
+		// No changes, leave as is (with a warning)
+		log.Warnln("No deployment configuration, any existing configuration will remain")
+	} else {
+		// Updated configuration has been parsed, update internal deployment configuration
+		log.Infoln("Updating of deployment configuration complete")
+		Deployments = updateConfig
+	}
+
 	return nil
 }
 
@@ -99,15 +124,15 @@ func FindDeployment(mac string) string {
 		return "anyboot"
 	}
 
-	if len(DeploymentConfig.Deployments) == 0 {
+	if len(Deployments.Configs) == 0 {
 		// No configurations have been loaded
 		log.Warnln("Attempted to perform Mac Address lookup, however no configurations have been loaded")
 		return ""
 	}
-	for i := range DeploymentConfig.Deployments {
-		log.Debugf("Comparing [%s] to [%s]", mac, DeploymentConfig.Deployments[i].MAC)
-		if mac == DeploymentConfig.Deployments[i].MAC {
-			return DeploymentConfig.Deployments[i].Deployment
+	for i := range Deployments.Configs {
+		log.Debugf("Comparing [%s] to [%s]", mac, Deployments.Configs[i].MAC)
+		if mac == Deployments.Configs[i].MAC {
+			return Deployments.Configs[i].ConfigName
 		}
 	}
 	return ""
@@ -119,56 +144,56 @@ func (config *HostConfig) PopulateConfiguration() {
 
 	// Inherit the global Gateway
 	if config.Gateway == "" {
-		config.Gateway = DeploymentConfig.GlobalServerConfig.Gateway
+		config.Gateway = Deployments.GlobalServerConfig.Gateway
 	}
 
 	// Inherit the global Subnet
 	if config.Subnet == "" {
-		config.Subnet = DeploymentConfig.GlobalServerConfig.Subnet
+		config.Subnet = Deployments.GlobalServerConfig.Subnet
 	}
 
 	// Inherit the global Name Server (DNS)
 	if config.NameServer == "" {
-		config.NameServer = DeploymentConfig.GlobalServerConfig.NameServer
+		config.NameServer = Deployments.GlobalServerConfig.NameServer
 	}
 
 	if config.Adapter == "" {
-		config.Adapter = DeploymentConfig.GlobalServerConfig.Adapter
+		config.Adapter = Deployments.GlobalServerConfig.Adapter
 	}
 
 	// REPOSITORY CONFIGURATION
 
 	// Inherit the global Repository address
 	if config.RepositoryAddress == "" {
-		config.RepositoryAddress = DeploymentConfig.GlobalServerConfig.RepositoryAddress
+		config.RepositoryAddress = Deployments.GlobalServerConfig.RepositoryAddress
 	}
 
 	// Inherit the global Repository Mirror directory (typically /ubuntu)
 	if config.MirrorDirectory == "" {
-		config.MirrorDirectory = DeploymentConfig.GlobalServerConfig.MirrorDirectory
+		config.MirrorDirectory = Deployments.GlobalServerConfig.MirrorDirectory
 	}
 
 	// USER CONFIGURATION
 
 	// Inherit the global Username
 	if config.Username == "" {
-		config.Username = DeploymentConfig.GlobalServerConfig.Username
+		config.Username = Deployments.GlobalServerConfig.Username
 	}
 
 	// Inherit the global Password
 	if config.Password == "" {
-		config.Password = DeploymentConfig.GlobalServerConfig.Password
+		config.Password = Deployments.GlobalServerConfig.Password
 	}
 
 	// Inherit the global SSH Key Path
 	if config.SSHKeyPath == "" {
-		config.SSHKeyPath = DeploymentConfig.GlobalServerConfig.SSHKeyPath
+		config.SSHKeyPath = Deployments.GlobalServerConfig.SSHKeyPath
 	}
 
 	// Package Configuration
 
 	// Inherit the global package selection
 	if config.Packages == "" {
-		config.Packages = DeploymentConfig.GlobalServerConfig.Packages
+		config.Packages = Deployments.GlobalServerConfig.Packages
 	}
 }
