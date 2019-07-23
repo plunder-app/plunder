@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"net"
 	"os"
@@ -17,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var controller server.BootController
+//var controller server.BootController
 var dhcpSettings server.DHCPSettings
 
 var gateway, dns, startAddress, configPath, deploymentPath, defaultKernel, defaultInitrd, defaultCmdLine *string
@@ -43,23 +40,23 @@ func init() {
 	ip[3]++
 
 	// Prepopulate the flags with the found nic information
-	controller.AdapterName = PlunderServer.Flags().String("adapter", nicName, "Name of adapter to use e.g eth0, en0")
+	server.Controller.AdapterName = PlunderServer.Flags().String("adapter", nicName, "Name of adapter to use e.g eth0, en0")
 
-	controller.HTTPAddress = PlunderServer.Flags().String("addressHTTP", nicAddr, "Address of HTTP to use, if blank will default to [addressDHCP]")
-	controller.TFTPAddress = PlunderServer.Flags().String("addressTFTP", nicAddr, "Address of TFTP to use, if blank will default to [addressDHCP]")
+	server.Controller.HTTPAddress = PlunderServer.Flags().String("addressHTTP", nicAddr, "Address of HTTP to use, if blank will default to [addressDHCP]")
+	server.Controller.TFTPAddress = PlunderServer.Flags().String("addressTFTP", nicAddr, "Address of TFTP to use, if blank will default to [addressDHCP]")
 
-	controller.EnableDHCP = PlunderServer.Flags().Bool("enableDHCP", false, "Enable the DCHP Server")
-	controller.EnableTFTP = PlunderServer.Flags().Bool("enableTFTP", false, "Enable the TFTP Server")
-	controller.EnableHTTP = PlunderServer.Flags().Bool("enableHTTP", false, "Enable the HTTP Server")
+	server.Controller.EnableDHCP = PlunderServer.Flags().Bool("enableDHCP", false, "Enable the DCHP Server")
+	server.Controller.EnableTFTP = PlunderServer.Flags().Bool("enableTFTP", false, "Enable the TFTP Server")
+	server.Controller.EnableHTTP = PlunderServer.Flags().Bool("enableHTTP", false, "Enable the HTTP Server")
 
-	controller.PXEFileName = PlunderServer.Flags().String("iPXEPath", "undionly.kpxe", "Path to an iPXE bootloader")
+	server.Controller.PXEFileName = PlunderServer.Flags().String("iPXEPath", "undionly.kpxe", "Path to an iPXE bootloader")
 
 	// DHCP Settings
-	controller.DHCPConfig.DHCPAddress = PlunderServer.Flags().String("addressDHCP", nicAddr, "Address to advertise leases from, ideally will be the IP address of --adapter")
-	controller.DHCPConfig.DHCPGateway = PlunderServer.Flags().String("gateway", nicAddr, "Address of Gateway to use, if blank will default to [addressDHCP]")
-	controller.DHCPConfig.DHCPDNS = PlunderServer.Flags().String("dns", nicAddr, "Address of DNS to use, if blank will default to [addressDHCP]")
-	controller.DHCPConfig.DHCPLeasePool = PlunderServer.Flags().Int("leasecount", 20, "Amount of leases to advertise")
-	controller.DHCPConfig.DHCPStartAddress = PlunderServer.Flags().String("startAddress", ip.String(), "Start advertised address [REQUIRED]")
+	server.Controller.DHCPConfig.DHCPAddress = PlunderServer.Flags().String("addressDHCP", nicAddr, "Address to advertise leases from, ideally will be the IP address of --adapter")
+	server.Controller.DHCPConfig.DHCPGateway = PlunderServer.Flags().String("gateway", nicAddr, "Address of Gateway to use, if blank will default to [addressDHCP]")
+	server.Controller.DHCPConfig.DHCPDNS = PlunderServer.Flags().String("dns", nicAddr, "Address of DNS to use, if blank will default to [addressDHCP]")
+	server.Controller.DHCPConfig.DHCPLeasePool = PlunderServer.Flags().Int("leasecount", 20, "Amount of leases to advertise")
+	server.Controller.DHCPConfig.DHCPStartAddress = PlunderServer.Flags().String("startAddress", ip.String(), "Start advertised address [REQUIRED]")
 
 	//HTTP Settings
 	defaultKernel = PlunderServer.Flags().String("kernel", "", "Path to a kernel to set as the *default* kernel")
@@ -100,7 +97,7 @@ var PlunderServer = &cobra.Command{
 
 		// If configPath is not blank then the flag has been used
 		if *configPath != "" {
-			log.Infof("Reading server configuration from [%s]", *configPath)
+			log.Infof("Reading configuration from [%s]", *configPath)
 
 			// Check the actual path from the string
 			if _, err := os.Stat(*configPath); !os.IsNotExist(err) {
@@ -110,7 +107,7 @@ var PlunderServer = &cobra.Command{
 				}
 
 				// Read the controller from either a yaml or json format
-				controller, err = parseControllerFile(configFile)
+				err = server.ParseControllerFile(configFile)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
@@ -119,43 +116,20 @@ var PlunderServer = &cobra.Command{
 				log.Fatalf("Unable to open [%s]", *configPath)
 			}
 		}
-
-		if *controller.EnableDHCP == false && *controller.EnableHTTP == false && *controller.EnableTFTP == false {
+		if *server.Controller.EnableDHCP == false && *server.Controller.EnableHTTP == false && *server.Controller.EnableTFTP == false {
 			log.Fatalln("At least one service is required to be enabled")
 		}
 
 		// If we've enabled DHCP, then we need to ensure a start address for the range is populated
-		if *controller.EnableDHCP && *controller.DHCPConfig.DHCPStartAddress == "" {
+		if *server.Controller.EnableDHCP && *server.Controller.DHCPConfig.DHCPStartAddress == "" {
 			log.Fatalln("A DHCP Start address is required")
 		}
 
-		if *controller.DHCPConfig.DHCPLeasePool == 0 {
+		if *server.Controller.DHCPConfig.DHCPLeasePool == 0 {
 			log.Fatalln("At least one available lease is required")
 		}
 
-		controller.StartServices(deployment)
+		server.Controller.StartServices(deployment)
 		return
 	},
-}
-
-func parseControllerFile(b []byte) (controller server.BootController, err error) {
-
-	jsonBytes, err := yaml.YAMLToJSON(b)
-	if err == nil {
-		// If there were no errors then the YAML => JSON was succesful, no attempt to unmarshall
-		err = json.Unmarshal(jsonBytes, &controller)
-		if err != nil {
-			return controller, fmt.Errorf("Unable to parse [%s] as either yaml or json", *mapFile)
-		}
-
-	} else {
-		// Couldn't parse the yaml to JSON
-		// Attempt to parse it as JSON
-		err = json.Unmarshal(b, &controller)
-		if err != nil {
-			return controller, fmt.Errorf("Unable to parse [%s] as either yaml or json", *mapFile)
-		}
-	}
-	return controller, nil
-
 }

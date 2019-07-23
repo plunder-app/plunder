@@ -11,10 +11,20 @@ import (
 )
 
 // find BootConfig will look through a Boot controller for a booting configuration identified through a configuration name
-func (c *BootController) findBootConfig(configName string) *bootConfig {
-	for i := range c.BootConfigs {
-		if *c.BootConfigs[i].ConfigName == configName {
-			return &c.BootConfigs[i]
+func findBootConfigForDeployment(deployment DeploymentConfig) *BootConfig {
+
+	// First check is to look inside the deployment configuration for a custom configuration
+	if deployment.ConfigBoot.Kernel != "" && deployment.ConfigBoot.Initrd != "" {
+		// A Custom Kernel and initrd are specified
+		log.Debugln("Internal Kernel/Initrd configuration being used")
+		return &deployment.ConfigBoot
+	}
+
+	// Second check is to find a matching controller configuration to adopt
+	for i := range Controller.BootConfigs {
+		if Controller.BootConfigs[i].ConfigName == deployment.ConfigName {
+			// Set the specific deployment configuration to the controller config
+			return &Controller.BootConfigs[i]
 		}
 	}
 
@@ -23,8 +33,22 @@ func (c *BootController) findBootConfig(configName string) *bootConfig {
 }
 
 // find BootConfig will look through a Boot controller for a booting configuration identified through a configuration name
-func (c *BootController) setBootConfig(configName, kernel, initrd, cmdline *string) {
-	newConfig := &bootConfig{
+func findBootConfigForName(configName string) *BootConfig {
+
+	// Find a matching controller configuration to return
+	for i := range Controller.BootConfigs {
+		if Controller.BootConfigs[i].ConfigName == configName {
+			return &Controller.BootConfigs[i]
+		}
+	}
+
+	// No configuration could be found
+	return nil
+}
+
+// find BootConfig will look through a Boot controller for a booting configuration identified through a configuration name
+func (c *BootController) setBootConfig(configName, kernel, initrd, cmdline string) {
+	newConfig := &BootConfig{
 		ConfigName: configName,
 		Kernel:     kernel,
 		Initrd:     initrd,
@@ -56,7 +80,7 @@ func (c *BootController) StartServices(deployment []byte) {
 		log.Debugf("\nServer IP:\t%s\nAdapter:\t%s\nStart Address:\t%s\nPool Size:\t%d\n", *c.DHCPConfig.DHCPAddress, *c.AdapterName, *c.DHCPConfig.DHCPStartAddress, *c.DHCPConfig.DHCPLeasePool)
 
 		go func() {
-			log.Println("RemoteBoot => Starting DHCP")
+			log.Println("Plunder Services --> Starting DHCP")
 
 			newConnection, err := conn.NewUDP4FilterListener(*c.AdapterName, ":67")
 			if err != nil {
@@ -71,7 +95,7 @@ func (c *BootController) StartServices(deployment []byte) {
 
 	if *c.EnableTFTP == true {
 		go func() {
-			log.Println("RemoteBoot => Starting TFTP")
+			log.Println("Plunder Services --> Starting TFTP")
 			log.Debugf("\nServer IP:\t%s\nPXEFile:\t%s\n", *c.TFTPAddress, *c.PXEFileName)
 
 			err := c.serveTFTP()
@@ -81,28 +105,23 @@ func (c *BootController) StartServices(deployment []byte) {
 
 	if *c.EnableHTTP == true {
 		if len(c.BootConfigs) == 0 {
-			log.Warn("No Kernel specified in configuration")
+			log.Warn("No Boot settings specified in configuration")
 		}
-		// if c.Kernel == nil || *c.Kernel == "" {
-		// 	log.Warn("No Kernel specified in configuration")
-		// }
-		// if c.Kernel == nil || *c.Initrd == "" {
-		// 	log.Warn("No Initrd specified in configuration")
-		// }
 
 		httpAddress = *c.HTTPAddress
 		httpPaths = make(map[string]string)
 
 		// If a Deployment file is set then update the configuration
 		if len(deployment) != 0 {
-			err := UpdateConfiguration(deployment)
+			err := UpdateControllerConfig(deployment)
 			if err != nil {
-				log.Fatalf("%v", err)
+				// Don't quit on error as updated configuration can be uploaded through the API
+				log.Errorf("%v", err)
 			}
 		}
 
 		go func() {
-			log.Println("RemoteBoot => Starting HTTP")
+			log.Println("Plunder Services --> Starting HTTP")
 			err := c.serveHTTP()
 			log.Fatalf("%v", err)
 		}()

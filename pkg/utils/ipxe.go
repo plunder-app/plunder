@@ -41,7 +41,7 @@ reboot
 }
 
 // IPXEPreeseed - This will build an iPXE boot script for Debian/Ubuntu
-func IPXEPreeseed(webserverAddress string, kernel string, initrd string, cmdline string) string {
+func IPXEPreeseed(webserverAddress,kernel , initrd , cmdline string) string{
 	script := `
 kernel http://%s/%s auto=true url=http://%s/${mac:hexhyp}.cfg priority=critical %s netcfg/choose_interface=${netX/mac}
 initrd http://%s/%s
@@ -54,7 +54,7 @@ boot
 }
 
 // IPXEKickstart - This will build an iPXE boot script for RHEL/CentOS
-func IPXEKickstart(webserverAddress string, kernel string, initrd string, cmdline string) string {
+func IPXEKickstart(webserverAddress, kernel , initrd , cmdline string) string{
 	script := `
 kernel http://%s/%s auto=true url=http://%s/${mac:hexhyp}.cfg priority=critical %s 
 initrd http://%s/%s
@@ -67,7 +67,7 @@ boot
 }
 
 // IPXEAnyBoot - This will build an iPXE boot script for anything wanting to PXE boot
-func IPXEAnyBoot(webserverAddress string, kernel string, initrd string, cmdline string) string {
+func IPXEAnyBoot(webserverAddress string, kernel , initrd , cmdline string) string{
 	script := `
 kernel http://%s/%s auto=true url=http://%s/${mac:hexhyp}.cfg %s 
 initrd http://%s/%s

@@ -89,7 +89,7 @@ func ImportHostsFromDeployment(config []byte) error {
 		return err
 	}
 
-	if len(deployment.Deployments) == 0 {
+	if len(deployment.Configs) == 0 {
 		return fmt.Errorf("No deployment configurations found")
 	}
 
@@ -112,13 +112,13 @@ func ImportHostsFromDeployment(config []byte) error {
 	}
 
 	// Parse the deployments
-	for i := range deployment.Deployments {
+	for i := range deployment.Configs {
 		var sshHost HostSSHConfig
 
-		sshHost.Host = deployment.Deployments[i].Config.IPAddress
+		sshHost.Host = deployment.Configs[i].ConfigHost.IPAddress
 
-		if deployment.Deployments[i].Config.Username != "" {
-			sshHost.User = deployment.Deployments[i].Config.Username
+		if deployment.Configs[i].ConfigHost.Username != "" {
+			sshHost.User = deployment.Configs[i].ConfigHost.Username
 		} else {
 			sshHost.User = deployment.GlobalServerConfig.Username
 		}
@@ -126,8 +126,8 @@ func ImportHostsFromDeployment(config []byte) error {
 		// Find additional keys that may exist in the same location
 		var keys []ssh.AuthMethod
 
-		if deployment.Deployments[i].Config.SSHKeyPath != "" {
-			key, err := findPrivateKey(deployment.Deployments[i].Config.SSHKeyPath)
+		if deployment.Configs[i].ConfigHost.SSHKeyPath != "" {
+			key, err := findPrivateKey(deployment.Configs[i].ConfigHost.SSHKeyPath)
 			if err != nil {
 				return err
 			}
@@ -136,7 +136,7 @@ func ImportHostsFromDeployment(config []byte) error {
 			if cachedGlobalKey != nil {
 				keys = append(keys, cachedGlobalKey)
 			} else {
-				return fmt.Errorf("Host [%s] has no key specified", deployment.Deployments[i].Config.IPAddress)
+				return fmt.Errorf("Host [%s] has no key specified", deployment.Configs[i].ConfigHost.IPAddress)
 			}
 		}
 		sshHost.ClientConfig = &ssh.ClientConfig{User: sshHost.User, Auth: keys, HostKeyCallback: ssh.InsecureIgnoreHostKey()}

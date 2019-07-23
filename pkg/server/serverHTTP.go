@@ -34,24 +34,24 @@ func ConfigAPIPath() string {
 func (c *BootController) serveHTTP() error {
 
 	// Find the default configuration
-	defaultConfig := c.findBootConfig("default")
+	defaultConfig := findBootConfigForName("default")
 	if defaultConfig != nil {
-		preseed = utils.IPXEPreeseed(*c.HTTPAddress, *defaultConfig.Kernel, *defaultConfig.Initrd, *defaultConfig.Cmdline)
+		preseed = utils.IPXEPreeseed(*c.HTTPAddress, defaultConfig.Kernel, defaultConfig.Initrd, defaultConfig.Cmdline)
 	} else {
 		log.Warnf("Found [%d] configurations and no \"default\" configuration", len(c.BootConfigs))
 	}
 
 	// If a preeseed configuration has been configured then add it, and create a HTTP endpoint
-	preeseedConfig := c.findBootConfig("preeseed")
+	preeseedConfig := findBootConfigForName("preeseed")
 	if preeseedConfig != nil {
-		preseed = utils.IPXEPreeseed(*c.HTTPAddress, *preeseedConfig.Kernel, *preeseedConfig.Initrd, *preeseedConfig.Cmdline)
+		preseed = utils.IPXEPreeseed(*c.HTTPAddress, preeseedConfig.Kernel, preeseedConfig.Initrd, preeseedConfig.Cmdline)
 		http.HandleFunc("/preseed.ipxe", preseedHandler)
 	}
 
 	// If a kickstart configuration has been configured then add it, and create a HTTP endpoint
-	kickstartConfig := c.findBootConfig("kickstart")
+	kickstartConfig := findBootConfigForName("kickstart")
 	if kickstartConfig != nil {
-		preseed = utils.IPXEPreeseed(*c.HTTPAddress, *kickstartConfig.Kernel, *kickstartConfig.Initrd, *kickstartConfig.Cmdline)
+		preseed = utils.IPXEPreeseed(*c.HTTPAddress, kickstartConfig.Kernel, kickstartConfig.Initrd, kickstartConfig.Cmdline)
 		http.HandleFunc("/kickstart.ipxe", kickstartHandler)
 	}
 
@@ -134,7 +134,7 @@ func deploymentHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	switch r.Method {
 	case "GET":
-		b, err := json.MarshalIndent(DeploymentConfig, "", "\t")
+		b, err := json.MarshalIndent(Deployments, "", "\t")
 		if err != nil {
 			io.WriteString(w, "<b>Unable to Parse Deployment configuration</b>")
 		}
@@ -145,7 +145,7 @@ func deploymentHandler(w http.ResponseWriter, r *http.Request) {
 				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
 				io.WriteString(w, errorHTML)
 			}
-			err := UpdateConfiguration(b)
+			err := UpdateControllerConfig(b)
 			if err != nil {
 				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
 				io.WriteString(w, errorHTML)
