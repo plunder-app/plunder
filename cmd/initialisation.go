@@ -88,6 +88,7 @@ var plunderDeploymentConfig = &cobra.Command{
 		hostDeployConfig := server.DeploymentConfig{
 			MAC:        "00:11:22:33:44:55",
 			ConfigHost: hostConfig,
+			ConfigName: "default",
 		}
 
 		configuration := &server.DeploymentConfigurationFile{
