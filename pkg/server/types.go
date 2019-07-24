@@ -59,25 +59,31 @@ type DeploymentConfig struct {
 
 // HostConfig - Defines how a server will be configured by plunder
 type HostConfig struct {
-	Gateway    string `json:"gateway"`
-	IPAddress  string `json:"address"`
-	Subnet     string `json:"subnet"`
-	NameServer string `json:"nameserver"`
-	ServerName string `json:"hostname"`
-	NTPServer  string `json:"ntpserver"`
-	Adapter    string `json:"adapter"`
-	SwapEnable bool   `json:"swapEnabled"`
 
-	Username string `json:"username"`
-	Password string `json:"password"`
+	// Not required for the global configuration
+	Adapter    string `json:"adapter,omitempty"`  // Adapter to be configured with networking address
+	IPAddress  string `json:"address,omitempty"`  // Allocated IP address for a host (ignored for global)
+	ServerName string `json:"hostname,omitempty"` // Hostname to be applied to a server
 
-	RepositoryAddress string `json:"repoaddress"`
+	// Typically shared details
+	Gateway    string `json:"gateway,omitempty"` // Default Gateway
+	Subnet     string `json:"subnet,omitempty"`  // Subnet to be used for the host
+	NameServer string `json:"nameserver,omitempty"`
+	NTPServer  string `json:"ntpserver,omitempty"` // Time Server to be used
+	SwapEnable bool   `json:"swapEnabled,omitempty"`
+
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+
+	RepositoryAddress string `json:"repoaddress,omitempty"`
 	// MirrorDirectory is an Ubuntu specific config
-	MirrorDirectory string `json:"mirrordir"`
+	MirrorDirectory string `json:"mirrordir,omitempty"`
 
-	// SSHKeyPath will typically be loaded from a file ~/.ssh/id_rsa.pub
-	SSHKeyPath string `json:"sshkeypath"`
+	// SSHKeyPath will typically be referenced from a file ~/.ssh/id_rsa.pub
+	SSHKeyPath string `json:"sshkeypath,omitempty"`
+	// SSHKey is a full SSH Key
+	SSHKey string `json:"sshkey,omitempty"`
 
 	// Packages to be installed
-	Packages string `json:"packages"`
+	Packages string `json:"packages,omitempty"`
 }

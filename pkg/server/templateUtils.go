@@ -66,7 +66,7 @@ func UpdateControllerConfig(configFile []byte) error {
 		updateConfig.Configs[i].ConfigBoot = *bootConfig
 
 		// This will populate anything missing from the global configuration
-		updateConfig.Configs[i].ConfigHost.PopulateConfiguration()
+		updateConfig.Configs[i].ConfigHost.PopulateConfiguration(updateConfig.GlobalServerConfig)
 
 		// Look for understood config types
 		switch updateConfig.Configs[i].ConfigName {
@@ -139,61 +139,61 @@ func FindDeployment(mac string) string {
 }
 
 // PopulateConfiguration - This will read a deployment configuration and attempt to fill any missing fields from the global config
-func (config *HostConfig) PopulateConfiguration() {
+func (config *HostConfig) PopulateConfiguration(globalConfig HostConfig) {
 	// NETWORK CONFIGURATION
 
 	// Inherit the global Gateway
 	if config.Gateway == "" {
-		config.Gateway = Deployments.GlobalServerConfig.Gateway
+		config.Gateway = globalConfig.Gateway
 	}
 
 	// Inherit the global Subnet
 	if config.Subnet == "" {
-		config.Subnet = Deployments.GlobalServerConfig.Subnet
+		config.Subnet = globalConfig.Subnet
 	}
 
 	// Inherit the global Name Server (DNS)
 	if config.NameServer == "" {
-		config.NameServer = Deployments.GlobalServerConfig.NameServer
+		config.NameServer = globalConfig.NameServer
 	}
 
 	if config.Adapter == "" {
-		config.Adapter = Deployments.GlobalServerConfig.Adapter
+		config.Adapter = globalConfig.Adapter
 	}
 
 	// REPOSITORY CONFIGURATION
 
 	// Inherit the global Repository address
 	if config.RepositoryAddress == "" {
-		config.RepositoryAddress = Deployments.GlobalServerConfig.RepositoryAddress
+		config.RepositoryAddress = globalConfig.RepositoryAddress
 	}
 
 	// Inherit the global Repository Mirror directory (typically /ubuntu)
 	if config.MirrorDirectory == "" {
-		config.MirrorDirectory = Deployments.GlobalServerConfig.MirrorDirectory
+		config.MirrorDirectory = globalConfig.MirrorDirectory
 	}
 
 	// USER CONFIGURATION
 
 	// Inherit the global Username
 	if config.Username == "" {
-		config.Username = Deployments.GlobalServerConfig.Username
+		config.Username = globalConfig.Username
 	}
 
 	// Inherit the global Password
 	if config.Password == "" {
-		config.Password = Deployments.GlobalServerConfig.Password
+		config.Password = globalConfig.Password
 	}
 
 	// Inherit the global SSH Key Path
 	if config.SSHKeyPath == "" {
-		config.SSHKeyPath = Deployments.GlobalServerConfig.SSHKeyPath
+		config.SSHKeyPath = globalConfig.SSHKeyPath
 	}
 
 	// Package Configuration
 
 	// Inherit the global package selection
 	if config.Packages == "" {
-		config.Packages = Deployments.GlobalServerConfig.Packages
+		config.Packages = globalConfig.Packages
 	}
 }
