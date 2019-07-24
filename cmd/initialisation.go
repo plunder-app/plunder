@@ -64,8 +64,37 @@ var plunderDeploymentConfig = &cobra.Command{
 	Short: "Initialise a server configuration",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
-		var configuration server.DeploymentConfigurationFile
-		configuration.Configs = append(configuration.Configs, server.DeploymentConfig{})
+		// Create an example Global configuration
+		globalConfig := server.HostConfig{
+			Gateway:           "192.168.0.1",
+			NTPServer:         "192.168.0.1",
+			NameServer:        "192.168.0.1",
+			Adapter:           "ens192",
+			Subnet:            "255.255.255.0",
+			Username:          "user",
+			Password:          "pass",
+			Packages:          "nginx",
+			RepositoryAddress: "192.168.0.1",
+			MirrorDirectory:   "/ubuntu",
+			SSHKeyPath:        "/home/deploy/.ssh/id_pub.rsa",
+			SSHKey:            "RSA--------ABCDEFGH",
+		}
+
+		// Create an example Host configuration
+		hostConfig := server.HostConfig{
+			IPAddress:  "192.168.0.2",
+			ServerName: "Server01",
+		}
+		hostDeployConfig := server.DeploymentConfig{
+			MAC:        "00:11:22:33:44:55",
+			ConfigHost: hostConfig,
+		}
+
+		configuration := &server.DeploymentConfigurationFile{
+			GlobalServerConfig: globalConfig,
+		}
+
+		configuration.Configs = append(configuration.Configs, hostDeployConfig)
 		// Indent (or pretty-print) the configuration output
 		b, err := json.MarshalIndent(configuration, "", "\t")
 		if err != nil {
