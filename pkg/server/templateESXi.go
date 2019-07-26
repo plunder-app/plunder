@@ -1,10 +1,7 @@
 package server
 
 import (
-	"fmt"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // bootcfgHead const, this is the basis for the configuration that will be modified per use-case for the boot.cfg
@@ -68,26 +65,6 @@ __NTP_CONFIG__
 func (config *HostConfig) BuildESXiConfig(mountPath string) string {
 
 	parsedBootCfg := strings.Replace(bootcfg67u2, "/", mountPath, -1)
-	var key string
-	var err error
 
-	if config.SSHKeyPath != "" {
-		key, err = config.ReadKeyFromFile(config.SSHKeyPath)
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
-	}
-
-	var parsedDisk string
-
-	if config.SwapEnable == true {
-		parsedDisk = preseedDisk + swap
-	} else {
-		parsedDisk = preseedDisk + noswap
-	}
-	parsedNet := fmt.Sprintf(preseedNet, config.Adapter, config.Gateway, config.IPAddress, config.NameServer, config.Subnet, config.ServerName)
-	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory, config.Packages)
-	parsedCmd := fmt.Sprintf(preseedCmd, key)
-	parsedUsr := fmt.Sprintf(preseedUsers, config.Username, config.Username, config.Password, config.Password)
-	return fmt.Sprintf("%s%s%s%s%s%s", preseedHead, parsedDisk, parsedNet, parsedPkg, parsedUsr, parsedCmd)
+	return parsedBootCfg
 }

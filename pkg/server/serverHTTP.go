@@ -42,7 +42,7 @@ func (c *BootController) serveHTTP() error {
 	}
 
 	// If a preeseed configuration has been configured then add it, and create a HTTP endpoint
-	preeseedConfig := findBootConfigForName("preeseed")
+	preeseedConfig := findBootConfigForName("preseed")
 	if preeseedConfig != nil {
 		preseed = utils.IPXEPreeseed(*c.HTTPAddress, preeseedConfig.Kernel, preeseedConfig.Initrd, preeseedConfig.Cmdline)
 		http.HandleFunc("/preseed.ipxe", preseedHandler)

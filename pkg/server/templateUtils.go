@@ -58,7 +58,7 @@ func UpdateControllerConfig(configFile []byte) error {
 
 		// If there is no deployment configuration under this name return an error
 		if bootConfig == nil {
-			errorString := fmt.Errorf("The configuration for host [%s] uses unknown config [%s]", updateConfig.Configs[i].MAC, updateConfig.Configs[i].ConfigName)
+			errorString := fmt.Errorf("Host [%s] uses unknown config [%s], stopping config update", updateConfig.Configs[i].MAC, updateConfig.Configs[i].ConfigName)
 			return errorString
 		}
 
