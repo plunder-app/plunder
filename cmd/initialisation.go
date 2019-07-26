@@ -77,7 +77,7 @@ var plunderDeploymentConfig = &cobra.Command{
 			RepositoryAddress: "192.168.0.1",
 			MirrorDirectory:   "/ubuntu",
 			SSHKeyPath:        "/home/deploy/.ssh/id_pub.rsa",
-			SSHKey:            "RSA--------ABCDEFGH",
+			SSHKey:            "ssh-rsa AABBCCDDEE1122334455",
 		}
 
 		// Create an example Host configuration

@@ -45,28 +45,26 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 			return
 		}
 	reply:
-		h.Options[60] = h.IP
+		h.Options[dhcp.OptionVendorClassIdentifier] = h.IP
 		// Reply should have the configuration details in for iPXE to boot from
-		if string(options[77]) != "" {
-			if string(options[77]) == "iPXE" {
-				deploymentType := FindDeployment(mac)
-				// If this mac address has no deployment attached then reboot IPXE
-				if deploymentType == "" {
-					log.Warnf("Mac address[%s] is unknown, not returning an address", mac)
-					return nil
-				}
-				// Assign the deployment boot script
-				log.Infof("Mac address [%s] is assigned a [%s] deployment type", mac, deploymentType)
-				// Convert the : in the mac address to dashes to make life easier
-				dashMac := strings.Replace(mac, ":", "-", -1)
-				// if an entry doesnt exist then drop it to a default type, if not then it has its own specific
-				if httpPaths[fmt.Sprintf("%s.ipxe", dashMac)] == "" {
-					h.Options[67] = []byte("http://" + h.IP.String() + "/" + deploymentType + ".ipxe")
-				} else {
-					h.Options[67] = []byte("http://" + h.IP.String() + "/" + dashMac + ".ipxe")
-				}
-
+		if string(options[dhcp.OptionUserClass]) == "iPXE" {
+			deploymentType := FindDeployment(mac)
+			// If this mac address has no deployment attached then reboot IPXE
+			if deploymentType == "" {
+				log.Warnf("Mac address[%s] is unknown, not returning an address", mac)
+				return nil
 			}
+			// Assign the deployment boot script
+			log.Infof("Mac address [%s] is assigned a [%s] deployment type", mac, deploymentType)
+			// Convert the : in the mac address to dashes to make life easier
+			dashMac := strings.Replace(mac, ":", "-", -1)
+			// if an entry doesnt exist then drop it to a default type, if not then it has its own specific
+			if httpPaths[fmt.Sprintf("%s.ipxe", dashMac)] == "" {
+				h.Options[dhcp.OptionBootFileName] = []byte("http://" + h.IP.String() + "/" + deploymentType + ".ipxe")
+			} else {
+				h.Options[dhcp.OptionBootFileName] = []byte("http://" + h.IP.String() + "/" + dashMac + ".ipxe")
+			}
+
 		}
 		ipLease := dhcp.IPAdd(h.Start, free)
 		log.Debugf("Allocated IP [%s] for [%s]", ipLease.String(), mac)
