@@ -44,6 +44,8 @@ fi
 echo "Plunder server configuration, temporary output will live in ./testing"
 mkdir testing
 ./plunder config server > ./testing/server_test_config.json
+./plunder config deployment > ./testing/deployment_config.json
+
 echo "Creating alternative configuration with services enabled"
 sed '/enableHTTP/s/false/true/' ./testing/server_test_config.json > ./testing/server_test_http_config.json
 
@@ -79,11 +81,25 @@ then
           echo "Plunder correctly didn't start"
       fi
       echo "Starting with enabled HTTP configuration (check OSX)"
-      ./plunder server --config ./testing/server_test_http_config.json
+      ./plunder server --config ./testing/server_test_http_config.json &
+      echo $! >./testing/plunder.pid
       retVal=$?
       if [ $retVal -ne 0 ]; then
           echo "Plunder correctly didn't start"
       fi
+      echo "Sleeping for 3 seconds to ensure plunder has started"
+      sleep 3
+      echo "Print Configuration info"; echo "--------------------------"
+      curl localhost/config; echo ""
+      echo "Print Deployment info"; echo "--------------------------"
+      curl localhost/deployment; echo ""
+      echo "POST Deployment to Plunder API"
+      curl -X POST -d "@./testing/deployment_config.json" localhost/deployment
+      echo "Print (UPDATED) Deployment info"; echo "--------------------------"
+      curl localhost/deployment; echo ""
+      kill -9 `cat ./testing/plunder.pid`
+      wait $! 2>/dev/null
+      sleep 1
 else 
       echo "Skipping permission tests as running as root"
 fi
