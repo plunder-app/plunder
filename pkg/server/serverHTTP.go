@@ -13,7 +13,7 @@ import (
 )
 
 // These strings container the generated iPXE details that are passed to the bootloader when the correct url is requested
-var preseed, kickstart, anyBoot, reboot string
+var preseed, kickstart, defaultBoot, reboot string
 
 // This stores the mapping for a mac adress key to it's pxe data
 var httpPaths map[string]string
@@ -31,12 +31,13 @@ func ConfigAPIPath() string {
 	return "/config"
 }
 
-func (c *BootController) serveHTTP() error {
+func (c BootController) generateBootTypeHanders() {
 
 	// Find the default configuration
 	defaultConfig := findBootConfigForName("default")
 	if defaultConfig != nil {
-		preseed = utils.IPXEPreeseed(*c.HTTPAddress, defaultConfig.Kernel, defaultConfig.Initrd, defaultConfig.Cmdline)
+		defaultBoot = utils.IPXEPreeseed(*c.HTTPAddress, defaultConfig.Kernel, defaultConfig.Initrd, defaultConfig.Cmdline)
+		http.HandleFunc("/default.ipxe", defaultBootHandler)
 	} else {
 		log.Warnf("Found [%d] configurations and no \"default\" configuration", len(c.BootConfigs))
 	}
@@ -55,7 +56,19 @@ func (c *BootController) serveHTTP() error {
 		http.HandleFunc("/kickstart.ipxe", kickstartHandler)
 	}
 
-	//anyBoot = utils.IPXEAnyBoot(*c.HTTPAddress, *c.Kernel, *c.Initrd, *c.Cmdline)
+	// If a vsphereConfig configuration has been configured then add it, and create a HTTP endpoint
+	vsphereConfig := findBootConfigForName("vsphere")
+	if kickstartConfig != nil {
+		preseed = utils.IPXEPreeseed(*c.HTTPAddress, vsphereConfig.Kernel, vsphereConfig.Initrd, vsphereConfig.Cmdline)
+		http.HandleFunc("/vsphere.ipxe", vsphereHandler)
+	}
+}
+
+func (c *BootController) serveHTTP() error {
+
+	// This function will pre-generate the boot handlers for the various boot types
+	c.generateBootTypeHanders()
+
 	reboot = utils.IPXEReboot()
 
 	docroot, err := filepath.Abs("./")
@@ -68,7 +81,6 @@ func (c *BootController) serveHTTP() error {
 
 	http.HandleFunc("/health", HealthCheckHandler)
 	http.HandleFunc("/reboot.ipxe", rebootHandler)
-	http.HandleFunc("/anyboot.ipxe", anyBootHandler)
 
 	// API Endpoints - allow the update of various configuration without restarting
 	http.HandleFunc(DeploymentAPIPath(), deploymentHandler)
@@ -104,11 +116,18 @@ func kickstartHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, kickstart)
 }
 
-func anyBootHandler(w http.ResponseWriter, r *http.Request) {
+func vsphereHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain")
-	// Return the kickstart content
-	io.WriteString(w, anyBoot)
+	// Return the vsphere content
+	io.WriteString(w, "")
+}
+
+func defaultBootHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "text/plain")
+	// Return the default boot content
+	io.WriteString(w, defaultBoot)
 }
 
 func rebootHandler(w http.ResponseWriter, r *http.Request) {
