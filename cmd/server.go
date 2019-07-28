@@ -2,10 +2,7 @@ package cmd
 
 import (
 	"io/ioutil"
-	"net"
 	"os"
-
-	"github.com/plunder-app/plunder/pkg/utils"
 
 	"github.com/plunder-app/plunder/pkg/server"
 
@@ -26,24 +23,24 @@ var anyboot *bool
 func init() {
 
 	// Find an example nic to use, that isn't the loopback address
-	nicName, nicAddr, err := utils.FindIPAddress("")
-	if err != nil {
-		log.Warnf("%v", err)
-	}
-	//
-	ip := net.ParseIP(nicAddr)
-	ip = ip.To4()
-	if ip == nil {
-		log.Fatalf("error parsing IP address of adapter [%s]", nicName)
-	}
+	// nicName, nicAddr, err := utils.FindIPAddress("")
+	// if err != nil {
+	// 	log.Warnf("%v", err)
+	// }
+	// //
+	// ip := net.ParseIP(nicAddr)
+	// ip = ip.To4()
+	// if ip == nil {
+	// 	log.Fatalf("error parsing IP address of adapter [%s]", nicName)
+	// }
 
-	ip[3]++
+	// ip[3]++
 
 	// Prepopulate the flags with the found nic information
-	server.Controller.AdapterName = PlunderServer.Flags().String("adapter", nicName, "Name of adapter to use e.g eth0, en0")
+	server.Controller.AdapterName = PlunderServer.Flags().String("adapter", "", "Name of adapter to use e.g eth0, en0")
 
-	server.Controller.HTTPAddress = PlunderServer.Flags().String("addressHTTP", nicAddr, "Address of HTTP to use, if blank will default to [addressDHCP]")
-	server.Controller.TFTPAddress = PlunderServer.Flags().String("addressTFTP", nicAddr, "Address of TFTP to use, if blank will default to [addressDHCP]")
+	server.Controller.HTTPAddress = PlunderServer.Flags().String("addressHTTP", "", "Address of HTTP to use, if blank will default to [addressDHCP]")
+	server.Controller.TFTPAddress = PlunderServer.Flags().String("addressTFTP", "", "Address of TFTP to use, if blank will default to [addressDHCP]")
 
 	server.Controller.EnableDHCP = PlunderServer.Flags().Bool("enableDHCP", false, "Enable the DCHP Server")
 	server.Controller.EnableTFTP = PlunderServer.Flags().Bool("enableTFTP", false, "Enable the TFTP Server")
@@ -52,11 +49,11 @@ func init() {
 	server.Controller.PXEFileName = PlunderServer.Flags().String("iPXEPath", "undionly.kpxe", "Path to an iPXE bootloader")
 
 	// DHCP Settings
-	server.Controller.DHCPConfig.DHCPAddress = PlunderServer.Flags().String("addressDHCP", nicAddr, "Address to advertise leases from, ideally will be the IP address of --adapter")
-	server.Controller.DHCPConfig.DHCPGateway = PlunderServer.Flags().String("gateway", nicAddr, "Address of Gateway to use, if blank will default to [addressDHCP]")
-	server.Controller.DHCPConfig.DHCPDNS = PlunderServer.Flags().String("dns", nicAddr, "Address of DNS to use, if blank will default to [addressDHCP]")
+	server.Controller.DHCPConfig.DHCPAddress = PlunderServer.Flags().String("addressDHCP", "", "Address to advertise leases from, ideally will be the IP address of --adapter")
+	server.Controller.DHCPConfig.DHCPGateway = PlunderServer.Flags().String("gateway", "", "Address of Gateway to use, if blank will default to [addressDHCP]")
+	server.Controller.DHCPConfig.DHCPDNS = PlunderServer.Flags().String("dns", "", "Address of DNS to use, if blank will default to [addressDHCP]")
 	server.Controller.DHCPConfig.DHCPLeasePool = PlunderServer.Flags().Int("leasecount", 20, "Amount of leases to advertise")
-	server.Controller.DHCPConfig.DHCPStartAddress = PlunderServer.Flags().String("startAddress", ip.String(), "Start advertised address [REQUIRED]")
+	server.Controller.DHCPConfig.DHCPStartAddress = PlunderServer.Flags().String("startAddress", "", "Start advertised address [REQUIRED]")
 
 	//HTTP Settings
 	defaultKernel = PlunderServer.Flags().String("kernel", "", "Path to a kernel to set as the *default* kernel")

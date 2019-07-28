@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"net"
 )
@@ -35,7 +36,7 @@ func FindIPAddress(addrName string) (string, string, error) {
 		}
 
 	}
-	return "", address, nil
+	return "", "", fmt.Errorf("Unknown interface [%s]", addrName)
 }
 
 //ConvertIP -
