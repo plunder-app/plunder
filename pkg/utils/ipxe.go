@@ -66,6 +66,18 @@ boot
 	return iPXEHeader + buildScript
 }
 
+// IPXEVSphere - This will build an iPXE boot script for VMware vSphere/ESXi
+func IPXEVSphere(webserverAddress, kernel, cmdline string) string {
+	script := `
+kernel http://%s/%s -c http://%s/${mac:hexhyp}.cfg %s
+boot
+`
+	// Replace the addresses inline
+	buildScript := fmt.Sprintf(script, webserverAddress, kernel, webserverAddress, cmdline)
+
+	return iPXEHeader + buildScript
+}
+
 // IPXEAnyBoot - This will build an iPXE boot script for anything wanting to PXE boot
 func IPXEAnyBoot(webserverAddress string, kernel, initrd, cmdline string) string {
 	script := `

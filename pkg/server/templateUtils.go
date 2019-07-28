@@ -48,7 +48,11 @@ func UpdateControllerConfig(configFile []byte) error {
 
 	log.Debugf("Parsing [%d] Configurations", len(updateConfig.Configs))
 	for i := range updateConfig.Configs {
-		var newConfig, ipxeConfig string
+		// inMemipxeConfig is a custom configuration that matches kernel/initrd & cmdline and is 00:11:22:33:44:55.ipxe
+		var inMemipxeConfig string
+
+		// inMemipxeConfig is a custom configuration that is specific to the boot type [preseed/kickstart/vsphere] and is 00:11:22:33:44:55.cfg
+		var inMemBootConfig string
 
 		// We need to move all ":" to "-" to make life a little easier for filesystems and internet standards
 		dashMac := strings.Replace(updateConfig.Configs[i].MAC, ":", "-", -1)
@@ -71,37 +75,43 @@ func UpdateControllerConfig(configFile []byte) error {
 		// Look for understood config types
 		switch updateConfig.Configs[i].ConfigName {
 		case "preseed":
-			ipxeConfig = utils.IPXEPreeseed(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
+			inMemipxeConfig = utils.IPXEPreeseed(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
 			log.Debugf("Generating preseed ipxeConfig for [%s]", dashMac)
-			newConfig = updateConfig.Configs[i].ConfigHost.BuildPreeSeedConfig()
+			inMemBootConfig = updateConfig.Configs[i].ConfigHost.BuildPreeSeedConfig()
 
 		case "kickstart":
-			ipxeConfig = utils.IPXEKickstart(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
+			inMemipxeConfig = utils.IPXEKickstart(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
 			log.Debugf("Generating kickstart ipxeConfig for [%s]", dashMac)
-			newConfig = updateConfig.Configs[i].ConfigHost.BuildKickStartConfig()
+			inMemBootConfig = updateConfig.Configs[i].ConfigHost.BuildKickStartConfig()
+		case "vsphere":
+			inMemipxeConfig = utils.IPXEVSphere(httpAddress, bootConfig.Kernel, bootConfig.Cmdline)
+			log.Debugf("Generating vsphere ipxeConfig for [%s]", dashMac)
+			inMemBootConfig = updateConfig.Configs[i].ConfigHost.BuildESXiConfig()
 
 		default:
 			log.Debugf("Building configuration for configName [%s]", updateConfig.Configs[i].ConfigBoot.ConfigName)
-			ipxeConfig = utils.IPXEAnyBoot(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
+			inMemipxeConfig = utils.IPXEAnyBoot(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
 		}
 
-		// If we've specified an iPXE configuration then we add it
-		if ipxeConfig != "" {
+		// Build the configuration that is passed to iPXE on boot
+		if inMemipxeConfig != "" {
 			path := fmt.Sprintf("/%s.ipxe", dashMac)
 			// Only add handler if one didn't exist before
-			if httpPaths[path] == "" {
-				http.HandleFunc(path, rootHandler)
-			}
-			httpPaths[path] = ipxeConfig
+			//if httpPaths[path] == "" {
+			http.HandleFunc(path, rootHandler)
+			//}
+			httpPaths[path] = inMemipxeConfig
 
 		}
-		if newConfig != "" {
+
+		// Build a boot configuration that is passed to a kernel
+		if inMemBootConfig != "" {
 			path := fmt.Sprintf("/%s.cfg", dashMac)
 			// Only add handler if one didn't exist before
-			if httpPaths[path] == "" {
-				http.HandleFunc(path, rootHandler)
-			}
-			httpPaths[path] = newConfig
+			//if httpPaths[path] == "" {
+			http.HandleFunc(path, rootHandler)
+			//}
+			httpPaths[path] = inMemBootConfig
 		}
 	}
 	if len(updateConfig.Configs) == 0 {

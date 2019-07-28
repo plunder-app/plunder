@@ -13,7 +13,7 @@ import (
 )
 
 // These strings container the generated iPXE details that are passed to the bootloader when the correct url is requested
-var preseed, kickstart, defaultBoot, reboot string
+var preseed, kickstart, defaultBoot, vsphere, reboot string
 
 // This stores the mapping for a mac adress key to it's pxe data
 var httpPaths map[string]string
@@ -52,14 +52,14 @@ func (c BootController) generateBootTypeHanders() {
 	// If a kickstart configuration has been configured then add it, and create a HTTP endpoint
 	kickstartConfig := findBootConfigForName("kickstart")
 	if kickstartConfig != nil {
-		preseed = utils.IPXEPreeseed(*c.HTTPAddress, kickstartConfig.Kernel, kickstartConfig.Initrd, kickstartConfig.Cmdline)
+		kickstart = utils.IPXEPreeseed(*c.HTTPAddress, kickstartConfig.Kernel, kickstartConfig.Initrd, kickstartConfig.Cmdline)
 		http.HandleFunc("/kickstart.ipxe", kickstartHandler)
 	}
 
 	// If a vsphereConfig configuration has been configured then add it, and create a HTTP endpoint
 	vsphereConfig := findBootConfigForName("vsphere")
-	if kickstartConfig != nil {
-		preseed = utils.IPXEPreeseed(*c.HTTPAddress, vsphereConfig.Kernel, vsphereConfig.Initrd, vsphereConfig.Cmdline)
+	if vsphereConfig != nil {
+		vsphere = utils.IPXEVSphere(*c.HTTPAddress, vsphereConfig.Kernel, vsphereConfig.Cmdline)
 		http.HandleFunc("/vsphere.ipxe", vsphereHandler)
 	}
 }
@@ -120,7 +120,7 @@ func vsphereHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain")
 	// Return the vsphere content
-	io.WriteString(w, "")
+	io.WriteString(w, vsphere)
 }
 
 func defaultBootHandler(w http.ResponseWriter, r *http.Request) {
