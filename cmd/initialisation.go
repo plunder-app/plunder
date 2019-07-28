@@ -3,7 +3,10 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"net"
+	"strings"
 
+	"github.com/ghodss/yaml"
 	"github.com/plunder-app/plunder/pkg/parlay"
 	"github.com/plunder-app/plunder/pkg/parlay/types"
 	"github.com/plunder-app/plunder/pkg/server"
@@ -14,8 +17,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// These variables are used to capture input from the CLI
+var output, detectNic string
+var pretty bool
+
 func init() {
 	plunderCmd.AddCommand(plunderConfig)
+	plunderConfig.PersistentFlags().StringVarP(&output, "output", "o", "json", "Ouput type, should be either JSON or YAML")
+	plunderConfig.PersistentFlags().BoolVarP(&pretty, "pretty", "p", false, "Ouput JSON in a pretty/Human readable format")
+	plunderServerConfig.Flags().StringVarP(&detectNic, "detect", "d", "", "Attempt to automatically detect the default settings for a specfic interface")
+
 	plunderConfig.AddCommand(plunderServerConfig)
 	plunderConfig.AddCommand(plunderDeploymentConfig)
 	plunderConfig.AddCommand(PlunderParlayConfig)
@@ -48,12 +59,14 @@ var plunderServerConfig = &cobra.Command{
 			Cmdline:    "cmd=options",
 			ConfigName: "default",
 		}
+
+		detectServerConfig()
+
 		server.Controller.BootConfigs = append(server.Controller.BootConfigs, *bc)
-		b, err := json.MarshalIndent(server.Controller, "", "\t")
+		err := renderOutput(server.Controller, pretty)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		fmt.Printf("\n%s\n", b)
 		return
 	},
 }
@@ -73,7 +86,7 @@ var plunderDeploymentConfig = &cobra.Command{
 			Subnet:            "255.255.255.0",
 			Username:          "user",
 			Password:          "pass",
-			Packages:          "nginx",
+			Packages:          "nginx openssh-server",
 			RepositoryAddress: "192.168.0.1",
 			MirrorDirectory:   "/ubuntu",
 			SSHKeyPath:        "/home/deploy/.ssh/id_pub.rsa",
@@ -97,11 +110,10 @@ var plunderDeploymentConfig = &cobra.Command{
 
 		configuration.Configs = append(configuration.Configs, hostDeployConfig)
 		// Indent (or pretty-print) the configuration output
-		b, err := json.MarshalIndent(configuration, "", "\t")
+		err := renderOutput(configuration, pretty)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		fmt.Printf("\n%s\n", b)
 		return
 	},
 }
@@ -163,12 +175,11 @@ var PlunderParlayConfig = &cobra.Command{
 		parlayConfig.Deployments = []parlay.Deployment{}
 		parlayConfig.Deployments = append(parlayConfig.Deployments, parlayDeployment)
 
-		// Indent (or pretty-print) the configuration output
-		b, err := json.MarshalIndent(parlayConfig, "", "\t")
+		// Render the output to screen
+		err := renderOutput(parlayConfig, pretty)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		fmt.Printf("\n%s\n", b)
 		return
 	},
 }
@@ -186,4 +197,60 @@ var plunderGet = &cobra.Command{
 		}
 		return
 	},
+}
+
+func renderOutput(data interface{}, pretty bool) error {
+	var d []byte
+	var err error
+	switch strings.ToLower(output) {
+	case "yaml":
+		d, err = yaml.Marshal(data)
+	case "json":
+		if pretty {
+			d, err = json.MarshalIndent(data, "", "\t")
+		} else {
+			d, err = json.Marshal(data)
+		}
+	default:
+		return fmt.Errorf("Unknown output type [%s]", output)
+	}
+	if err != nil {
+		return err
+	}
+	// Print out the output to STDOUT
+	fmt.Printf("%s\n", d)
+	return nil
+}
+
+func detectServerConfig() error {
+
+	// Find an example nic to use, that isn't the loopback address
+	nicName, nicAddr, err := utils.FindIPAddress(detectNic)
+	if err != nil {
+		return err
+	}
+
+	// Attempt to parse th returned IP address and apply simple incrementation to determin DHCP start range
+	ip := net.ParseIP(nicAddr)
+	ip = ip.To4()
+	if ip == nil {
+		return fmt.Errorf("error parsing IP address of adapter [%s]", detectNic)
+	}
+	ip[3]++
+
+	// Prepopulate the flags with the found nic information
+	server.Controller.AdapterName = &nicName
+	server.Controller.HTTPAddress = &nicAddr
+	server.Controller.TFTPAddress = &nicAddr
+
+	*server.Controller.PXEFileName = "undionly.kpxe"
+
+	// DHCP Settings
+	server.Controller.DHCPConfig.DHCPAddress = &nicAddr
+	server.Controller.DHCPConfig.DHCPGateway = &nicAddr
+	server.Controller.DHCPConfig.DHCPDNS = &nicAddr
+	*server.Controller.DHCPConfig.DHCPLeasePool = 20
+	*server.Controller.DHCPConfig.DHCPStartAddress = ip.String()
+
+	return nil
 }
