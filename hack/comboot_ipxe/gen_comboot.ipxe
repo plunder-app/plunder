@@ -1,0 +1,5 @@
+#!/bin/bash
+echo Building latest container for iPXE, with comboot support
+cd comboot_ipxe
+docker build -t ipxe_comboot .
+docker run -it -v $(echo $PWD):/tmp/ipxe ipxe_comboot  /bin/sh -c "cp undionly.kpxe /tmp/ipxe"
