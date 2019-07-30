@@ -54,6 +54,9 @@ func UpdateControllerConfig(configFile []byte) error {
 		// inMemipxeConfig is a custom configuration that is specific to the boot type [preseed/kickstart/vsphere] and is 00:11:22:33:44:55.cfg
 		var inMemBootConfig string
 
+		// imMemESXiKickstart is a custom configuraton specific to vSphere for it's kickstart
+		var imMemESXiKickstart string
+
 		// We need to move all ":" to "-" to make life a little easier for filesystems and internet standards
 		dashMac := strings.Replace(updateConfig.Configs[i].MAC, ":", "-", -1)
 
@@ -87,6 +90,7 @@ func UpdateControllerConfig(configFile []byte) error {
 			inMemipxeConfig = utils.IPXEVSphere(httpAddress, bootConfig.Kernel, bootConfig.Cmdline)
 			log.Debugf("Generating vsphere ipxeConfig for [%s]", dashMac)
 			inMemBootConfig = updateConfig.Configs[i].ConfigHost.BuildESXiConfig()
+			imMemESXiKickstart = updateConfig.Configs[i].ConfigHost.BuildESXiKickStart()
 
 		default:
 			log.Debugf("Building configuration for configName [%s]", updateConfig.Configs[i].ConfigBoot.ConfigName)
@@ -96,10 +100,7 @@ func UpdateControllerConfig(configFile []byte) error {
 		// Build the configuration that is passed to iPXE on boot
 		if inMemipxeConfig != "" {
 			path := fmt.Sprintf("/%s.ipxe", dashMac)
-			// Only add handler if one didn't exist before
-			//if httpPaths[path] == "" {
 			http.HandleFunc(path, rootHandler)
-			//}
 			httpPaths[path] = inMemipxeConfig
 
 		}
@@ -107,12 +108,17 @@ func UpdateControllerConfig(configFile []byte) error {
 		// Build a boot configuration that is passed to a kernel
 		if inMemBootConfig != "" {
 			path := fmt.Sprintf("/%s.cfg", dashMac)
-			// Only add handler if one didn't exist before
-			//if httpPaths[path] == "" {
 			http.HandleFunc(path, rootHandler)
-			//}
 			httpPaths[path] = inMemBootConfig
 		}
+
+		// Build a vSphere kickstart configuration that is passed to an installer
+		if imMemESXiKickstart != "" {
+			path := fmt.Sprintf("/%s.ks", dashMac)
+			http.HandleFunc(path, rootHandler)
+			httpPaths[path] = inMemBootConfig
+		}
+
 	}
 	if len(updateConfig.Configs) == 0 {
 		// No changes, leave as is (with a warning)
@@ -140,8 +146,8 @@ func FindDeployment(mac string) string {
 		return ""
 	}
 	for i := range Deployments.Configs {
-		log.Debugf("Comparing [%s] to [%s]", mac, Deployments.Configs[i].MAC)
-		if mac == Deployments.Configs[i].MAC {
+		log.Debugf("Comparing [%s] to [%s]", mac, strings.ToLower(Deployments.Configs[i].MAC))
+		if mac == strings.ToLower(Deployments.Configs[i].MAC) {
 			return Deployments.Configs[i].ConfigName
 		}
 	}
