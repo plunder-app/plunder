@@ -43,8 +43,10 @@ fi
 
 echo "Plunder server configuration, temporary output will live in ./testing"
 mkdir testing
-./plunder config server > ./testing/server_test_config.json
-./plunder config deployment > ./testing/deployment_config.json
+./plunder config server -p > ./testing/server_test_config.json
+./plunder config deployment -p > ./testing/deployment_config.json
+./plunder config server -o yaml > ./testing/server_test_config.yaml
+./plunder config deployment -o yaml > ./testing/deployment_config.yaml
 
 echo "Creating alternative configuration with services enabled"
 sed '/enableHTTP/s/false/true/' ./testing/server_test_config.json > ./testing/server_test_http_config.json
@@ -93,12 +95,17 @@ then
       curl localhost/config; echo ""
       echo "Print Deployment info"; echo "--------------------------"
       curl localhost/deployment; echo ""
-      echo "POST Deployment to Plunder API"
+      echo "POST JSON Deployment to Plunder API"
       curl -X POST -d "@./testing/deployment_config.json" localhost/deployment
+      echo "Print (UPDATED) Deployment info"; echo "--------------------------"
+      curl localhost/deployment; echo ""
+      echo "POST YAML Deployment to Plunder API"
+      curl -X POST --data-binary "@./testing/deployment_config.yaml" localhost/deployment -H "Content-type: text/x-yaml"
       echo "Print (UPDATED) Deployment info"; echo "--------------------------"
       curl localhost/deployment; echo ""
       kill -9 `cat ./testing/plunder.pid`
       wait $! 2>/dev/null
+      rm  ./testing/plunder.pid
       sleep 1
 else 
       echo "Skipping permission tests as running as root"
@@ -114,5 +121,5 @@ if [ $retVal -ne 0 ]; then
     exit
 fi
 
-echo "Removing [./testing/] directory, and [./plunder] binary"
-rm -rf ./testing/ ./plunder
+echo "To remote [./testing/] directory, and [./plunder] binary"
+echo "rm -rf ./testing/ ./plunder"

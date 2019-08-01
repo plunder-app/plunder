@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -38,10 +37,9 @@ func (config *HostConfig) ReadKeyFromFile(sshKeyPath string) (string, error) {
 func UpdateControllerConfig(configFile []byte) error {
 
 	// Separate configuration until everything is processes correctly
-	var updateConfig DeploymentConfigurationFile
 
 	log.Infoln("Updating the Deployment Configuration")
-	err := json.Unmarshal(configFile, &updateConfig)
+	updateConfig, err := ParseDeployment(configFile)
 	if err != nil {
 		return err
 	}
@@ -86,6 +84,7 @@ func UpdateControllerConfig(configFile []byte) error {
 			inMemipxeConfig = utils.IPXEKickstart(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
 			log.Debugf("Generating kickstart ipxeConfig for [%s]", dashMac)
 			inMemBootConfig = updateConfig.Configs[i].ConfigHost.BuildKickStartConfig()
+
 		case "vsphere":
 			inMemipxeConfig = utils.IPXEVSphere(httpAddress, bootConfig.Kernel, bootConfig.Cmdline)
 			log.Debugf("Generating vsphere ipxeConfig for [%s]", dashMac)
@@ -97,18 +96,20 @@ func UpdateControllerConfig(configFile []byte) error {
 			inMemipxeConfig = utils.IPXEAnyBoot(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
 		}
 
+		// Use of a Mux allows the redefinition of http paths
+		mux := http.NewServeMux()
+
 		// Build the configuration that is passed to iPXE on boot
 		if inMemipxeConfig != "" {
 			path := fmt.Sprintf("/%s.ipxe", dashMac)
-			http.HandleFunc(path, rootHandler)
+			mux.HandleFunc(path, rootHandler)
 			httpPaths[path] = inMemipxeConfig
-
 		}
 
 		// Build a boot configuration that is passed to a kernel
 		if inMemBootConfig != "" {
 			path := fmt.Sprintf("/%s.cfg", dashMac)
-			http.HandleFunc(path, rootHandler)
+			mux.HandleFunc(path, rootHandler)
 			httpPaths[path] = inMemBootConfig
 		}
 
@@ -126,7 +127,7 @@ func UpdateControllerConfig(configFile []byte) error {
 	} else {
 		// Updated configuration has been parsed, update internal deployment configuration
 		log.Infoln("Updating of deployment configuration complete")
-		Deployments = updateConfig
+		Deployments = *updateConfig
 	}
 
 	return nil

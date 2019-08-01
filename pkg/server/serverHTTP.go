@@ -149,22 +149,27 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deploymentHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
+
 	switch r.Method {
 	case "GET":
 		b, err := json.MarshalIndent(Deployments, "", "\t")
 		if err != nil {
 			io.WriteString(w, "<b>Unable to Parse Deployment configuration</b>")
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
 		}
 		io.WriteString(w, string(b))
 	case "POST":
 		if b, err := ioutil.ReadAll(r.Body); err == nil {
 			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Header().Set("Content-Type", "application/json")
 				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
 				io.WriteString(w, errorHTML)
 			}
 			err := UpdateControllerConfig(b)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
 			if err != nil {
 				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
 				io.WriteString(w, errorHTML)
