@@ -37,3 +37,27 @@ func ParseControllerFile(b []byte) error {
 	}
 	return nil
 }
+
+// ParseDeployment will read in a byte array and attempt to parse it as yaml or json
+func ParseDeployment(b []byte) (*DeploymentConfigurationFile, error) {
+
+	var deployment DeploymentConfigurationFile
+
+	jsonBytes, err := yaml.YAMLToJSON(b)
+	if err == nil {
+		// If there were no errors then the YAML => JSON was successful, no attempt to unmarshall
+		err = json.Unmarshal(jsonBytes, &deployment)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to parse configuration as either yaml or json\n %s", err.Error())
+		}
+
+	} else {
+		// Couldn't parse the yaml to JSON
+		// Attempt to parse it as JSON
+		err = json.Unmarshal(b, &deployment)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to parse configuration as either yaml or json\n %s", err.Error())
+		}
+	}
+	return &deployment, nil
+}
