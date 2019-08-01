@@ -24,7 +24,7 @@ const kickstart67u2 = `accepteula
 install --firstdisk --overwritevmfs 
 rootpw %s
 reboot
-vmserialnum --esx=PUT IN YOUR LICENSE KEY
+# vmserialnum --esx=PUT IN YOUR LICENSE KEY
  
 #network configuration 
 network --bootproto=static --addvmportgroup=1 --ip=%s --netmask=%s --gateway=%s --nameserver=%s --hostname=%s

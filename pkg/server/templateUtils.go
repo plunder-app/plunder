@@ -116,7 +116,7 @@ func UpdateControllerConfig(configFile []byte) error {
 		if imMemESXiKickstart != "" {
 			path := fmt.Sprintf("/%s.ks", dashMac)
 			http.HandleFunc(path, rootHandler)
-			httpPaths[path] = inMemBootConfig
+			httpPaths[path] = imMemESXiKickstart
 		}
 
 	}

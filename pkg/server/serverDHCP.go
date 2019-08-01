@@ -30,7 +30,7 @@ type DHCPSettings struct {
 
 //ServeDHCP -
 func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, options dhcp.Options) (d dhcp.Packet) {
-	mac := p.CHAddr().String()
+	mac := strings.ToLower(p.CHAddr().String())
 	log.Debugf("DCHP Message Type: [%v] from MAC Address [%s]", msgType, mac)
 	switch msgType {
 	case dhcp.Discover:
