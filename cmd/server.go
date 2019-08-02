@@ -4,7 +4,9 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/plunder-app/plunder/pkg/apiserver"
 	"github.com/plunder-app/plunder/pkg/services"
+	"github.com/plunder-app/plunder/pkg/utils"
 	"github.com/spf13/cobra"
 
 	log "github.com/sirupsen/logrus"
@@ -15,7 +17,7 @@ var dhcpSettings services.DHCPSettings
 
 var gateway, dns, startAddress, configPath, deploymentPath, defaultKernel, defaultInitrd, defaultCmdLine *string
 
-var leasecount *int
+var leasecount, port *int
 
 var anyboot *bool
 
@@ -49,6 +51,9 @@ func init() {
 	configPath = PlunderServer.Flags().String("config", "", "Path to a plunder server configuration")
 	deploymentPath = PlunderServer.Flags().String("deployment", "", "Path to a plunder deployment configuration")
 	anyboot = PlunderServer.Flags().Bool("anyboot", false, "Should be used without a configuration, this will boot the kernel/initrd")
+
+	// API Server configuration
+	port = PlunderServer.Flags().IntP("port", "p", 60443, "Port that the Plunder API server will listen on")
 	plunderCmd.AddCommand(PlunderServer)
 }
 
@@ -89,7 +94,7 @@ var PlunderServer = &cobra.Command{
 				}
 
 				// Read the controller from either a yaml or json format
-				err = services.ParseControllerFile(configFile)
+				err = services.ParseControllerData(configFile)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
@@ -98,8 +103,9 @@ var PlunderServer = &cobra.Command{
 				log.Fatalf("Unable to open [%s]", *configPath)
 			}
 		}
+
 		if *services.Controller.EnableDHCP == false && *services.Controller.EnableHTTP == false && *services.Controller.EnableTFTP == false {
-			log.Fatalln("At least one service is required to be enabled")
+			log.Warnln("All services are currently disabled")
 		}
 
 		// If we've enabled DHCP, then we need to ensure a start address for the range is populated
@@ -112,6 +118,17 @@ var PlunderServer = &cobra.Command{
 		}
 
 		services.Controller.StartServices(deployment)
+
+		// Run the API server in a seperate go routine
+		go func() {
+			err := apiserver.Server(*port)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+		}()
+
+		utils.WaitForCtrlC()
+
 		return
 	},
 }

@@ -36,6 +36,8 @@ func (config *HostConfig) ReadKeyFromFile(sshKeyPath string) (string, error) {
 // UpdateDeploymentConfig will read a configuration string and build the iPXE files needed
 func UpdateDeploymentConfig(configFile []byte) error {
 
+	httpPaths = make(map[string]string)
+
 	// Separate configuration until everything is processes correctly
 
 	log.Infoln("Updating the Deployment Configuration")

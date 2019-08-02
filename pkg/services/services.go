@@ -109,7 +109,6 @@ func (c *BootController) StartServices(deployment []byte) {
 		}
 
 		httpAddress = *c.HTTPAddress
-		httpPaths = make(map[string]string)
 
 		// If a Deployment file is set then update the configuration
 		if len(deployment) != 0 {
@@ -127,5 +126,4 @@ func (c *BootController) StartServices(deployment []byte) {
 		}()
 	}
 
-	utils.WaitForCtrlC()
 }

@@ -2,13 +2,39 @@ package apiserver
 
 import (
 	"crypto/tls"
-	"log"
+	"fmt"
 	"net/http"
+
+	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
-func Server() {
+//Server -
+func Server(port int) error {
 	e := setAPIEndpoints()
-	http.ListenAndServe(":5000", e)
+	// Create a new router
+	router := mux.NewRouter()
+
+	// Define the retrieval endpoints for Plunder Server configuration
+	router.HandleFunc("/config", getConfig).Methods("GET")
+
+	// Define the creation endpoints for Plunder Server Configuration
+	router.HandleFunc("/config", postConfig).Methods("POST")
+
+	// Define the retrieval endpoints for Plunder Deployment configuration
+	router.HandleFunc("/deployment", getDeployment).Methods("GET")
+
+	// Define the creation and modification endpoints for Plunder Deployment configuration
+	router.HandleFunc("/deployment", postDeployment).Methods("POST")
+	router.HandleFunc("/deployment/{ID}", nil).Methods("POST")
+	router.HandleFunc("/deployment/{ID}", nil).Methods("DELETE")
+	log.Infof("Starting API server on port %d", port)
+
+	err := http.ListenAndServe(fmt.Sprintf(":%d", port), e)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 //TLSServer is a https server
