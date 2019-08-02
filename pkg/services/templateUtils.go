@@ -1,4 +1,4 @@
-package server
+package services
 
 import (
 	"fmt"
@@ -33,8 +33,8 @@ func (config *HostConfig) ReadKeyFromFile(sshKeyPath string) (string, error) {
 	return singleLine, nil
 }
 
-// UpdateControllerConfig will read a configuration string and build the iPXE files needed
-func UpdateControllerConfig(configFile []byte) error {
+// UpdateDeploymentConfig will read a configuration string and build the iPXE files needed
+func UpdateDeploymentConfig(configFile []byte) error {
 
 	// Separate configuration until everything is processes correctly
 

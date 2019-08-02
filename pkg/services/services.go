@@ -1,4 +1,4 @@
-package server
+package services
 
 import (
 	"time"
@@ -113,7 +113,7 @@ func (c *BootController) StartServices(deployment []byte) {
 
 		// If a Deployment file is set then update the configuration
 		if len(deployment) != 0 {
-			err := UpdateControllerConfig(deployment)
+			err := UpdateDeploymentConfig(deployment)
 			if err != nil {
 				// Don't quit on error as updated configuration can be uploaded through the API
 				log.Errorf("%v", err)

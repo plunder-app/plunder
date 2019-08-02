@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
-	"github.com/plunder-app/plunder/pkg/server"
+	"github.com/plunder-app/plunder/pkg/services"
 	"golang.org/x/crypto/ssh"
 
 	log "github.com/sirupsen/logrus"
@@ -82,7 +82,7 @@ func AddHost(address, keypath, username string) error {
 // ImportHostsFromDeployment - This will parse a deployment (either file or HTTP post)
 func ImportHostsFromDeployment(config []byte) error {
 
-	var deployment server.DeploymentConfigurationFile
+	var deployment services.DeploymentConfigurationFile
 
 	err := json.Unmarshal(config, &deployment)
 	if err != nil {

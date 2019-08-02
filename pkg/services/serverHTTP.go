@@ -1,4 +1,4 @@
-package server
+package services
 
 import (
 	"encoding/json"
@@ -167,7 +167,7 @@ func deploymentHandler(w http.ResponseWriter, r *http.Request) {
 				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
 				io.WriteString(w, errorHTML)
 			}
-			err := UpdateControllerConfig(b)
+			err := UpdateDeploymentConfig(b)
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
 			if err != nil {
