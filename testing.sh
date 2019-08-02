@@ -77,17 +77,17 @@ if [[ $i -gt 0 ]]
 then
       echo "Testing as current user [NAME = $n / ID = $i]"
       echo "Starting with disabled configuration"
-      ./plunder server --config ./testing/server_test_config.json
+      sudo ./plunder server --config ./testing/server_test_config.json
       retVal=$?
       if [ $retVal -ne 0 ]; then
           echo "Plunder correctly didn't start"
       fi
       echo "Starting with enabled HTTP configuration (check OSX)"
-      ./plunder server --config ./testing/server_test_http_config.json &
-      echo $! >./testing/plunder.pid
+      sudo ./plunder server --config ./testing/server_test_http_config.json &
       retVal=$?
       if [ $retVal -ne 0 ]; then
           echo "Plunder correctly didn't start"
+          exit 1
       fi
       echo "Sleeping for 3 seconds to ensure plunder has started"
       sleep 3
@@ -103,9 +103,8 @@ then
       curl -X POST --data-binary "@./testing/deployment_config.yaml" localhost/deployment -H "Content-type: text/x-yaml"
       echo "Print (UPDATED) Deployment info"; echo "--------------------------"
       curl localhost/deployment; echo ""
-      kill -9 `cat ./testing/plunder.pid`
+      sudo kill -9 $( ps -ef | grep -i plunder | grep -v -e 'sudo' -e 'grep' | awk '{ print $2 }')     
       wait $! 2>/dev/null
-      rm  ./testing/plunder.pid
       sleep 1
 else 
       echo "Skipping permission tests as running as root"
