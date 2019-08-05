@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/plunder-app/plunder/pkg/server"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -13,6 +12,7 @@ import (
 	"github.com/plunder-app/plunder/pkg/parlay"
 	"github.com/plunder-app/plunder/pkg/parlay/plugin"
 	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/services"
 	"github.com/plunder-app/plunder/pkg/ssh"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -172,7 +172,7 @@ var plunderAutomateSSH = &cobra.Command{
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
-			u.Path = server.DeploymentAPIPath()
+			u.Path = services.DeploymentAPIPath()
 
 			resp, err := http.Get(u.String())
 			if err != nil {

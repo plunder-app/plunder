@@ -1,4 +1,4 @@
-package server
+package services
 
 import (
 	"time"
@@ -10,13 +10,18 @@ import (
 	"github.com/krolaw/dhcp4/conn"
 )
 
+var dhcpServer = make(chan bool)
+var dhcpError = make(chan error, 1)
+
+var runningDHCP, runningTFTP, runningHTTP bool
+
 // find BootConfig will look through a Boot controller for a booting configuration identified through a configuration name
 func findBootConfigForDeployment(deployment DeploymentConfig) *BootConfig {
 
 	// First check is to look inside the deployment configuration for a custom configuration
 	if deployment.ConfigBoot.Kernel != "" && deployment.ConfigBoot.Initrd != "" {
 		// A Custom Kernel and initrd are specified
-		log.Debugln("Internal Kernel/Initrd configuration being used")
+		log.Debugf("The server [%s] has a custom bootConfig defined", deployment.MAC)
 		return &deployment.ConfigBoot
 	}
 
@@ -28,7 +33,7 @@ func findBootConfigForDeployment(deployment DeploymentConfig) *BootConfig {
 		}
 	}
 
-	// No configuration could be found
+	// Either there is no custom kernel/initrd/cmdline or a bootconfig doesn't exist as part of the server configuration
 	return nil
 }
 
@@ -78,19 +83,38 @@ func (c *BootController) StartServices(deployment []byte) {
 		}
 
 		log.Debugf("\nServer IP:\t%s\nAdapter:\t%s\nStart Address:\t%s\nPool Size:\t%d\n", *c.DHCPConfig.DHCPAddress, *c.AdapterName, *c.DHCPConfig.DHCPStartAddress, *c.DHCPConfig.DHCPLeasePool)
+		log.Println("Plunder Services --> Starting DHCP")
 
-		go func() {
-			log.Println("Plunder Services --> Starting DHCP")
-
+		if runningDHCP == false {
 			newConnection, err := conn.NewUDP4FilterListener(*c.AdapterName, ":67")
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
-			//Close the connection when we're tidying up
-			defer newConnection.Close()
-			err = dhcp.Serve(newConnection, c.handler)
-			log.Fatalf("%v", err)
-		}()
+			go func() {
+				//Close the connection when we're tidying up
+				defer newConnection.Close()
+				runningDHCP = true
+				dhcpError <- dhcp.Serve(newConnection, c.handler)
+				runningDHCP = false
+
+			}()
+
+			go func() {
+				select {
+				case <-dhcpError:
+					log.Infof("%s\n", dhcpError)
+				case <-dhcpServer:
+					newConnection.Close()
+				}
+			}()
+		}
+	} else {
+		log.Debugf("Stopping DHCP Server")
+		if runningDHCP {
+			dhcpServer <- true
+			runningDHCP = false
+		}
+
 	}
 
 	if *c.EnableTFTP == true {
@@ -99,7 +123,9 @@ func (c *BootController) StartServices(deployment []byte) {
 			log.Debugf("\nServer IP:\t%s\nPXEFile:\t%s\n", *c.TFTPAddress, *c.PXEFileName)
 
 			err := c.serveTFTP()
-			log.Fatalf("%v", err)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
 		}()
 	}
 
@@ -109,11 +135,10 @@ func (c *BootController) StartServices(deployment []byte) {
 		}
 
 		httpAddress = *c.HTTPAddress
-		httpPaths = make(map[string]string)
 
 		// If a Deployment file is set then update the configuration
 		if len(deployment) != 0 {
-			err := UpdateControllerConfig(deployment)
+			err := UpdateDeploymentConfig(deployment)
 			if err != nil {
 				// Don't quit on error as updated configuration can be uploaded through the API
 				log.Errorf("%v", err)
@@ -123,9 +148,16 @@ func (c *BootController) StartServices(deployment []byte) {
 		go func() {
 			log.Println("Plunder Services --> Starting HTTP")
 			err := c.serveHTTP()
-			log.Fatalf("%v", err)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
 		}()
 	}
 
-	utils.WaitForCtrlC()
+}
+
+// EvaluateServiceConfig - Takes a new configuration and compares the current to new config and then implements the changes
+func EvaluateServiceConfig(newConfig *BootController) error {
+
+	return nil
 }

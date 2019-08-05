@@ -9,7 +9,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/plunder-app/plunder/pkg/parlay"
 	"github.com/plunder-app/plunder/pkg/parlay/types"
-	"github.com/plunder-app/plunder/pkg/server"
+	"github.com/plunder-app/plunder/pkg/services"
 	"github.com/plunder-app/plunder/pkg/utils"
 
 	log "github.com/sirupsen/logrus"
@@ -53,7 +53,7 @@ var plunderServerConfig = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 		// Indent (or pretty-print) the configuration output
-		bc := &server.BootConfig{
+		bc := &services.BootConfig{
 			Kernel:     "/kernelPath",
 			Initrd:     "/initPath",
 			Cmdline:    "cmd=options",
@@ -62,8 +62,8 @@ var plunderServerConfig = &cobra.Command{
 
 		detectServerConfig()
 
-		server.Controller.BootConfigs = append(server.Controller.BootConfigs, *bc)
-		err := renderOutput(server.Controller, pretty)
+		services.Controller.BootConfigs = append(services.Controller.BootConfigs, *bc)
+		err := renderOutput(services.Controller, pretty)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -78,7 +78,7 @@ var plunderDeploymentConfig = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 		// Create an example Global configuration
-		globalConfig := server.HostConfig{
+		globalConfig := services.HostConfig{
 			Gateway:           "192.168.0.1",
 			NTPServer:         "192.168.0.1",
 			NameServer:        "192.168.0.1",
@@ -94,17 +94,17 @@ var plunderDeploymentConfig = &cobra.Command{
 		}
 
 		// Create an example Host configuration
-		hostConfig := server.HostConfig{
+		hostConfig := services.HostConfig{
 			IPAddress:  "192.168.0.2",
 			ServerName: "Server01",
 		}
-		hostDeployConfig := server.DeploymentConfig{
+		hostDeployConfig := services.DeploymentConfig{
 			MAC:        "00:11:22:33:44:55",
 			ConfigHost: hostConfig,
 			ConfigName: "default",
 		}
 
-		configuration := &server.DeploymentConfigurationFile{
+		configuration := &services.DeploymentConfigurationFile{
 			GlobalServerConfig: globalConfig,
 		}
 
@@ -239,18 +239,18 @@ func detectServerConfig() error {
 	ip[3]++
 
 	// Prepopulate the flags with the found nic information
-	server.Controller.AdapterName = &nicName
-	server.Controller.HTTPAddress = &nicAddr
-	server.Controller.TFTPAddress = &nicAddr
+	services.Controller.AdapterName = &nicName
+	services.Controller.HTTPAddress = &nicAddr
+	services.Controller.TFTPAddress = &nicAddr
 
-	*server.Controller.PXEFileName = "undionly.kpxe"
+	*services.Controller.PXEFileName = "undionly.kpxe"
 
 	// DHCP Settings
-	server.Controller.DHCPConfig.DHCPAddress = &nicAddr
-	server.Controller.DHCPConfig.DHCPGateway = &nicAddr
-	server.Controller.DHCPConfig.DHCPDNS = &nicAddr
-	*server.Controller.DHCPConfig.DHCPLeasePool = 20
-	*server.Controller.DHCPConfig.DHCPStartAddress = ip.String()
+	services.Controller.DHCPConfig.DHCPAddress = &nicAddr
+	services.Controller.DHCPConfig.DHCPGateway = &nicAddr
+	services.Controller.DHCPConfig.DHCPDNS = &nicAddr
+	*services.Controller.DHCPConfig.DHCPLeasePool = 20
+	*services.Controller.DHCPConfig.DHCPStartAddress = ip.String()
 
 	return nil
 }

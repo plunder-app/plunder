@@ -1,4 +1,4 @@
-package server
+package services
 
 import (
 	"encoding/json"
@@ -16,8 +16,8 @@ var Controller BootController
 // Deployments - contains an accessible "current" configuration for all deployments
 var Deployments DeploymentConfigurationFile
 
-// ParseControllerFile will read in a byte array and attempt to parse it as yaml or json
-func ParseControllerFile(b []byte) error {
+// ParseControllerData will read in a byte array and attempt to parse it as yaml or json
+func ParseControllerData(b []byte) error {
 
 	jsonBytes, err := yaml.YAMLToJSON(b)
 	if err == nil {

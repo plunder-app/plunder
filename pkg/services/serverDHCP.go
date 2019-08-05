@@ -1,4 +1,4 @@
-package server
+package services
 
 import (
 	"fmt"
@@ -48,7 +48,7 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 		h.Options[dhcp.OptionVendorClassIdentifier] = h.IP
 		// Reply should have the configuration details in for iPXE to boot from
 		if string(options[dhcp.OptionUserClass]) == "iPXE" {
-			deploymentType := FindDeployment(mac)
+			deploymentType := FindDeploymentConfigFromMac(mac)
 			// If this mac address has no deployment attached then reboot IPXE
 			if deploymentType == "" {
 				log.Warnf("Mac address[%s] is unknown, not returning an address", mac)
