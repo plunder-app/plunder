@@ -31,13 +31,13 @@ func ConfigAPIPath() string {
 	return "/config"
 }
 
-func (c BootController) generateBootTypeHanders() {
+func (c BootController) generateBootTypeHanders(mux *http.ServeMux) {
 
 	// Find the default configuration
 	defaultConfig := findBootConfigForName("default")
 	if defaultConfig != nil {
 		defaultBoot = utils.IPXEPreeseed(*c.HTTPAddress, defaultConfig.Kernel, defaultConfig.Initrd, defaultConfig.Cmdline)
-		http.HandleFunc("/default.ipxe", defaultBootHandler)
+		mux.HandleFunc("/default.ipxe", rootHandler)
 	} else {
 		log.Warnf("Found [%d] configurations and no \"default\" configuration", len(c.BootConfigs))
 	}
@@ -46,28 +46,32 @@ func (c BootController) generateBootTypeHanders() {
 	preeseedConfig := findBootConfigForName("preseed")
 	if preeseedConfig != nil {
 		preseed = utils.IPXEPreeseed(*c.HTTPAddress, preeseedConfig.Kernel, preeseedConfig.Initrd, preeseedConfig.Cmdline)
-		http.HandleFunc("/preseed.ipxe", preseedHandler)
+
+		mux.HandleFunc("/preseed.ipxe", preseedHandler)
 	}
 
 	// If a kickstart configuration has been configured then add it, and create a HTTP endpoint
 	kickstartConfig := findBootConfigForName("kickstart")
 	if kickstartConfig != nil {
 		kickstart = utils.IPXEPreeseed(*c.HTTPAddress, kickstartConfig.Kernel, kickstartConfig.Initrd, kickstartConfig.Cmdline)
-		http.HandleFunc("/kickstart.ipxe", kickstartHandler)
+		mux.HandleFunc("/kickstart.ipxe", kickstartHandler)
 	}
 
 	// If a vsphereConfig configuration has been configured then add it, and create a HTTP endpoint
 	vsphereConfig := findBootConfigForName("vsphere")
 	if vsphereConfig != nil {
 		vsphere = utils.IPXEVSphere(*c.HTTPAddress, vsphereConfig.Kernel, vsphereConfig.Cmdline)
-		http.HandleFunc("/vsphere.ipxe", vsphereHandler)
+		mux.HandleFunc("/vsphere.ipxe", vsphereHandler)
 	}
 }
 
 func (c *BootController) serveHTTP() error {
 
+	// Use of a Mux allows the redefinition of http paths
+	mux := http.NewServeMux()
+
 	// This function will pre-generate the boot handlers for the various boot types
-	c.generateBootTypeHanders()
+	c.generateBootTypeHanders(mux)
 
 	reboot = utils.IPXEReboot()
 
@@ -76,18 +80,17 @@ func (c *BootController) serveHTTP() error {
 		return err
 	}
 
-	//httpRoot := http.FileServer(http.Dir(docroot)).ServeHTTP()
-	http.Handle("/", http.FileServer(http.Dir(docroot)))
+	mux.Handle("/", http.FileServer(http.Dir(docroot)))
 
-	http.HandleFunc("/health", HealthCheckHandler)
-	http.HandleFunc("/reboot.ipxe", rebootHandler)
+	mux.HandleFunc("/health", HealthCheckHandler)
+	mux.HandleFunc("/reboot.ipxe", rebootHandler)
 
 	// API Endpoints - allow the update of various configuration without restarting
-	http.HandleFunc(DeploymentAPIPath(), deploymentHandler)
+	mux.HandleFunc(DeploymentAPIPath(), deploymentHandler)
 
 	// Set the pointer to the boot config
 	controller = c
-	http.HandleFunc(ConfigAPIPath(), configHandler)
+	mux.HandleFunc(ConfigAPIPath(), configHandler)
 
 	return http.ListenAndServe(":80", nil)
 }
