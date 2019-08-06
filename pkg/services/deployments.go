@@ -3,7 +3,6 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/plunder-app/plunder/pkg/utils"
@@ -22,6 +21,11 @@ func init() {
 }
 
 func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
+
+	// If HTTP isn't enabled we can't build the multiplexer for URLs
+	if mux == nil {
+		return fmt.Errorf("Deployment HTTP Server isn't enabled, so parsing deployments isn't possible")
+	}
 
 	log.Debugf("Parsing [%d] Configurations", len(updateConfig.Configs))
 	for i := range updateConfig.Configs {
@@ -76,27 +80,34 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 			inMemipxeConfig = utils.IPXEAnyBoot(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
 		}
 
-		// Use of a Mux allows the redefinition of http paths
-		mux := http.NewServeMux()
-
 		// Build the configuration that is passed to iPXE on boot
 		if inMemipxeConfig != "" {
 			path := fmt.Sprintf("/%s.ipxe", dashMac)
-			mux.HandleFunc(path, rootHandler)
+			if _, ok := httpPaths[path]; !ok {
+				// Only create the handler if one doesn't exist
+				mux.HandleFunc(path, rootHandler)
+			}
+
 			httpPaths[path] = inMemipxeConfig
 		}
 
 		// Build a boot configuration that is passed to a kernel
 		if inMemBootConfig != "" {
 			path := fmt.Sprintf("/%s.cfg", dashMac)
-			mux.HandleFunc(path, rootHandler)
+			if _, ok := httpPaths[path]; !ok {
+				// Only create the handler if one doesn't exist
+				mux.HandleFunc(path, rootHandler)
+			}
 			httpPaths[path] = inMemBootConfig
 		}
 
 		// Build a vSphere kickstart configuration that is passed to an installer
 		if imMemESXiKickstart != "" {
 			path := fmt.Sprintf("/%s.ks", dashMac)
-			mux.HandleFunc(path, rootHandler)
+			if _, ok := httpPaths[path]; !ok {
+				// Only create the handler if one doesn't exist
+				mux.HandleFunc(path, rootHandler)
+			}
 			httpPaths[path] = imMemESXiKickstart
 		}
 

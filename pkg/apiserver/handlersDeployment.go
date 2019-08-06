@@ -11,19 +11,27 @@ import (
 	"github.com/plunder-app/plunder/pkg/services"
 )
 
-type response struct {
+//Response - This is the wrapper for responses back to a client, if any errors are created then the payload isn't guarenteed
+type Response struct {
 	FriendlyError string `json:"friendlyError,omitempty"`
 	Error         string `json:"error,omitempty"`
 
-	Response interface{} `json:"response,omitempty"`
+	Payload json.RawMessage `json:"payload,omitempty"`
 }
 
 // Retrieve the plunder global deployment configuration
 
 func getDeployments(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var rsp response
-	rsp.Response = services.Deployments
+	var rsp Response
+	jsonData, err := json.Marshal(services.Deployments)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		rsp.FriendlyError = "Error retrieving deployment Configuration"
+		rsp.Error = err.Error()
+	} else {
+		rsp.Payload = jsonData
+	}
 	json.NewEncoder(w).Encode(rsp)
 }
 
@@ -33,12 +41,12 @@ func postDeployments(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if b, err := ioutil.ReadAll(r.Body); err == nil {
 		err := services.UpdateDeploymentConfig(b)
-		var rsp response
+		var rsp Response
 
 		if err != nil {
 			rsp.FriendlyError = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
-			rsp.Response = nil
+			rsp.Payload = nil
 			json.NewEncoder(w).Encode(rsp)
 		}
 	}
@@ -49,14 +57,21 @@ func postDeployments(w http.ResponseWriter, r *http.Request) {
 func getSpecificDeployment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	var rsp response
+	var rsp Response
 	for i := range services.Deployments.Configs {
 
 		if params["id"] == strings.Replace(services.Deployments.Configs[i].MAC, ":", "-", -1) {
-			rsp.Response = services.Deployments.Configs[i]
+			jsonData, err := json.Marshal(services.Deployments.Configs[i])
+			if err != nil {
+				w.Header().Set("Content-Type", "application/json")
+				rsp.FriendlyError = "Error retrieving deployment Configuration"
+				rsp.Error = err.Error()
+			} else {
+				rsp.Payload = jsonData
+			}
 		}
 	}
-	if rsp.Response == nil {
+	if rsp.Payload == nil {
 		rsp.Error = fmt.Sprintf("Unable to find %s", params["id"])
 	}
 	json.NewEncoder(w).Encode(rsp)
@@ -68,12 +83,12 @@ func postDeployment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if b, err := ioutil.ReadAll(r.Body); err == nil {
 		err := services.AddDeployment(b)
-		var rsp response
+		var rsp Response
 
 		if err != nil {
 			rsp.FriendlyError = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
-			rsp.Response = nil
+			rsp.Payload = nil
 			json.NewEncoder(w).Encode(rsp)
 		}
 	}
@@ -83,7 +98,7 @@ func postDeployment(w http.ResponseWriter, r *http.Request) {
 // Retrieve a specific plunder deployment configuration
 func updateDeployment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var rsp response
+	var rsp Response
 
 	// Find the deployment ID
 	id := mux.Vars(r)["id"]
@@ -92,29 +107,29 @@ func updateDeployment(w http.ResponseWriter, r *http.Request) {
 	if id == "global" {
 		if b, err := ioutil.ReadAll(r.Body); err == nil {
 			err := services.UpdateGlobalDeploymentConfig(b)
-	
+
 			if err != nil {
 				rsp.FriendlyError = "Error updating Global Configuration"
 				rsp.Error = err.Error()
-				rsp.Response = nil
+				rsp.Payload = nil
 				json.NewEncoder(w).Encode(rsp)
 			}
 		}
 	} else {
-	// We need to revert the mac address back to the correct format (dashes back to colons)
-	mac := strings.Replace(id, "-", ":", -1)
+		// We need to revert the mac address back to the correct format (dashes back to colons)
+		mac := strings.Replace(id, "-", ":", -1)
 
-	if b, err := ioutil.ReadAll(r.Body); err == nil {
-		err := services.UpdateDeployment(mac, b)
+		if b, err := ioutil.ReadAll(r.Body); err == nil {
+			err := services.UpdateDeployment(mac, b)
 
-		if err != nil {
-			rsp.FriendlyError = "Error updating Deployment Configuration"
-			rsp.Error = err.Error()
-			rsp.Response = nil
-			json.NewEncoder(w).Encode(rsp)
+			if err != nil {
+				rsp.FriendlyError = "Error updating Deployment Configuration"
+				rsp.Error = err.Error()
+				rsp.Payload = nil
+				json.NewEncoder(w).Encode(rsp)
+			}
 		}
 	}
-}
 }
 
 // Retrieve a specific plunder deployment configuration
@@ -128,12 +143,12 @@ func deleteDeployment(w http.ResponseWriter, r *http.Request) {
 
 	if b, err := ioutil.ReadAll(r.Body); err == nil {
 		err := services.DeleteDeployment(mac, b)
-		var rsp response
+		var rsp Response
 
 		if err != nil {
 			rsp.FriendlyError = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
-			rsp.Response = nil
+			rsp.Payload = nil
 			json.NewEncoder(w).Encode(rsp)
 		}
 	}

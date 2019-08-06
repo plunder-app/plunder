@@ -1,6 +1,7 @@
 package services
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/plunder-app/plunder/pkg/utils"
@@ -136,6 +137,17 @@ func (c *BootController) StartServices(deployment []byte) {
 
 		httpAddress = *c.HTTPAddress
 
+		go func() {
+			log.Println("Plunder Services --> Starting HTTP")
+			err := c.serveHTTP()
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+		}()
+
+		// Use of a Mux allows the redefinition of http paths
+		mux = http.NewServeMux()
+
 		// If a Deployment file is set then update the configuration
 		if len(deployment) != 0 {
 			err := UpdateDeploymentConfig(deployment)
@@ -144,20 +156,6 @@ func (c *BootController) StartServices(deployment []byte) {
 				log.Errorf("%v", err)
 			}
 		}
-
-		go func() {
-			log.Println("Plunder Services --> Starting HTTP")
-			err := c.serveHTTP()
-			if err != nil {
-				log.Fatalf("%v", err)
-			}
-		}()
 	}
 
-}
-
-// EvaluateServiceConfig - Takes a new configuration and compares the current to new config and then implements the changes
-func EvaluateServiceConfig(newConfig *BootController) error {
-
-	return nil
 }

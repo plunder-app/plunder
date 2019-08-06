@@ -1,8 +1,27 @@
 package apiserver
 
 import (
+	"fmt"
+
 	"github.com/gorilla/mux"
 )
+
+// Expose Endpoints to the outside world
+
+//ConfigAPIPath returns the URI that is used to interact with the plunder Configuration API
+func ConfigAPIPath() string {
+	return "/config"
+}
+
+//DeploymentsAPIPath returns the URI that is used to interact with all Plunder deployments
+func DeploymentsAPIPath() string {
+	return "/deployments"
+}
+
+//DeploymentAPIPath returns the URI that is used to interact with the specific deployments
+func DeploymentAPIPath() string {
+	return "/deployment"
+}
 
 // setAPIEndpoints defines all of the API end points for Plunder
 func setAPIEndpoints() *mux.Router {
@@ -14,29 +33,29 @@ func setAPIEndpoints() *mux.Router {
 	// ------------------------------------
 
 	// Define the retrieval endpoints for Plunder Server configuration
-	router.HandleFunc("/config", getConfig).Methods("GET")
+	router.HandleFunc(fmt.Sprintf("%s", ConfigAPIPath()), getConfig).Methods("GET")
 
 	// Define the creation endpoints for Plunder Server Configuration
-	router.HandleFunc("/config", postConfig).Methods("POST")
+	router.HandleFunc(fmt.Sprintf("%s", ConfigAPIPath()), postConfig).Methods("POST")
 
 	// Define the retrieval endpoints for Plunder Deployment configuration
-	router.HandleFunc("/deployments", getDeployments).Methods("GET")
+	router.HandleFunc(fmt.Sprintf("%s", DeploymentsAPIPath()), getDeployments).Methods("GET")
 
 	// Define the retrieval endpoints for Plunder Deployment configuration
-	router.HandleFunc("/deployments", postDeployments).Methods("POST")
+	router.HandleFunc(fmt.Sprintf("%s", DeploymentsAPIPath()), postDeployments).Methods("POST")
 
 	// ------------------------------------
 	// Specific configuration management
 	// ------------------------------------
 
 	// Define the creation endpoints for Plunder Server Boot Configuration
-	router.HandleFunc("/config/{id}", postBootConfig).Methods("POST")
+	router.HandleFunc(fmt.Sprintf("%s/{id}", ConfigAPIPath()), postBootConfig).Methods("POST")
 
 	// Define the creation and modification endpoints for Plunder Deployment configuration
-	router.HandleFunc("/deployment", postDeployment).Methods("POST")
-	router.HandleFunc("/deployment/{id}", getSpecificDeployment).Methods("GET")
-	router.HandleFunc("/deployment/{id}", updateDeployment).Methods("POST")
-	router.HandleFunc("/deployment/{id}", deleteDeployment).Methods("DELETE")
+	router.HandleFunc(fmt.Sprintf("%s", DeploymentAPIPath()), postDeployment).Methods("POST")
+	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), getSpecificDeployment).Methods("GET")
+	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), updateDeployment).Methods("POST")
+	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), deleteDeployment).Methods("DELETE")
 
 	return router
 }
