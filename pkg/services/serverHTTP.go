@@ -1,10 +1,7 @@
 package services
 
 import (
-	"encoding/json"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"path/filepath"
 
@@ -18,15 +15,7 @@ var preseed, kickstart, defaultBoot, vsphere, reboot string
 // controller Pointer for the config API endpoint handler
 var controller *BootController
 
-//DeploymentAPIPath returns the URI that is used to interact with the plunder Deployment API
-func DeploymentAPIPath() string {
-	return "/deployment"
-}
-
-//ConfigAPIPath returns the URI that is used to interact with the plunder Configuration API
-func ConfigAPIPath() string {
-	return "/config"
-}
+var mux *http.ServeMux
 
 func (c BootController) generateBootTypeHanders(mux *http.ServeMux) {
 
@@ -64,9 +53,6 @@ func (c BootController) generateBootTypeHanders(mux *http.ServeMux) {
 
 func (c *BootController) serveHTTP() error {
 
-	// Use of a Mux allows the redefinition of http paths
-	mux := http.NewServeMux()
-
 	// This function will pre-generate the boot handlers for the various boot types
 	c.generateBootTypeHanders(mux)
 
@@ -78,18 +64,13 @@ func (c *BootController) serveHTTP() error {
 	}
 
 	mux.Handle("/", http.FileServer(http.Dir(docroot)))
-
 	mux.HandleFunc("/health", HealthCheckHandler)
 	mux.HandleFunc("/reboot.ipxe", rebootHandler)
 
-	// API Endpoints - allow the update of various configuration without restarting
-	mux.HandleFunc(DeploymentAPIPath(), deploymentHandler)
-
 	// Set the pointer to the boot config
 	controller = c
-	mux.HandleFunc(ConfigAPIPath(), configHandler)
 
-	return http.ListenAndServe(":80", nil)
+	return http.ListenAndServe(":80", mux)
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
@@ -146,61 +127,4 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	// In the future we could report back on the status of our DB, or our cache
 	// (e.g. Redis) by performing a simple PING, and include them in the response.
 	io.WriteString(w, `{"alive": true}`)
-}
-
-func deploymentHandler(w http.ResponseWriter, r *http.Request) {
-
-	switch r.Method {
-	case "GET":
-		b, err := json.MarshalIndent(Deployments, "", "\t")
-		if err != nil {
-			io.WriteString(w, "<b>Unable to Parse Deployment configuration</b>")
-			w.WriteHeader(http.StatusBadRequest)
-			w.Header().Set("Content-Type", "application/json")
-		}
-		io.WriteString(w, string(b))
-	case "POST":
-		if b, err := ioutil.ReadAll(r.Body); err == nil {
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Header().Set("Content-Type", "application/json")
-				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
-				io.WriteString(w, errorHTML)
-			}
-			err := UpdateDeploymentConfig(b)
-			w.WriteHeader(http.StatusBadRequest)
-			w.Header().Set("Content-Type", "application/json")
-			if err != nil {
-				errorHTML := fmt.Sprintf("<b>Unable to Parse Deployment configuration</b>\n Error: %s", err.Error())
-				io.WriteString(w, errorHTML)
-			}
-		}
-	default:
-		// Unknown HTTP Method for this endpoint
-	}
-}
-
-func configHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	switch r.Method {
-	case "GET":
-		b, err := json.MarshalIndent(controller, "", "\t")
-		if err != nil {
-			io.WriteString(w, "<b>Unable to Parse configuration</b>")
-		}
-		io.WriteString(w, string(b))
-	case "POST":
-		if _, err := ioutil.ReadAll(r.Body); err == nil {
-			if err != nil {
-				errorHTML := fmt.Sprintf("<b>Unable to Parse configuration</b>\n Error: %s", err.Error())
-				io.WriteString(w, errorHTML)
-			}
-
-			// TODO - (thebsdbox) add updating of BootController
-
-		}
-	default:
-		// Unknown HTTP Method for this endpoint
-	}
 }

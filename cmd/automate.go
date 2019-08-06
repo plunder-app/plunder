@@ -9,10 +9,10 @@ import (
 	"os"
 
 	"github.com/ghodss/yaml"
+	"github.com/plunder-app/plunder/pkg/apiserver"
 	"github.com/plunder-app/plunder/pkg/parlay"
-	"github.com/plunder-app/plunder/pkg/parlay/plugin"
+	parlayplugin "github.com/plunder-app/plunder/pkg/parlay/plugin"
 	"github.com/plunder-app/plunder/pkg/parlay/types"
-	"github.com/plunder-app/plunder/pkg/services"
 	"github.com/plunder-app/plunder/pkg/ssh"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -172,7 +172,7 @@ var plunderAutomateSSH = &cobra.Command{
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
-			u.Path = services.DeploymentAPIPath()
+			u.Path = apiserver.DeploymentsAPIPath()
 
 			resp, err := http.Get(u.String())
 			if err != nil {
