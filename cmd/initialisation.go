@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/plunder-app/plunder/pkg/certs"
 	"github.com/plunder-app/plunder/pkg/parlay"
 	"github.com/plunder-app/plunder/pkg/parlay/types"
 	"github.com/plunder-app/plunder/pkg/services"
@@ -30,6 +32,7 @@ func init() {
 	plunderConfig.AddCommand(plunderServerConfig)
 	plunderConfig.AddCommand(plunderDeploymentConfig)
 	plunderConfig.AddCommand(PlunderParlayConfig)
+	plunderConfig.AddCommand(plunderCerts)
 
 	plunderCmd.AddCommand(plunderGet)
 
@@ -195,6 +198,21 @@ var plunderGet = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
+		return
+	},
+}
+
+// plunderCerts - The Get command will pull any required components (iPXE boot files)
+var plunderCerts = &cobra.Command{
+	Use:   "certs",
+	Short: "Generate the Plunder Key Certs needed for the API Server",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+
+		certs.GenerateKeyPair(nil, time.Now(), (24*time.Hour)*365)
+		certs.WriteKeyToFile("./plunder.key")
+		certs.WritePemToFile("./plunder.pem")
+
 		return
 	},
 }
