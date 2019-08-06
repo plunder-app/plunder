@@ -6,15 +6,15 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"io/ioutil"
 	"math/big"
-	"net"
+	"os"
 	"time"
+
+	"github.com/plunder-app/plunder/pkg/utils"
 )
 
 // Internal variables to hold the outputs
@@ -65,6 +65,18 @@ func GenerateKeyPair(hosts []string, start time.Time, length time.Duration) erro
 		Bytes: x509.MarshalPKCS1PrivateKey(caPrivKey),
 	})
 
+	// Find all IP addresses on a server
+	serverAddresses, err := utils.FindAllIPAddresses()
+	if err != nil {
+		return err
+	}
+
+	// Find the hostname of the server
+	serverName, err := os.Hostname()
+	if err != nil {
+		return err
+	}
+
 	// set up our server certificate
 	cert := &x509.Certificate{
 		SerialNumber: big.NewInt(2019),
@@ -76,13 +88,13 @@ func GenerateKeyPair(hosts []string, start time.Time, length time.Duration) erro
 			StreetAddress: []string{""},
 			PostalCode:    []string{""},
 		},
-		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+		IPAddresses:  serverAddresses,
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().AddDate(10, 0, 0),
 		SubjectKeyId: []byte{1, 2, 3, 4, 6},
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:     x509.KeyUsageDigitalSignature,
-		//DNSNames:     []string{"deploy01"}, // TODO
+		DNSNames:     []string{serverName},
 	}
 
 	certPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
@@ -108,27 +120,7 @@ func GenerateKeyPair(hosts []string, start time.Time, length time.Duration) erro
 		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
 	})
 
-	_, err = tls.X509KeyPair(certPEM.Bytes(), certPrivKeyPEM.Bytes())
-	if err != nil {
-		fmt.Printf("Da fuck [%s]\n", err.Error())
-	}
-
-	_, err = tls.LoadX509KeyPair("plunder.pem", "plunder.key")
-	if err != nil {
-		fmt.Printf("Da fuck [%s]\n", err.Error())
-	}
-
 	keyData = certPrivKeyPEM.Bytes()
-
-	// serverTLSConf = &tls.Config{
-	// 	Certificates: []tls.Certificate{serverCert},
-	// }
-
-	// certpool := x509.NewCertPool()
-	// certpool.AppendCertsFromPEM(caPEM.Bytes())
-	// clientTLSConf = &tls.Config{
-	// 	RootCAs: certpool,
-	// }
 
 	return nil
 }
@@ -136,7 +128,7 @@ func GenerateKeyPair(hosts []string, start time.Time, length time.Duration) erro
 // WriteKeyToFile - will write a generated Key to a file path
 func WriteKeyToFile(path string) error {
 
-	err := ioutil.WriteFile(path, keyData, 0644)
+	err := ioutil.WriteFile(path, keyData, 0600)
 	if err != nil {
 		return err
 	}
@@ -146,7 +138,7 @@ func WriteKeyToFile(path string) error {
 // WritePemToFile - will write a generated pem to a file path
 func WritePemToFile(path string) error {
 
-	err := ioutil.WriteFile(path, pemData, 0644)
+	err := ioutil.WriteFile(path, pemData, 0600)
 	if err != nil {
 		return err
 	}
