@@ -214,6 +214,18 @@ func DeleteDeployment(macAddress string, rawDeployment []byte) error {
 
 }
 
+// UpdateGlobalDeploymentConfig - This allows updating of the global configuration independently
+func UpdateGlobalDeploymentConfig(rawDeployment []byte) error {
+	var globalDeploymentConfig HostConfig
+	err := json.Unmarshal(rawDeployment, &globalDeploymentConfig)
+	if err != nil {
+		return fmt.Errorf("Unable to parse deployment configuration")
+	}
+	// Update the deployments with the new configuration
+	Deployments.GlobalServerConfig = globalDeploymentConfig
+	return nil
+}
+
 //FindDeploymentConfigFromMac - this will return the deployment configuration, allowing the DHCP server to return the correct DHCP options
 func FindDeploymentConfigFromMac(mac string) string {
 

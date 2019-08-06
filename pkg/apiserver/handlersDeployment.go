@@ -83,15 +83,29 @@ func postDeployment(w http.ResponseWriter, r *http.Request) {
 // Retrieve a specific plunder deployment configuration
 func updateDeployment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	var rsp response
 
 	// Find the deployment ID
 	id := mux.Vars(r)["id"]
+
+	// Are we updating the deployment "global"
+	if id == "global" {
+		if b, err := ioutil.ReadAll(r.Body); err == nil {
+			err := services.UpdateGlobalDeploymentConfig(b)
+	
+			if err != nil {
+				rsp.FriendlyError = "Error updating Global Configuration"
+				rsp.Error = err.Error()
+				rsp.Response = nil
+				json.NewEncoder(w).Encode(rsp)
+			}
+		}
+	} else {
 	// We need to revert the mac address back to the correct format (dashes back to colons)
 	mac := strings.Replace(id, "-", ":", -1)
 
 	if b, err := ioutil.ReadAll(r.Body); err == nil {
 		err := services.UpdateDeployment(mac, b)
-		var rsp response
 
 		if err != nil {
 			rsp.FriendlyError = "Error updating Deployment Configuration"
@@ -100,6 +114,7 @@ func updateDeployment(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(rsp)
 		}
 	}
+}
 }
 
 // Retrieve a specific plunder deployment configuration
