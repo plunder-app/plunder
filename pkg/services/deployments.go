@@ -13,6 +13,14 @@ import (
 // AnyBoot - This flag when set to true will just boot any kernel/initrd/cmdline configuration
 var AnyBoot bool
 
+// This stores the mapping for a url to the data /macaddress.file => data
+var httpPaths map[string]string
+
+func init() {
+	// Initialise the paths map
+	httpPaths = make(map[string]string)
+}
+
 func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 
 	log.Debugf("Parsing [%d] Configurations", len(updateConfig.Configs))
@@ -107,8 +115,6 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 
 // UpdateDeploymentConfig will read a configuration string and build the iPXE files needed
 func UpdateDeploymentConfig(rawDeploymentConfig []byte) error {
-
-	httpPaths = make(map[string]string)
 
 	// Separate configuration until everything is processes correctly
 

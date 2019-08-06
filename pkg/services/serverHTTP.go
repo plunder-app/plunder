@@ -15,9 +15,6 @@ import (
 // These strings container the generated iPXE details that are passed to the bootloader when the correct url is requested
 var preseed, kickstart, defaultBoot, vsphere, reboot string
 
-// This stores the mapping for a mac adress key to it's pxe data
-var httpPaths map[string]string
-
 // controller Pointer for the config API endpoint handler
 var controller *BootController
 
