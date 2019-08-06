@@ -39,6 +39,35 @@ func FindIPAddress(addrName string) (string, string, error) {
 	return "", "", fmt.Errorf("Unknown interface [%s]", addrName)
 }
 
+// FindAllIPAddresses - Will return all IP addresses for a server
+func FindAllIPAddresses() ([]net.IP, error) {
+	var IPS []net.IP
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return nil, err
+	}
+	for _, i := range ifaces {
+		addrs, err := i.Addrs()
+		if err != nil {
+			return nil, err
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip != nil {
+				IPS = append(IPS, net.IP(ip))
+			}
+			// process IP address
+		}
+	}
+	return IPS, nil
+}
+
 //ConvertIP -
 func ConvertIP(ipAddress string) []byte {
 	// net.ParseIP has returned IPv6 sized allocations o_O

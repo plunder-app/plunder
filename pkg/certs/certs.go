@@ -6,15 +6,14 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"io/ioutil"
 	"math/big"
-	"net"
 	"time"
+
+	"github.com/plunder-app/plunder/pkg/utils"
 )
 
 // Internal variables to hold the outputs
@@ -64,7 +63,10 @@ func GenerateKeyPair(hosts []string, start time.Time, length time.Duration) erro
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(caPrivKey),
 	})
-
+	serverAddresses, err := utils.FindAllIPAddresses()
+	if err != nil {
+		return err
+	}
 	// set up our server certificate
 	cert := &x509.Certificate{
 		SerialNumber: big.NewInt(2019),
@@ -76,7 +78,7 @@ func GenerateKeyPair(hosts []string, start time.Time, length time.Duration) erro
 			StreetAddress: []string{""},
 			PostalCode:    []string{""},
 		},
-		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+		IPAddresses:  serverAddresses,
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().AddDate(10, 0, 0),
 		SubjectKeyId: []byte{1, 2, 3, 4, 6},
@@ -107,16 +109,6 @@ func GenerateKeyPair(hosts []string, start time.Time, length time.Duration) erro
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
 	})
-
-	_, err = tls.X509KeyPair(certPEM.Bytes(), certPrivKeyPEM.Bytes())
-	if err != nil {
-		fmt.Printf("Da fuck [%s]\n", err.Error())
-	}
-
-	_, err = tls.LoadX509KeyPair("plunder.pem", "plunder.key")
-	if err != nil {
-		fmt.Printf("Da fuck [%s]\n", err.Error())
-	}
 
 	keyData = certPrivKeyPEM.Bytes()
 
