@@ -19,7 +19,7 @@ var gateway, dns, startAddress, configPath, deploymentPath, defaultKernel, defau
 
 var leasecount, port *int
 
-var anyboot *bool
+var anyboot, insecure *bool
 
 func init() {
 
@@ -54,6 +54,8 @@ func init() {
 
 	// API Server configuration
 	port = PlunderServer.Flags().IntP("port", "p", 60443, "Port that the Plunder API server will listen on")
+	insecure = PlunderServer.Flags().BoolP("insecure", "i", false, "Start the Plunder API server without encryption")
+
 	plunderCmd.AddCommand(PlunderServer)
 }
 
@@ -121,7 +123,7 @@ var PlunderServer = &cobra.Command{
 
 		// Run the API server in a seperate go routine
 		go func() {
-			err := apiserver.Server(*port)
+			err := apiserver.Server(*port, *insecure)
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
