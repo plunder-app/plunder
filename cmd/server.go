@@ -15,7 +15,7 @@ import (
 //var controller server.BootController
 var dhcpSettings services.DHCPSettings
 
-var gateway, dns, startAddress, configPath, deploymentPath, defaultKernel, defaultInitrd, defaultCmdLine *string
+var apiServerPath, gateway, dns, startAddress, configPath, deploymentPath, defaultKernel, defaultInitrd, defaultCmdLine *string
 
 var leasecount, port *int
 
@@ -55,6 +55,7 @@ func init() {
 	// API Server configuration
 	port = PlunderServer.Flags().IntP("port", "p", 60443, "Port that the Plunder API server will listen on")
 	insecure = PlunderServer.Flags().BoolP("insecure", "i", false, "Start the Plunder API server without encryption")
+	apiServerPath = PlunderServer.Flags().String("path", ".plunderserver.yaml", "Path to configuration for the API Server")
 
 	plunderCmd.AddCommand(PlunderServer)
 }
@@ -123,7 +124,7 @@ var PlunderServer = &cobra.Command{
 
 		// Run the API server in a seperate go routine
 		go func() {
-			err := apiserver.Server(*port, *insecure)
+			err := apiserver.Server(*apiServerPath, *port, *insecure)
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
