@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/plunder-app/plunder/pkg/apiserver"
 	"github.com/plunder-app/plunder/pkg/certs"
 	"github.com/plunder-app/plunder/pkg/parlay"
 	"github.com/plunder-app/plunder/pkg/parlay/types"
@@ -20,19 +22,32 @@ import (
 )
 
 // These variables are used to capture input from the CLI
-var output, detectNic string
+var output, detectNic, serverPath, clientPath string
+var configAPIServerPort int
 var pretty bool
 
 func init() {
 	plunderCmd.AddCommand(plunderConfig)
 	plunderConfig.PersistentFlags().StringVarP(&output, "output", "o", "json", "Ouput type, should be either JSON or YAML")
 	plunderConfig.PersistentFlags().BoolVarP(&pretty, "pretty", "p", false, "Ouput JSON in a pretty/Human readable format")
-	plunderServerConfig.Flags().StringVarP(&detectNic, "detect", "d", "", "Attempt to automatically detect the default settings for a specfic interface")
 
+	// Persistent above both client functions
+	plunderAPIConfig.PersistentFlags().IntVar(&configAPIServerPort, "port", 60443, "Port that the plunder API server should use")
+
+	// Path for Server
+	plunderAPIConfigServer.Flags().StringVar(&serverPath, "path", ".plunderserver.yaml", "Path that the plunder API server config should be written to")
+	// Path for Client
+	plunderAPIConfigClient.Flags().StringVar(&clientPath, "path", "plunderclient.yaml", "Path that the plunder API client config should be written to")
+
+	// Add sub commands to APIServer
+	plunderAPIConfig.AddCommand(plunderAPIConfigClient)
+	plunderAPIConfig.AddCommand(plunderAPIConfigServer)
+
+	// Add all sub commands to the config sub command
+	plunderConfig.AddCommand(plunderAPIConfig)
 	plunderConfig.AddCommand(plunderServerConfig)
 	plunderConfig.AddCommand(plunderDeploymentConfig)
 	plunderConfig.AddCommand(PlunderParlayConfig)
-	plunderConfig.AddCommand(plunderCerts)
 
 	plunderCmd.AddCommand(plunderGet)
 
@@ -202,17 +217,53 @@ var plunderGet = &cobra.Command{
 	},
 }
 
-// plunderCerts - The Get command will pull any required components (iPXE boot files)
-var plunderCerts = &cobra.Command{
-	Use:   "certs",
-	Short: "Generate the Plunder Key Certs needed for the API Server",
+// plunderAPIConfig - The Get command will pull any required components (iPXE boot files)
+var plunderAPIConfig = &cobra.Command{
+	Use:   "apiserver",
+	Short: "Generate the configuration for the api server",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+		cmd.Help()
+		return
+	},
+}
+
+// plunderAPIConfigServer - The Get command will pull any required components (iPXE boot files)
+var plunderAPIConfigServer = &cobra.Command{
+	Use:   "server",
+	Short: "Generate the configuration for the api server",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 
-		certs.GenerateKeyPair(nil, time.Now(), (24*time.Hour)*365)
-		certs.WriteKeyToFile("./plunder.key")
-		certs.WritePemToFile("./plunder.pem")
+		err := certs.GenerateKeyPair(nil, time.Now(), (24*time.Hour)*365)
+		if err != nil {
+			log.Fatalln(err)
+		}
 
+		err = apiserver.WriteServerConfig(serverPath, "", "", configAPIServerPort, certs.GetPem(), certs.GetKey())
+		if err != nil {
+			log.Fatalln(err)
+		}
+		return
+	},
+}
+
+// plunderAPIConfigServer - The Get command will pull any required components (iPXE boot files)
+var plunderAPIConfigClient = &cobra.Command{
+	Use:   "client",
+	Short: "Generate the configuration for a client for the API server",
+	Run: func(cmd *cobra.Command, args []string) {
+		log.SetLevel(log.Level(logLevel))
+
+		s, err := apiserver.OpenServerConfig(serverPath)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		hostname, err := os.Hostname()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		apiserver.WriteClientConfig(clientPath, hostname, s)
 		return
 	},
 }

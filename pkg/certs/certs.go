@@ -145,3 +145,13 @@ func WritePemToFile(path string) error {
 
 	return nil
 }
+
+// GetKey - will return the []byte of the key
+func GetKey() []byte {
+	return keyData
+}
+
+// GetPem - will return the []byte of the key
+func GetPem() []byte {
+	return pemData
+}
