@@ -36,8 +36,8 @@ func postConfig(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			rsp.FriendlyError = "Error updating Server Configuration"
 			rsp.Error = err.Error()
-			json.NewEncoder(w).Encode(rsp)
 		}
+		json.NewEncoder(w).Encode(rsp)
 		services.Controller.StartServices(nil)
 	}
 }
@@ -52,7 +52,7 @@ func postBootConfig(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			rsp.FriendlyError = "Error updating Server Configuration"
 			rsp.Error = err.Error()
-			json.NewEncoder(w).Encode(rsp)
 		}
+		json.NewEncoder(w).Encode(rsp)
 	}
 }
