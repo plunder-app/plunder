@@ -9,8 +9,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// AnyBoot - This flag when set to true will just boot any kernel/initrd/cmdline configuration
-var AnyBoot bool
+// DefaultBootType specifies what a server will default to if no config is found
+var DefaultBootType string
 
 // This stores the mapping for a url to the data /macaddress.file => data
 var httpPaths map[string]string
@@ -247,9 +247,9 @@ func UpdateGlobalDeploymentConfig(rawDeployment []byte) error {
 func FindDeploymentConfigFromMac(mac string) string {
 
 	// AnyBoot will just boot the specified kernel/initrd
-	if AnyBoot == true {
-		return "anyboot"
-	}
+	// if AnyBoot == true {
+	// 	return "anyboot"
+	// }
 
 	if len(Deployments.Configs) == 0 {
 		// No configurations have been loaded
@@ -262,5 +262,5 @@ func FindDeploymentConfigFromMac(mac string) string {
 			return Deployments.Configs[i].ConfigName
 		}
 	}
-	return ""
+	return DefaultBootType
 }

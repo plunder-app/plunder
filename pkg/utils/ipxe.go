@@ -15,12 +15,19 @@ const iPXEURL = "https://boot.ipxe.org/undionly.kpxe"
 // This header is used by all configurations
 const iPXEHeader = `#!ipxe
 dhcp
+echo .
+echo .
+echo .
+echo .
 echo +-------------------- Plunder -------------------------------
-echo | hostname: ${hostname}, next-server: ${next-server}
-echo | address.: ${net0/ip}
-echo | mac.....: ${net0/mac}  
-echo | gateway.: ${net0/gateway} 
+echo | 
+echo |    address.: ${net0/ip}
+echo |    mac.....: ${net0/mac}  
+echo |    gateway.: ${net0/gateway} 
 echo +------------------------------------------------------------
+echo .
+echo .
+echo .
 echo .`
 
 //////////////////////////////
@@ -37,7 +44,16 @@ sleep 5
 reboot
 `
 	return iPXEHeader + script
+}
 
+// IPXEAutoBoot -
+func IPXEAutoBoot() string {
+	script := `
+echo Unknown MAC address, PXE boot will keep retrying until configuration changes
+:retry_boot
+autoboot || goto retry_boot
+`
+	return iPXEHeader + script
 }
 
 // IPXEPreeseed - This will build an iPXE boot script for Debian/Ubuntu

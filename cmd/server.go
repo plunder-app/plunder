@@ -50,7 +50,7 @@ func init() {
 	// Config File
 	configPath = PlunderServer.Flags().String("config", "", "Path to a plunder server configuration")
 	deploymentPath = PlunderServer.Flags().String("deployment", "", "Path to a plunder deployment configuration")
-	anyboot = PlunderServer.Flags().Bool("anyboot", false, "Should be used without a configuration, this will boot the kernel/initrd")
+	PlunderServer.Flags().StringVar(&services.DefaultBootType, "defaultBoot", "", "In the event a boot type can't be found default to this")
 
 	// API Server configuration
 	port = PlunderServer.Flags().IntP("port", "p", 60443, "Port that the Plunder API server will listen on")
@@ -69,9 +69,9 @@ var PlunderServer = &cobra.Command{
 		var deployment []byte
 		// If deploymentPath is not blank then the flag has been used
 		if *deploymentPath != "" {
-			if *anyboot == true {
-				log.Errorf("AnyBoot has been enabled, all configuration will be ignored")
-			}
+			// if *anyboot == true {
+			// 	log.Errorf("AnyBoot has been enabled, all configuration will be ignored")
+			// }
 			log.Infof("Reading deployment configuration from [%s]", *deploymentPath)
 			if _, err := os.Stat(*deploymentPath); !os.IsNotExist(err) {
 				deployment, err = ioutil.ReadFile(*deploymentPath)
@@ -81,9 +81,9 @@ var PlunderServer = &cobra.Command{
 			}
 		}
 
-		if *anyboot == true {
-			services.AnyBoot = true
-		}
+		// if *anyboot == true {
+		// 	services.AnyBoot = true
+		// }
 
 		// If configPath is not blank then the flag has been used
 		if *configPath != "" {

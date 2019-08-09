@@ -10,7 +10,7 @@ import (
 )
 
 // These strings container the generated iPXE details that are passed to the bootloader when the correct url is requested
-var preseed, kickstart, defaultBoot, vsphere, reboot string
+var autoBoot, preseed, kickstart, defaultBoot, vsphere, reboot string
 
 // controller Pointer for the config API endpoint handler
 var controller *BootController
@@ -56,6 +56,7 @@ func (c *BootController) serveHTTP() error {
 	// This function will pre-generate the boot handlers for the various boot types
 	c.generateBootTypeHanders(mux)
 
+	autoBoot = utils.IPXEAutoBoot()
 	reboot = utils.IPXEReboot()
 
 	docroot, err := filepath.Abs("./")
@@ -66,6 +67,7 @@ func (c *BootController) serveHTTP() error {
 	mux.Handle("/", http.FileServer(http.Dir(docroot)))
 	mux.HandleFunc("/health", HealthCheckHandler)
 	mux.HandleFunc("/reboot.ipxe", rebootHandler)
+	mux.HandleFunc("/autoBoot.ipxe", autoBootHandler)
 
 	// Set the pointer to the boot config
 	controller = c
@@ -116,6 +118,13 @@ func rebootHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	// Return the reboot content
 	io.WriteString(w, reboot)
+}
+
+func autoBootHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "text/plain")
+	// Return the reboot content
+	io.WriteString(w, autoBoot)
 }
 
 // HealthCheckHandler -
