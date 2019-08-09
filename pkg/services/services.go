@@ -74,7 +74,8 @@ func (c *BootController) StartServices(deployment []byte) {
 
 		c.handler.LeaseDuration = 2 * time.Hour //TODO, make time modifiable
 		c.handler.LeaseRange = *c.DHCPConfig.DHCPLeasePool
-		c.handler.Leases = make(map[int]lease, *c.DHCPConfig.DHCPLeasePool)
+		// Initialise the two maps
+		c.handler.Leases = make(map[int]Lease, *c.DHCPConfig.DHCPLeasePool)
 
 		c.handler.Options = dhcp.Options{
 			dhcp.OptionSubnetMask:       []byte{255, 255, 255, 0},
