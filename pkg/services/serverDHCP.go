@@ -51,27 +51,33 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 		if string(options[dhcp.OptionUserClass]) == "iPXE" {
 			deploymentType := FindDeploymentConfigFromMac(mac)
 			// If this mac address has no deployment attached then reboot IPXE
-			if deploymentType == "" {
-				log.Warnf("Mac address[%s] is unknown, not returning an address", mac)
+			if deploymentType == "" || deploymentType == "autoBoot" || deploymentType == "reboot" {
 				newUnleased := Lease{
 					Nic:    mac,
 					Expiry: time.Now(),
 				}
-				// If the array is empty add the first element
-				if len(h.UnLeased) == 0 {
-					h.UnLeased = append(h.UnLeased, newUnleased)
-				} else {
-					// Step over the elements when there is more than one.
-					for i := range h.UnLeased {
-						if mac == h.UnLeased[i].Nic {
-							h.UnLeased[i].Expiry = time.Now()
-						} else {
-							// Update the unleased map with this mac address being seen
-							h.UnLeased = append(h.UnLeased, newUnleased)
-						}
+
+				// False by default
+				var macFound bool
+
+				// Look through array
+				for i := range h.UnLeased {
+					if mac == h.UnLeased[i].Nic {
+						h.UnLeased[i].Expiry = time.Now()
+						// Found this entry
+						macFound = true
 					}
 				}
-				return nil
+
+				// New entry
+				if macFound == false {
+					// Update the unleased map with this mac address being seen
+					h.UnLeased = append(h.UnLeased, newUnleased)
+				}
+				if deploymentType == "" {
+					log.Warnf("Mac address[%s] is unknown, not returning an address", mac)
+					return nil
+				}
 			}
 			// Assign the deployment boot script
 			log.Infof("Mac address [%s] is assigned a [%s] deployment type", mac, deploymentType)
