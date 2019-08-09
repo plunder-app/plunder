@@ -23,13 +23,18 @@ func DeploymentAPIPath() string {
 	return "/deployment"
 }
 
+//DHCPAPIPath returns the URI that is used to interact with the plunder Configuration API
+func DHCPAPIPath() string {
+	return "/dhcp"
+}
+
 // setAPIEndpoints defines all of the API end points for Plunder
 func setAPIEndpoints() *mux.Router {
 	// Create a new router
 	router := mux.NewRouter()
 
 	// ------------------------------------
-	// Large configuration management
+	// General configuration management
 	// ------------------------------------
 
 	// Define the retrieval endpoints for Plunder Server configuration
@@ -43,6 +48,9 @@ func setAPIEndpoints() *mux.Router {
 
 	// Define the retrieval endpoints for Plunder Deployment configuration
 	router.HandleFunc(fmt.Sprintf("%s", DeploymentsAPIPath()), postDeployments).Methods("POST")
+
+	// Define the retrieval endpoints for Plunder Server configuration
+	router.HandleFunc(fmt.Sprintf("%s/{id}", DHCPAPIPath()), getDHCP).Methods("GET")
 
 	// ------------------------------------
 	// Specific configuration management

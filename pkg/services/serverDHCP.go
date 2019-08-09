@@ -11,10 +11,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// lease defines a lease that is allocated to a client
-type lease struct {
-	nic    string    // Client's Addr
-	expiry time.Time // When the lease expires
+// Lease defines a lease that is allocated to a client
+type Lease struct {
+	Nic    string    `json:"mac"`  // Client's Addr
+	Expiry time.Time `json:"time"` // When the lease expires
 }
 
 // DHCPSettings -
@@ -25,7 +25,8 @@ type DHCPSettings struct {
 
 	LeaseRange    int           // Number of IPs to distribute (starting from start)
 	LeaseDuration time.Duration // Lease period
-	Leases        map[int]lease // Map to keep track of leases
+	Leases        map[int]Lease // Map to keep track of leases
+	UnLeased      []Lease       // Map to keep track of unleased devices, and when they were seen
 }
 
 //ServeDHCP -
@@ -36,7 +37,7 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 	case dhcp.Discover:
 		free, nic := -1, mac
 		for i, v := range h.Leases { // Find previous lease
-			if v.nic == nic {
+			if v.Nic == nic {
 				free = i
 				goto reply
 			}
@@ -52,6 +53,24 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 			// If this mac address has no deployment attached then reboot IPXE
 			if deploymentType == "" {
 				log.Warnf("Mac address[%s] is unknown, not returning an address", mac)
+				newUnleased := Lease{
+					Nic:    mac,
+					Expiry: time.Now(),
+				}
+				// If the array is empty add the first element
+				if len(h.UnLeased) == 0 {
+					h.UnLeased = append(h.UnLeased, newUnleased)
+				} else {
+					// Step over the elements when there is more than one.
+					for i := range h.UnLeased {
+						if mac == h.UnLeased[i].Nic {
+							h.UnLeased[i].Expiry = time.Now()
+						} else {
+							// Update the unleased map with this mac address being seen
+							h.UnLeased = append(h.UnLeased, newUnleased)
+						}
+					}
+				}
 				return nil
 			}
 			// Assign the deployment boot script
@@ -84,8 +103,8 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 
 		if len(reqIP) == 4 && !reqIP.Equal(net.IPv4zero) {
 			if leaseNum := dhcp.IPRange(h.Start, reqIP) - 1; leaseNum >= 0 && leaseNum < h.LeaseRange {
-				if l, exists := h.Leases[leaseNum]; !exists || l.nic == p.CHAddr().String() {
-					h.Leases[leaseNum] = lease{nic: p.CHAddr().String(), expiry: time.Now().Add(h.LeaseDuration)}
+				if l, exists := h.Leases[leaseNum]; !exists || l.Nic == p.CHAddr().String() {
+					h.Leases[leaseNum] = Lease{Nic: p.CHAddr().String(), Expiry: time.Now().Add(h.LeaseDuration)}
 					return dhcp.ReplyPacket(p, dhcp.ACK, h.IP, reqIP, h.LeaseDuration,
 						h.Options.SelectOrderOrAll(options[dhcp.OptionParameterRequestList]))
 				}
@@ -96,7 +115,8 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 	case dhcp.Release, dhcp.Decline:
 		nic := p.CHAddr().String()
 		for i, v := range h.Leases {
-			if v.nic == nic {
+			if v.Nic == nic {
+				log.Debugf("Releasing lease for [%s]", mac)
 				delete(h.Leases, i)
 				break
 			}
@@ -110,10 +130,25 @@ func (h *DHCPSettings) freeLease() int {
 	b := rand.Intn(h.LeaseRange) // Try random first
 	for _, v := range [][]int{{b, h.LeaseRange}, {0, b}} {
 		for i := v[0]; i < v[1]; i++ {
-			if l, ok := h.Leases[i]; !ok || l.expiry.Before(now) {
+			if l, ok := h.Leases[i]; !ok || l.Expiry.Before(now) {
 				return i
 			}
 		}
 	}
 	return -1
+}
+
+// GetLeases - This will retrieve all of the allocated leases from the boot controller
+func (c *BootController) GetLeases() *[]Lease {
+	var l []Lease
+	for i := range c.handler.Leases {
+		l = append(l, c.handler.Leases[i])
+	}
+	return &l
+}
+
+// GetUnLeased - This will retrieve all of the un-allocated leases from the boot controller
+func (c *BootController) GetUnLeased() *[]Lease {
+
+	return &c.handler.UnLeased
 }
