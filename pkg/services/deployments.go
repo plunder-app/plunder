@@ -203,12 +203,12 @@ func UpdateDeployment(macAddress string, rawDeployment []byte) error {
 // DeleteDeployment - This function will add a new deployment to the deployment configuration
 func DeleteDeployment(macAddress string, rawDeployment []byte) error {
 
-	var newDeployment DeploymentConfig
+	// var newDeployment DeploymentConfig
 
-	err := json.Unmarshal(rawDeployment, &newDeployment)
-	if err != nil {
-		return fmt.Errorf("Unable to parse deployment configuration")
-	}
+	// err := json.Unmarshal(rawDeployment, &newDeployment)
+	// if err != nil {
+	// 	return fmt.Errorf("Unable to parse deployment configuration")
+	// }
 
 	// We will now duplicate our configuration
 	updateConfig := Deployments

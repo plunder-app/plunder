@@ -14,7 +14,8 @@ import (
 //Response - This is the wrapper for responses back to a client, if any errors are created then the payload isn't guarenteed
 type Response struct {
 	FriendlyError string `json:"friendlyError,omitempty"`
-	Error         string `json:"error,omitempty"`
+	Error         string `json:"error,omitempty"`   // when it goes wrong
+	Success       string `json:"success,omitempty"` // when it goes correct
 
 	Payload json.RawMessage `json:"payload,omitempty"`
 }
@@ -47,8 +48,8 @@ func postDeployments(w http.ResponseWriter, r *http.Request) {
 			rsp.FriendlyError = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
 			rsp.Payload = nil
-			json.NewEncoder(w).Encode(rsp)
 		}
+		json.NewEncoder(w).Encode(rsp)
 	}
 }
 
@@ -89,8 +90,8 @@ func postDeployment(w http.ResponseWriter, r *http.Request) {
 			rsp.FriendlyError = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
 			rsp.Payload = nil
-			json.NewEncoder(w).Encode(rsp)
 		}
+		json.NewEncoder(w).Encode(rsp)
 	}
 
 }
@@ -112,7 +113,6 @@ func updateDeployment(w http.ResponseWriter, r *http.Request) {
 				rsp.FriendlyError = "Error updating Global Configuration"
 				rsp.Error = err.Error()
 				rsp.Payload = nil
-				json.NewEncoder(w).Encode(rsp)
 			}
 		}
 	} else {
@@ -126,10 +126,10 @@ func updateDeployment(w http.ResponseWriter, r *http.Request) {
 				rsp.FriendlyError = "Error updating Deployment Configuration"
 				rsp.Error = err.Error()
 				rsp.Payload = nil
-				json.NewEncoder(w).Encode(rsp)
 			}
 		}
 	}
+	json.NewEncoder(w).Encode(rsp)
 }
 
 // Retrieve a specific plunder deployment configuration
@@ -140,16 +140,17 @@ func deleteDeployment(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	// We need to revert the mac address back to the correct format (dashes back to colons)
 	mac := strings.Replace(id, "-", ":", -1)
+	var rsp Response
 
 	if b, err := ioutil.ReadAll(r.Body); err == nil {
 		err := services.DeleteDeployment(mac, b)
-		var rsp Response
 
 		if err != nil {
 			rsp.FriendlyError = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
 			rsp.Payload = nil
-			json.NewEncoder(w).Encode(rsp)
 		}
 	}
+	json.NewEncoder(w).Encode(rsp)
+
 }
