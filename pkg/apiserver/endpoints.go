@@ -28,6 +28,11 @@ func DHCPAPIPath() string {
 	return "/dhcp"
 }
 
+//ParlayAPIPath returns the URI that is used to interact with the plunder parlay automation engine
+func ParlayAPIPath() string {
+	return "/parlay"
+}
+
 // setAPIEndpoints defines all of the API end points for Plunder
 func setAPIEndpoints() *mux.Router {
 	// Create a new router
@@ -64,6 +69,9 @@ func setAPIEndpoints() *mux.Router {
 	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), getSpecificDeployment).Methods("GET")
 	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), updateDeployment).Methods("POST")
 	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), deleteDeployment).Methods("DELETE")
+
+	// Define the endpoint for sending commands to a remote host using the parlay engine
+	router.HandleFunc(fmt.Sprintf("%s/{id}", ParlayAPIPath()), postParlay).Methods("POST")
 
 	return router
 }

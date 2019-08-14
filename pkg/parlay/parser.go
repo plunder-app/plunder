@@ -4,20 +4,23 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/plunder-app/plunder/pkg/plunderlogging"
+
 	log "github.com/sirupsen/logrus"
 
 	parlayplugin "github.com/plunder-app/plunder/pkg/parlay/plugin"
 	"github.com/plunder-app/plunder/pkg/parlay/types"
-
 	"github.com/plunder-app/plunder/pkg/ssh"
 )
 
 // DeploySSH - will iterate through a deployment and perform the relevant actions
 func (m *TreasureMap) DeploySSH(logFile string) error {
+	var logger plunderlogging.Logger
+
 	if logFile != "" {
 		//enable logging
-		logging.init(logFile)
-		defer logging.f.Close()
+		logger.InitLogFile(logFile)
+		defer logger.SetLoggingState("", "Finished")
 	}
 
 	if len(ssh.Hosts) == 0 {
@@ -35,7 +38,7 @@ func (m *TreasureMap) DeploySSH(logFile string) error {
 
 		// Beggining of deployment work
 		log.Infof("Beginning Deployment [%s]\n", m.Deployments[x].Name)
-		logging.writeString(fmt.Sprintf("[%s] Beginning Deployment [%s]\n", time.Now().Format(time.ANSIC), m.Deployments[x].Name))
+		logger.WriteLogEntry("", fmt.Sprintf("[%s] Beginning Deployment [%s]\n", time.Now().Format(time.ANSIC), m.Deployments[x].Name))
 
 		// Set Restore checkpoint
 		restore.Deployment = m.Deployments[x].Name
@@ -43,7 +46,7 @@ func (m *TreasureMap) DeploySSH(logFile string) error {
 
 		if m.Deployments[x].Parallel == true {
 			// Begin this deployment in parallel across all hosts
-			err = parallelDeployment(m.Deployments[x].Actions, hosts)
+			err = parallelDeployment(m.Deployments[x].Actions, hosts, &logger)
 			if err != nil {
 				return err
 			}
@@ -57,7 +60,7 @@ func (m *TreasureMap) DeploySSH(logFile string) error {
 						hostConfig = hosts[i]
 					}
 				}
-				err = sequentialDeployment(m.Deployments[x].Actions, hostConfig)
+				err = sequentialDeployment(m.Deployments[x].Actions, hostConfig, &logger)
 				if err != nil {
 					return err
 				}
@@ -68,7 +71,7 @@ func (m *TreasureMap) DeploySSH(logFile string) error {
 }
 
 // Begin host by host deployments as part of each deployment
-func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) error {
+func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, logger *plunderlogging.Logger) error {
 	var err error
 
 	for y := range action {
@@ -108,8 +111,8 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) e
 				restore.createCheckpoint()
 
 				// Output error messages
-				logging.writeString(fmt.Sprintf("[%s] Command task [%s] on host [%s] failed with error [%s]\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host, cr.Error))
-				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
+				logger.WriteLogEntry("", fmt.Sprintf("[%s] Command task [%s] on host [%s] failed with error [%s]\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host, cr.Error))
+				logger.WriteLogEntry("", fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
 				return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", action[y].Name, hostConfig.Host, cr.Error, cr.Result)
 			}
 
@@ -117,8 +120,8 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) e
 			if cr.Error != nil && action[y].IgnoreFailure == true {
 				log.Warnf("Command Task [%s] on node [%s] failed (execution will continute)", action[y].Name, hostConfig.Host)
 				log.Debugf("Command Results ->\n%s", cr.Result)
-				logging.writeString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has failed (execution will continute)\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
-				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
+				logger.WriteLogEntry("", fmt.Sprintf("[%s] Command task [%s] on host [%s] has failed (execution will continute)\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
+				logger.WriteLogEntry("", fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
 			}
 
 			// No error, task was completed correctly
@@ -126,8 +129,8 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) e
 				// Output success Messages
 				log.Infof("Command Task [%s] on node [%s] completed successfully", action[y].Name, hostConfig.Host)
 				log.Debugf("Command Results ->\n%s", cr.Result)
-				logging.writeString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
-				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
+				logger.WriteLogEntry("", fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
+				logger.WriteLogEntry("", fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
 			}
 		case "pkg":
 
@@ -143,7 +146,7 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) e
 				return err
 			}
 			log.Debugf("About to execute [%d] actions", len(pluginActions))
-			err = sequentialDeployment(pluginActions, hostConfig)
+			err = sequentialDeployment(pluginActions, hostConfig, logger)
 			if err != nil {
 				return err
 			}
@@ -155,11 +158,11 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig) e
 
 // Peform all of the actions in parallel on all hosts in the host array
 // this function will make use of the parallel ssh calls
-func parallelDeployment(action []types.Action, hosts []ssh.HostSSHConfig) error {
+func parallelDeployment(action []types.Action, hosts []ssh.HostSSHConfig, logger *plunderlogging.Logger) error {
 	for y := range action {
 		switch action[y].ActionType {
 		case "upload":
-			logging.writeString(fmt.Sprintf("[%s] Uploading file [%s] to Destination [%s] to multiple hosts\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination))
+			logger.WriteLogEntry("", fmt.Sprintf("[%s] Uploading file [%s] to Destination [%s] to multiple hosts\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination))
 
 			results := ssh.ParalellUpload(hosts, action[y].Source, action[y].Destination, action[y].Timeout)
 			// Unlikely that this should happen
@@ -173,15 +176,15 @@ func parallelDeployment(action []types.Action, hosts []ssh.HostSSHConfig) error 
 					restore.Action = action[y].Name
 					restore.createCheckpoint()
 
-					logging.writeString(fmt.Sprintf("[%s] Error uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
-					logging.writeString(fmt.Sprintf("[%s] [%s]\n", time.Now().Format(time.ANSIC), results[i].Error))
+					logger.WriteLogEntry("", fmt.Sprintf("[%s] Error uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
+					logger.WriteLogEntry("", fmt.Sprintf("[%s] [%s]\n", time.Now().Format(time.ANSIC), results[i].Error))
 					return fmt.Errorf("Upload task [%s] on host [%s] failed with error [%s]", action[y].Name, results[i].Host, results[i].Error)
 				}
-				logging.writeString(fmt.Sprintf("[%s] Completed uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
+				logger.WriteLogEntry("", fmt.Sprintf("[%s] Completed uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
 				log.Infof("Succesfully uploaded [%s] to [%s] on [%s]", action[y].Source, action[y].Destination, results[i].Host)
 			}
 		case "download":
-			logging.writeString(fmt.Sprintf("[%s] Downloading remote file [%s] to [%s] from multiple hosts\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination))
+			logger.WriteLogEntry("", fmt.Sprintf("[%s] Downloading remote file [%s] to [%s] from multiple hosts\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination))
 
 			results := ssh.ParalellDownload(hosts, action[y].Source, action[y].Destination, action[y].Timeout)
 			// Unlikely that this should happen
@@ -195,15 +198,15 @@ func parallelDeployment(action []types.Action, hosts []ssh.HostSSHConfig) error 
 					restore.Action = action[y].Name
 					restore.createCheckpoint()
 
-					logging.writeString(fmt.Sprintf("[%s] Error downloading file [%s] to [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
-					logging.writeString(fmt.Sprintf("[%s] [%s]\n", time.Now().Format(time.ANSIC), results[i].Error))
+					logger.WriteLogEntry("", fmt.Sprintf("[%s] Error downloading file [%s] to [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
+					logger.WriteLogEntry("", fmt.Sprintf("[%s] [%s]\n", time.Now().Format(time.ANSIC), results[i].Error))
 					return fmt.Errorf("Download task [%s] on host [%s] failed with error [%s]", action[y].Name, results[i].Host, results[i].Error)
 				}
-				logging.writeString(fmt.Sprintf("[%s] Completed uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
+				logger.WriteLogEntry("", fmt.Sprintf("[%s] Completed uploading file [%s] to Destination [%s] to host [%s]\n", time.Now().Format(time.ANSIC), action[y].Source, action[y].Destination, results[i].Host))
 				log.Infof("Succesfully uploaded [%s] to [%s] on [%s]", action[y].Source, action[y].Destination, results[i].Host)
 			}
 		case "command":
-			logging.writeString(fmt.Sprintf("[%s] Executing command action [%s] to multiple hosts\n", time.Now().Format(time.ANSIC), action[y].Name))
+			logger.WriteLogEntry("", fmt.Sprintf("[%s] Executing command action [%s] to multiple hosts\n", time.Now().Format(time.ANSIC), action[y].Name))
 			command, err := buildCommand(action[y])
 			if err != nil {
 				// Set checkpoint
@@ -222,12 +225,12 @@ func parallelDeployment(action []types.Action, hosts []ssh.HostSSHConfig) error 
 
 					//log.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", action[y].Name, crs[x].Host, crs[x].Result, crs[x].Error.Error())
 					errors = true // An error has been found
-					logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", crs[x].Result))
+					logger.WriteLogEntry("", fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", crs[x].Result))
 					return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", action[y].Name, crs[x].Host, crs[x].Error, crs[x].Result)
 				}
 				log.Infof("Command Task [%s] on node [%s] completed successfully", action[y].Name, crs[x].Host)
-				logging.writeString(fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), action[y].Name, crs[x].Host))
-				logging.writeString(fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", crs[x].Result))
+				logger.WriteLogEntry("", fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), action[y].Name, crs[x].Host))
+				logger.WriteLogEntry("", fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", crs[x].Result))
 			}
 			if errors == true {
 				return fmt.Errorf("An error was encountered on command Task [%s]", action[y].Name)
