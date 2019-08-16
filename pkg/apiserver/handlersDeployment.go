@@ -57,24 +57,28 @@ func postDeployments(w http.ResponseWriter, r *http.Request) {
 
 func getSpecificDeployment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	params := mux.Vars(r)
 	var rsp Response
-	for i := range services.Deployments.Configs {
+	// Find the deployment ID
+	id := mux.Vars(r)["id"]
+	// We need to revert the mac address back to the correct format (dashes back to colons)
+	mac := strings.Replace(id, "-", ":", -1)
 
-		if params["id"] == strings.Replace(services.Deployments.Configs[i].MAC, ":", "-", -1) {
-			jsonData, err := json.Marshal(services.Deployments.Configs[i])
-			if err != nil {
-				w.Header().Set("Content-Type", "application/json")
-				rsp.FriendlyError = "Error retrieving deployment Configuration"
-				rsp.Error = err.Error()
-			} else {
-				rsp.Payload = jsonData
-			}
+	deployment := services.GetDeployment(mac)
+
+	if deployment != nil {
+		jsonData, err := json.Marshal(deployment)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			rsp.FriendlyError = "Error retrieving deployment Configuration"
+			rsp.Error = err.Error()
+		} else {
+			rsp.Payload = jsonData
 		}
+
+	} else {
+		rsp.Error = fmt.Sprintf("Unable to find %s", mac)
 	}
-	if rsp.Payload == nil {
-		rsp.Error = fmt.Sprintf("Unable to find %s", params["id"])
-	}
+
 	json.NewEncoder(w).Encode(rsp)
 
 }

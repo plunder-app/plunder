@@ -167,6 +167,17 @@ func AddDeployment(rawDeployment []byte) error {
 	return rebuildConfiguration(&updateConfig)
 }
 
+// GetDeployment - This function will add a new deployment to the deployment configuration
+func GetDeployment(macAddress string) *DeploymentConfig {
+	// Iterate through all the deployments
+	for i := range Deployments.Configs {
+		if macAddress == strings.Replace(Deployments.Configs[i].MAC, ":", "-", -1) {
+			return &Deployments.Configs[i]
+		}
+	}
+	return nil
+}
+
 // UpdateDeployment - This function will add a new deployment to the deployment configuration
 func UpdateDeployment(macAddress string, rawDeployment []byte) error {
 
@@ -202,13 +213,6 @@ func UpdateDeployment(macAddress string, rawDeployment []byte) error {
 
 // DeleteDeployment - This function will add a new deployment to the deployment configuration
 func DeleteDeployment(macAddress string, rawDeployment []byte) error {
-
-	// var newDeployment DeploymentConfig
-
-	// err := json.Unmarshal(rawDeployment, &newDeployment)
-	// if err != nil {
-	// 	return fmt.Errorf("Unable to parse deployment configuration")
-	// }
 
 	// We will now duplicate our configuration
 	updateConfig := Deployments
