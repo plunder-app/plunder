@@ -14,12 +14,16 @@ import (
 )
 
 // DeploySSH - will iterate through a deployment and perform the relevant actions
-func (m *TreasureMap) DeploySSH(logFile string) error {
+func (m *TreasureMap) DeploySSH(logFile string, jsonLogging bool) error {
 	var logger plunderlogging.Logger
 
 	if logFile != "" {
 		//enable logging
 		logger.InitLogFile(logFile)
+		if jsonLogging {
+			logger.InitJSON()
+		}
+
 		defer logger.SetLoggingState("", "Finished")
 	}
 

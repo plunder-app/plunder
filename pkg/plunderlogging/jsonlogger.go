@@ -24,6 +24,7 @@ type JSONLogEntry struct {
 }
 
 func (j *JSONLogger) initJSONLogger() {
+	j.enabled = true
 	j.logger = make(map[string]JSONLog)
 }
 

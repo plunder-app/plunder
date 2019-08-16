@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/plunder-app/plunder/pkg/services"
@@ -72,7 +73,13 @@ func AddHost(address, keypath, username string) error {
 		}
 	}
 
-	sshHost.ClientConfig = &ssh.ClientConfig{User: sshHost.User, Auth: keys, HostKeyCallback: ssh.InsecureIgnoreHostKey()}
+	// Default timeout for connecting to a host is five seconds (TODO)
+	sshHost.ClientConfig = &ssh.ClientConfig{
+		User:            sshHost.User,
+		Auth:            keys,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         2 * time.Second,
+	}
 
 	Hosts = append(Hosts, sshHost)
 
@@ -80,14 +87,7 @@ func AddHost(address, keypath, username string) error {
 }
 
 // ImportHostsFromDeployment - This will parse a deployment (either file or HTTP post)
-func ImportHostsFromDeployment(config []byte) error {
-
-	var deployment services.DeploymentConfigurationFile
-
-	err := json.Unmarshal(config, &deployment)
-	if err != nil {
-		return err
-	}
+func ImportHostsFromDeployment(deployment services.DeploymentConfigurationFile) error {
 
 	if len(deployment.Configs) == 0 {
 		return fmt.Errorf("No deployment configurations found")
@@ -95,6 +95,7 @@ func ImportHostsFromDeployment(config []byte) error {
 
 	// Find keys that are in the same places as the public Key
 	if deployment.GlobalServerConfig.SSHKeyPath != "" {
+		var err error
 		// Find if the private key exists
 		cachedGlobalKey, err = findPrivateKey(deployment.GlobalServerConfig.SSHKeyPath)
 		if err != nil {
@@ -139,12 +140,32 @@ func ImportHostsFromDeployment(config []byte) error {
 				return fmt.Errorf("Host [%s] has no key specified", deployment.Configs[i].ConfigHost.IPAddress)
 			}
 		}
-		sshHost.ClientConfig = &ssh.ClientConfig{User: sshHost.User, Auth: keys, HostKeyCallback: ssh.InsecureIgnoreHostKey()}
+
+		// Default timeout for connecting to a host is five seconds (TODO)
+		sshHost.ClientConfig = &ssh.ClientConfig{
+			User:            sshHost.User,
+			Auth:            keys,
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			Timeout:         2 * time.Second,
+		}
 
 		Hosts = append(Hosts, sshHost)
 	}
 
 	return nil
+}
+
+// ImportHostsFromRawDeployment - This will parse a deployment (either file or HTTP post)
+func ImportHostsFromRawDeployment(config []byte) error {
+
+	var deployment services.DeploymentConfigurationFile
+
+	err := json.Unmarshal(config, &deployment)
+	if err != nil {
+		return err
+	}
+	return ImportHostsFromDeployment(deployment)
+
 }
 
 // findDefaultKey - This will look in the users $HOME/.ssh/ for a key to add

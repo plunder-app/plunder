@@ -171,7 +171,7 @@ func AddDeployment(rawDeployment []byte) error {
 func GetDeployment(macAddress string) *DeploymentConfig {
 	// Iterate through all the deployments
 	for i := range Deployments.Configs {
-		if macAddress == strings.Replace(Deployments.Configs[i].MAC, ":", "-", -1) {
+		if macAddress == Deployments.Configs[i].MAC {
 			return &Deployments.Configs[i]
 		}
 	}

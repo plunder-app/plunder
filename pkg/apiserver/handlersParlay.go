@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/plunder-app/plunder/pkg/parlay"
 	"github.com/plunder-app/plunder/pkg/services"
+	"github.com/plunder-app/plunder/pkg/ssh"
 )
 
 // Retrieve a specific plunder deployment configuration
@@ -38,7 +39,9 @@ func postParlay(w http.ResponseWriter, r *http.Request) {
 				rsp.Error = err.Error()
 			} else {
 				// Parsed succesfully, we will deploy this in a go routine and use GET /parlay/MAC to view progress
-				go p.DeploySSH("")
+				//
+				ssh.ImportHostsFromDeployment(services.Deployments)
+				go p.DeploySSH("", true)
 			}
 		} else {
 			rsp.FriendlyError = "Error reading HTTP data"
