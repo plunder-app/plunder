@@ -27,14 +27,11 @@ func (m *TreasureMap) DeploySSH(logFile string, jsonLogging bool) error {
 	if logFile != "" {
 		//enable logging
 		logger.InitLogFile(logFile)
-
 	}
 
 	if jsonLogging {
 		logger.InitJSON()
 	}
-
-	defer logger.SetLoggingState("", "Finished")
 
 	if len(ssh.Hosts) == 0 {
 		log.Warnln("No hosts credentials have been loaded, only commands with commandLocal = true will work")
@@ -73,10 +70,15 @@ func (m *TreasureMap) DeploySSH(logFile string, jsonLogging bool) error {
 						hostConfig = hosts[i]
 					}
 				}
+				// Set the state of logging actions to in-progress
+				logger.SetLoggingState(hostConfig.Host, "Running")
 				err = sequentialDeployment(m.Deployments[x].Actions, hostConfig, &logger)
 				if err != nil {
+					logger.SetLoggingState(hostConfig.Host, "Failed")
 					return err
 				}
+				// Set the state of logging actions to completed
+				logger.SetLoggingState(hostConfig.Host, "Completed")
 			}
 		}
 	}
@@ -97,7 +99,6 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, l
 				restore.Host = hostConfig.Host
 				restore.createCheckpoint()
 				logger.WriteLogEntry(hostConfig.Host, action[y].Name, "", err.Error())
-				logger.SetLoggingState(hostConfig.Host, "Failed")
 				// Return the error
 				return fmt.Errorf("Upload task [%s] on host [%s] failed with error [%s]", action[y].Name, hostConfig.Host, err)
 			}
@@ -110,7 +111,6 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, l
 				restore.Host = hostConfig.Host
 				restore.createCheckpoint()
 				logger.WriteLogEntry(hostConfig.Host, action[y].Name, "", err.Error())
-				logger.SetLoggingState(hostConfig.Host, "Failed")
 				// Return the error
 				return fmt.Errorf("Download task [%s] on host [%s] failed with error [%s]", action[y].Name, hostConfig.Host, err)
 			}
@@ -127,7 +127,6 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, l
 
 				// Output error messages
 				logger.WriteLogEntry(hostConfig.Host, action[y].Name, cr.Result, cr.Error.Error())
-				logger.SetLoggingState(hostConfig.Host, "Failed")
 				// cr.Result is ommited here TODO
 				return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]", action[y].Name, hostConfig.Host, cr.Error)
 			}
@@ -163,7 +162,6 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, l
 			pluginActions, err := parlayplugin.ExecuteAction(action[y].ActionType, hostConfig.Host, action[y].Plugin)
 			if err != nil {
 				logger.WriteLogEntry(hostConfig.Host, action[y].Name, "", err.Error())
-				logger.SetLoggingState(hostConfig.Host, "Failed")
 				return err
 			}
 			log.Debugf("About to execute [%d] actions", len(pluginActions))
@@ -173,7 +171,6 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, l
 			}
 		}
 	}
-	logger.SetLoggingState(hostConfig.Host, "Completed")
 	return nil
 }
 
