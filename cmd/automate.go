@@ -231,7 +231,7 @@ var plunderAutomateSSH = &cobra.Command{
 					err = deployment.FindDeployment(*deploymentName, *actionName, *host, *logFile, *resume)
 				} else {
 					// Parse the entire deployment
-					err = deployment.DeploySSH(*logFile, false)
+					err = deployment.DeploySSH(*logFile, false, false)
 				}
 				if err != nil {
 					log.Fatalf("%v", err)
@@ -322,7 +322,7 @@ var plunderAutomateVMware = &cobra.Command{
 					err = deployment.FindDeployment(*deploymentName, *actionName, *host, *logFile, *resume)
 				} else {
 					// Parse the entire deployment
-					err = deployment.DeploySSH(*logFile, false)
+					err = deployment.DeploySSH(*logFile, false, false)
 				}
 				if err != nil {
 					log.Fatalf("%v", err)
@@ -434,7 +434,7 @@ var plunderAutomateUI = &cobra.Command{
 			log.Fatalf("No Deployment information imported")
 		}
 
-		err := newMap.DeploySSH(*logFile, false)
+		err := newMap.DeploySSH(*logFile, false, false)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
