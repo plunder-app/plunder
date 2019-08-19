@@ -17,7 +17,7 @@ func (c *HostSSHConfig) StartConnection() (*ssh.Client, error) {
 		host = host + ":22"
 	}
 
-	log.Debugf("Beginning connection to [%s] with user [%s]", c.Host, c.User)
+	log.Debugf("Beginning connection to [%s] with user [%s] and timeout [%d]", c.Host, c.User, c.ClientConfig.Timeout)
 	c.Connection, err = ssh.Dial("tcp", host, c.ClientConfig)
 	if err != nil {
 		return nil, err

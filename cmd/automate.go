@@ -158,7 +158,7 @@ var plunderAutomateSSH = &cobra.Command{
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
-				err = ssh.ImportHostsFromDeployment(config)
+				err = ssh.ImportHostsFromRawDeployment(config)
 				if err != nil {
 					cmd.Help()
 					log.Fatalf("%v", err)
@@ -185,7 +185,7 @@ var plunderAutomateSSH = &cobra.Command{
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
-			err = ssh.ImportHostsFromDeployment(config)
+			err = ssh.ImportHostsFromRawDeployment(config)
 			if err != nil {
 				cmd.Help()
 				log.Fatalf("%v", err)
@@ -231,7 +231,7 @@ var plunderAutomateSSH = &cobra.Command{
 					err = deployment.FindDeployment(*deploymentName, *actionName, *host, *logFile, *resume)
 				} else {
 					// Parse the entire deployment
-					err = deployment.DeploySSH(*logFile)
+					err = deployment.DeploySSH(*logFile, false)
 				}
 				if err != nil {
 					log.Fatalf("%v", err)
@@ -322,7 +322,7 @@ var plunderAutomateVMware = &cobra.Command{
 					err = deployment.FindDeployment(*deploymentName, *actionName, *host, *logFile, *resume)
 				} else {
 					// Parse the entire deployment
-					err = deployment.DeploySSH(*logFile)
+					err = deployment.DeploySSH(*logFile, false)
 				}
 				if err != nil {
 					log.Fatalf("%v", err)
@@ -387,7 +387,7 @@ var plunderAutomateUI = &cobra.Command{
 				}
 
 				// Parse all of the hosts in the deployment configuration and update the ssh package with their details
-				err = ssh.ImportHostsFromDeployment(config)
+				err = ssh.ImportHostsFromRawDeployment(config)
 				if err != nil {
 					cmd.Help()
 					log.Fatalf("%v", err)
@@ -413,7 +413,7 @@ var plunderAutomateUI = &cobra.Command{
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
-			err = ssh.ImportHostsFromDeployment(config)
+			err = ssh.ImportHostsFromRawDeployment(config)
 			if err != nil {
 				cmd.Help()
 				log.Fatalf("%v", err)
@@ -434,7 +434,7 @@ var plunderAutomateUI = &cobra.Command{
 			log.Fatalf("No Deployment information imported")
 		}
 
-		err := newMap.DeploySSH(*logFile)
+		err := newMap.DeploySSH(*logFile, false)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
