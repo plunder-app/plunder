@@ -17,11 +17,21 @@ func (l *Logger) EnableFileLogging(e bool) {
 }
 
 func (l *Logger) InitLogFile(path string) error {
-	return l.file.initFileLogger(path)
+	if l.file.enabled != true {
+		return l.file.initFileLogger(path)
+	}
+	// Dont re-initialise the file
+	return nil
+
 }
 
 func (l *Logger) InitJSON() {
-	l.json.initJSONLogger()
+	// Dont re-initialise the json
+
+	if l.json.enabled != true {
+		l.json.initJSONLogger()
+	}
+
 }
 
 // target - the entity we're affecting

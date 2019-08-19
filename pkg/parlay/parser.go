@@ -29,9 +29,11 @@ func (m *TreasureMap) DeploySSH(logFile string, jsonLogging bool) error {
 		logger.InitLogFile(logFile)
 
 	}
+
 	if jsonLogging {
 		logger.InitJSON()
 	}
+
 	defer logger.SetLoggingState("", "Finished")
 
 	if len(ssh.Hosts) == 0 {
