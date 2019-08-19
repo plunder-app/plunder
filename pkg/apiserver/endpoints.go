@@ -57,6 +57,9 @@ func setAPIEndpoints() *mux.Router {
 	// Define the retrieval endpoints for Plunder Server configuration
 	router.HandleFunc(fmt.Sprintf("%s/{id}", DHCPAPIPath()), getDHCP).Methods("GET")
 
+	// Define the endpoint for sending commands to a remote host using the parlay engine
+	router.HandleFunc(fmt.Sprintf("%s/", ParlayAPIPath()), postParlay).Methods("POST")
+
 	// ------------------------------------
 	// Specific configuration management
 	// ------------------------------------
@@ -71,7 +74,8 @@ func setAPIEndpoints() *mux.Router {
 	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), deleteDeployment).Methods("DELETE")
 
 	// Define the endpoint for sending commands to a remote host using the parlay engine
-	router.HandleFunc(fmt.Sprintf("%s/{id}", ParlayAPIPath()), postParlay).Methods("POST")
+	router.HandleFunc(fmt.Sprintf("%s/logs/{id}", ParlayAPIPath()), getParlay).Methods("GET")
+	router.HandleFunc(fmt.Sprintf("%s/logs/{id}", ParlayAPIPath()), delParlay).Methods("DELETE")
 
 	return router
 }

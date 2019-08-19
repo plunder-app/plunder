@@ -28,12 +28,12 @@ func (l *Logger) InitJSON() {
 // entry - the results of the operation on the target
 
 // WriteLogEntry will capture what is transpiring and where
-func (l *Logger) WriteLogEntry(target, entry string) {
+func (l *Logger) WriteLogEntry(target, task, entry, err string) {
 	if l.file.enabled {
 		l.file.writeEntry(target, entry)
 	}
 	if l.json.enabled {
-		l.json.writeEntry(target, entry)
+		l.json.writeEntry(target, task, entry, err)
 	}
 
 	// A logging system shouldnt break anything so any errors are just outputed to STDOUT
@@ -59,7 +59,7 @@ func (l *Logger) GetJSONLogs(target string) (*JSONLog, error) {
 	// Check if the logger exists
 	existingLog, ok := l.json.logger[target]
 	if ok {
-		return &existingLog, nil
+		return existingLog, nil
 	}
 	return nil, fmt.Errorf("No Logs for Targer [%s] exist", target)
 }

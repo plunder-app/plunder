@@ -3,12 +3,14 @@ package plunderlogging
 import (
 	"fmt"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // JSONLogger allows parlay to log output to an in-memory jsonStruct
 type JSONLogger struct {
 	enabled bool
-	logger  map[string]JSONLog
+	logger  map[string]*JSONLog
 }
 
 // JSONLog contains all of the output from a parlay execution
@@ -19,28 +21,30 @@ type JSONLog struct {
 
 // JSONLogEntry contains the details a specific action
 type JSONLogEntry struct {
-	Created time.Time `json:"created"`
-	Entry   string    `json:"entry"`
+	Created  time.Time `json:"created"`
+	TaskName string    `json:"task"`
+	Err      string    `json:"error"`
+	Entry    string    `json:"entry"`
 }
 
 func (j *JSONLogger) initJSONLogger() {
 	j.enabled = true
-	j.logger = make(map[string]JSONLog)
+	j.logger = make(map[string]*JSONLog)
 }
 
-func (j *JSONLogger) writeEntry(target, entry string) {
-
+func (j *JSONLogger) writeEntry(target, task, entry, err string) {
 	// Create new entry
 	newEntry := JSONLogEntry{
-		Created: time.Now(),
-		Entry:   entry,
+		Created:  time.Now(),
+		Entry:    entry,
+		TaskName: task,
+		Err:      err,
 	}
 
 	// Check if the logger exists
 	existingLog, ok := j.logger[target]
 	if ok {
 		// Update an existing entry
-
 		existingLog.Entries = append(existingLog.Entries, newEntry)
 	} else {
 		// Create a new logger
@@ -48,9 +52,11 @@ func (j *JSONLogger) writeEntry(target, entry string) {
 			State: "Running",
 		}
 		// Append the entry to it
-		newLog.Entries = append(existingLog.Entries, newEntry)
+		newLog.Entries = append(newLog.Entries, newEntry)
 		// Update the in-memory log store
-		j.logger[target] = newLog
+		j.logger[target] = &newLog
+		log.Debugf("Creating new logs for target [%s]", target)
+
 	}
 }
 
