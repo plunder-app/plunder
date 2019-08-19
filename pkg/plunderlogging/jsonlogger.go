@@ -68,7 +68,7 @@ func (j *JSONLogger) deleteLog(target string) error {
 		delete(j.logger, target)
 	} else {
 		// Return a warning
-		return fmt.Errorf("In-Memory logging for [%s] either doesn't exist or has already been delted", target)
+		return fmt.Errorf("In-Memory logging for [%s] either doesn't exist or has already been deleted", target)
 	}
 	return nil
 }
@@ -80,7 +80,7 @@ func (j *JSONLogger) setLoggingState(target, state string) error {
 		// Update an existing entry
 		existingLog.State = state
 	} else {
-		return fmt.Errorf("In-Memory logging for [%s] either doesn't exist or has already been delted", target)
+		return fmt.Errorf("In-Memory logging for [%s] either doesn't exist or has already been deleted", target)
 	}
 	return nil
 }

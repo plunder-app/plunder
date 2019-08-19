@@ -58,7 +58,7 @@ func setAPIEndpoints() *mux.Router {
 	router.HandleFunc(fmt.Sprintf("%s/{id}", DHCPAPIPath()), getDHCP).Methods("GET")
 
 	// Define the endpoint for sending commands to a remote host using the parlay engine
-	router.HandleFunc(fmt.Sprintf("%s/", ParlayAPIPath()), postParlay).Methods("POST")
+	router.HandleFunc(fmt.Sprintf("%s", ParlayAPIPath()), postParlay).Methods("POST")
 
 	// ------------------------------------
 	// Specific configuration management

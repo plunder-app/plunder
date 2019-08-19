@@ -61,5 +61,5 @@ func (l *Logger) GetJSONLogs(target string) (*JSONLog, error) {
 	if ok {
 		return existingLog, nil
 	}
-	return nil, fmt.Errorf("No Logs for Targer [%s] exist", target)
+	return nil, fmt.Errorf("No Logs for Target [%s] exist", target)
 }

@@ -160,6 +160,8 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, l
 			restore.createCheckpoint()
 			pluginActions, err := parlayplugin.ExecuteAction(action[y].ActionType, hostConfig.Host, action[y].Plugin)
 			if err != nil {
+				logger.WriteLogEntry(hostConfig.Host, action[y].Name, "", err.Error())
+				logger.SetLoggingState(hostConfig.Host, "Failed")
 				return err
 			}
 			log.Debugf("About to execute [%d] actions", len(pluginActions))
