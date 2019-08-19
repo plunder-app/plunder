@@ -155,6 +155,9 @@ func (c *BootController) GetLeases() *[]Lease {
 
 // GetUnLeased - This will retrieve all of the un-allocated leases from the boot controller
 func (c *BootController) GetUnLeased() *[]Lease {
-
+	if c.handler == nil {
+		var emptyLease []Lease
+		return &emptyLease
+	}
 	return &c.handler.UnLeased
 }

@@ -13,9 +13,16 @@ import (
 	"github.com/plunder-app/plunder/pkg/ssh"
 )
 
+// This logger will manage all of the logging for Parlay
+var logger plunderlogging.Logger
+
+// GetTargetLogs will retrieve the JSON logs
+func GetTargetLogs(target string) (*plunderlogging.JSONLog, error) {
+	return logger.GetJSONLogs(target)
+}
+
 // DeploySSH - will iterate through a deployment and perform the relevant actions
 func (m *TreasureMap) DeploySSH(logFile string, jsonLogging bool) error {
-	var logger plunderlogging.Logger
 
 	if logFile != "" {
 		//enable logging
@@ -115,8 +122,9 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, l
 				restore.createCheckpoint()
 
 				// Output error messages
-				logger.WriteLogEntry("", fmt.Sprintf("[%s] Command task [%s] on host [%s] failed with error [%s]\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host, cr.Error))
-				logger.WriteLogEntry("", fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
+				logger.WriteLogEntry(hostConfig.Host, fmt.Sprintf("[%s] Command task [%s] on host [%s] failed with error [%s]\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host, cr.Error))
+				logger.WriteLogEntry(hostConfig.Host, fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
+				logger.SetLoggingState(hostConfig.Host, "Failed")
 				return fmt.Errorf("Command task [%s] on host [%s] failed with error [%s]\n\t[%s]", action[y].Name, hostConfig.Host, cr.Error, cr.Result)
 			}
 
@@ -124,8 +132,8 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, l
 			if cr.Error != nil && action[y].IgnoreFailure == true {
 				log.Warnf("Command Task [%s] on node [%s] failed (execution will continute)", action[y].Name, hostConfig.Host)
 				log.Debugf("Command Results ->\n%s", cr.Result)
-				logger.WriteLogEntry("", fmt.Sprintf("[%s] Command task [%s] on host [%s] has failed (execution will continute)\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
-				logger.WriteLogEntry("", fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
+				logger.WriteLogEntry(hostConfig.Host, fmt.Sprintf("[%s] Command task [%s] on host [%s] has failed (execution will continute)\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
+				logger.WriteLogEntry(hostConfig.Host, fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
 			}
 
 			// No error, task was completed correctly
@@ -133,8 +141,8 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, l
 				// Output success Messages
 				log.Infof("Command Task [%s] on node [%s] completed successfully", action[y].Name, hostConfig.Host)
 				log.Debugf("Command Results ->\n%s", cr.Result)
-				logger.WriteLogEntry("", fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
-				logger.WriteLogEntry("", fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
+				logger.WriteLogEntry(hostConfig.Host, fmt.Sprintf("[%s] Command task [%s] on host [%s] has completed succesfully\n", time.Now().Format(time.ANSIC), action[y].Name, hostConfig.Host))
+				logger.WriteLogEntry(hostConfig.Host, fmt.Sprintf("------------  Output  ------------\n%s\n----------------------------------\n", cr.Result))
 			}
 		case "pkg":
 
@@ -156,7 +164,7 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, l
 			}
 		}
 	}
-
+	logger.SetLoggingState(hostConfig.Host, "Completed")
 	return nil
 }
 

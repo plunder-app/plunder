@@ -1,5 +1,7 @@
 package plunderlogging
 
+import "fmt"
+
 type Logger struct {
 	json JSONLogger
 	file FileLogger
@@ -48,4 +50,16 @@ func (l *Logger) SetLoggingState(target, state string) {
 
 	// A logging system shouldnt break anything so any errors are just outputed to STDOUT
 
+}
+
+func (l *Logger) GetJSONLogs(target string) (*JSONLog, error) {
+	if l.json.logger == nil {
+		return nil, fmt.Errorf("JSON Logging hasn't been enabled")
+	}
+	// Check if the logger exists
+	existingLog, ok := l.json.logger[target]
+	if ok {
+		return &existingLog, nil
+	}
+	return nil, fmt.Errorf("No Logs for Targer [%s] exist", target)
 }
