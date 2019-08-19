@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -36,12 +35,12 @@ func postParlay(w http.ResponseWriter, r *http.Request) {
 				rsp.FriendlyError = "Error parsing the parlay actions"
 				rsp.Error = err.Error()
 			} else {
-				go func() {
-					err = p.DeploySSH("", true)
-					if err != nil {
-						log.Errorf("%s", err.Error())
-					}
-				}()
+				err = p.DeploySSH("", true, true)
+				if err != nil {
+					rsp.FriendlyError = "Error parsing the parlay actions"
+					rsp.Error = err.Error()
+					log.Errorf("%s", err.Error())
+				}
 
 			}
 		}
@@ -95,18 +94,16 @@ func delParlay(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	// We need to revert the mac address back to the correct format (dashes back to colons)
-	mac := strings.Replace(id, "-", ":", -1)
+	target := strings.Replace(id, "-", ".", -1)
 
 	// Use the mac address to lookup the deployment
-	deployment := services.GetDeployment(mac)
-
+	err := parlay.DeleteTargetLogs(target)
 	// If the deployment exists then process the POST data
-	if deployment != nil {
+	if err != nil {
 
-		// DELETE the deployment logs (TODO)
-
-	} else {
-		rsp.FriendlyError = fmt.Sprintf("Unable to find deployment for server [%s]", mac)
+		// RETREIVE the deployment Logs (TODO)
+		rsp.FriendlyError = "Error reading deleting logs"
+		rsp.Error = err.Error()
 	}
 
 	json.NewEncoder(w).Encode(rsp)

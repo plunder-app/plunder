@@ -115,5 +115,5 @@ func (m *TreasureMap) FindDeployment(deployment, action, host, logFile string, r
 	} else {
 		return fmt.Errorf("No deployment was specified")
 	}
-	return foundMap.DeploySSH(logFile, false)
+	return foundMap.DeploySSH(logFile, false, false)
 }

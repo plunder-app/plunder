@@ -73,3 +73,11 @@ func (l *Logger) GetJSONLogs(target string) (*JSONLog, error) {
 	}
 	return nil, fmt.Errorf("No Logs for Target [%s] exist", target)
 }
+
+func (l *Logger) DeleteLogs(target string) error {
+	if l.json.logger == nil {
+		return nil
+	}
+	return l.json.deleteLog(target)
+
+}

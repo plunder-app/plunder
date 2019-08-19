@@ -2,7 +2,6 @@ package parlay
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/plunder-app/plunder/pkg/plunderlogging"
 
@@ -21,9 +20,31 @@ func GetTargetLogs(target string) (*plunderlogging.JSONLog, error) {
 	return logger.GetJSONLogs(target)
 }
 
-// DeploySSH - will iterate through a deployment and perform the relevant actions
-func (m *TreasureMap) DeploySSH(logFile string, jsonLogging bool) error {
+// DeleteTargetLogs will retrieve the JSON logs
+func DeleteTargetLogs(target string) error {
+	return logger.DeleteLogs(target)
+}
 
+// DeploySSH - will iterate through a deployment and perform the relevant actions
+func (m *TreasureMap) DeploySSH(logFile string, jsonLogging, background bool) error {
+
+	// ERROR Checking
+	if len(ssh.Hosts) == 0 {
+		log.Warnln("No hosts credentials have been loaded, only commands with commandLocal = true will work")
+	}
+	if len(m.Deployments) == 0 {
+		return fmt.Errorf("No Deployments in parlay map")
+	}
+
+	for x := range m.Deployments {
+		// Build new hosts list from imported SSH servers and compare that we have required credentials
+		_, err := ssh.FindHosts(m.Deployments[x].Hosts)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Begin the deployment
 	if logFile != "" {
 		//enable logging
 		logger.InitLogFile(logFile)
@@ -33,46 +54,95 @@ func (m *TreasureMap) DeploySSH(logFile string, jsonLogging bool) error {
 		logger.InitJSON()
 	}
 
-	if len(ssh.Hosts) == 0 {
-		log.Warnln("No hosts credentials have been loaded, only commands with commandLocal = true will work")
+	if background {
+		go startDeployments(m.Deployments)
+	} else {
+		startDeployments(m.Deployments)
 	}
-	if len(m.Deployments) == 0 {
-		return fmt.Errorf("No Deployments in parlay map")
-	}
-	for x := range m.Deployments {
+
+	// TODO - test original automation
+
+	// for x := range m.Deployments {
+	// 	// Build new hosts list from imported SSH servers and compare that we have required credentials
+	// 	hosts, err := ssh.FindHosts(m.Deployments[x].Hosts)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+
+	// 	// Beggining of deployment work
+	// 	log.Infof("Beginning Deployment [%s]\n", m.Deployments[x].Name)
+	// 	logger.WriteLogEntry("", "", "", fmt.Sprintf("Beginning Deployment [%s]\n", m.Deployments[x].Name))
+
+	// 	// Set Restore checkpoint
+	// 	restore.Deployment = m.Deployments[x].Name
+	// 	restore.Hosts = m.Deployments[x].Hosts
+
+	// 	if m.Deployments[x].Parallel == true {
+	// 		// Begin this deployment in parallel across all hosts
+	// 		err = parallelDeployment(m.Deployments[x].Actions, hosts, &logger)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	} else {
+	// 		// This work will be sequential, one host after the next
+	// 		for z := range m.Deployments[x].Hosts {
+	// 			var hostConfig ssh.HostSSHConfig
+	// 			// Find the hosts SSH configuration
+	// 			for i := range hosts {
+	// 				if hosts[i].Host == m.Deployments[x].Hosts[z] {
+	// 					hostConfig = hosts[i]
+	// 				}
+	// 			}
+	// 			// Set the state of logging actions to in-progress
+	// 			logger.SetLoggingState(hostConfig.Host, "Running")
+	// 			err = sequentialDeployment(m.Deployments[x].Actions, hostConfig, &logger)
+	// 			if err != nil {
+	// 				logger.SetLoggingState(hostConfig.Host, "Failed")
+	// 				return err
+	// 			}
+	// 			// Set the state of logging actions to completed
+	// 			logger.SetLoggingState(hostConfig.Host, "Completed")
+	// 		}
+	// 	}
+	// }
+	return nil
+}
+
+func startDeployments(d []Deployment) error {
+	for x := range d {
 		// Build new hosts list from imported SSH servers and compare that we have required credentials
-		hosts, err := ssh.FindHosts(m.Deployments[x].Hosts)
+		hosts, err := ssh.FindHosts(d[x].Hosts)
 		if err != nil {
 			return err
 		}
 
 		// Beggining of deployment work
-		log.Infof("Beginning Deployment [%s]\n", m.Deployments[x].Name)
-		logger.WriteLogEntry("", "", "", fmt.Sprintf("[%s] Beginning Deployment [%s]\n", time.Now().Format(time.ANSIC), m.Deployments[x].Name))
+		log.Infof("Beginning Deployment [%s]\n", d[x].Name)
+		logger.WriteLogEntry("", "", "", fmt.Sprintf("Beginning Deployment [%s]\n", d[x].Name))
 
 		// Set Restore checkpoint
-		restore.Deployment = m.Deployments[x].Name
-		restore.Hosts = m.Deployments[x].Hosts
+		restore.Deployment = d[x].Name
+		restore.Hosts = d[x].Hosts
 
-		if m.Deployments[x].Parallel == true {
+		if d[x].Parallel == true {
 			// Begin this deployment in parallel across all hosts
-			err = parallelDeployment(m.Deployments[x].Actions, hosts, &logger)
+			err = parallelDeployment(d[x].Actions, hosts, &logger)
 			if err != nil {
 				return err
 			}
 		} else {
 			// This work will be sequential, one host after the next
-			for z := range m.Deployments[x].Hosts {
+			for z := range d[x].Hosts {
 				var hostConfig ssh.HostSSHConfig
 				// Find the hosts SSH configuration
 				for i := range hosts {
-					if hosts[i].Host == m.Deployments[x].Hosts[z] {
+					if hosts[i].Host == d[x].Hosts[z] {
 						hostConfig = hosts[i]
 					}
 				}
 				// Set the state of logging actions to in-progress
 				logger.SetLoggingState(hostConfig.Host, "Running")
-				err = sequentialDeployment(m.Deployments[x].Actions, hostConfig, &logger)
+				err = sequentialDeployment(d[x].Actions, hostConfig, &logger)
 				if err != nil {
 					logger.SetLoggingState(hostConfig.Host, "Failed")
 					return err
