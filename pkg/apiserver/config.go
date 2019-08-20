@@ -23,8 +23,8 @@ type ServerConfig struct {
 	ServerKey string `json:"key"`
 }
 
-//OpenClientConfig will open and parse a Plunder server configuration file
-func OpenClientConfig(path string) (*ClientConfig, error) {
+//openClientConfig will open and parse a Plunder server configuration file
+func openClientConfig(path string) (*ClientConfig, error) {
 	var c ClientConfig
 	// Create a CA certificate pool and add cert.pem to it
 	b, err := ioutil.ReadFile(path)
