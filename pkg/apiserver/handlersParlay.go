@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/plunder-app/plunder/pkg/parlay"
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 	"github.com/plunder-app/plunder/pkg/services"
 	"github.com/plunder-app/plunder/pkg/ssh"
 
@@ -21,8 +22,8 @@ func postParlay(w http.ResponseWriter, r *http.Request) {
 
 	if b, err := ioutil.ReadAll(r.Body); err == nil {
 		// Parse the treasure map in the POST data
-		var p parlay.TreasureMap
-		err := json.Unmarshal(b, &p)
+		var m parlaytypes.TreasureMap
+		err := json.Unmarshal(b, &m)
 		// Unable to parse the JSON payload
 		if err != nil {
 			rsp.FriendlyError = "Error parsing the parlay actions"
@@ -35,7 +36,7 @@ func postParlay(w http.ResponseWriter, r *http.Request) {
 				rsp.FriendlyError = "Error parsing the parlay actions"
 				rsp.Error = err.Error()
 			} else {
-				err = p.DeploySSH("", true, true)
+				err = parlay.DeploySSH(&m,"", true, true)
 				if err != nil {
 					rsp.FriendlyError = "Error parsing the parlay actions"
 					rsp.Error = err.Error()

@@ -1,14 +1,13 @@
-package parlay
+package parlaytypes
 
 import (
 	"fmt"
 
-	"github.com/plunder-app/plunder/pkg/parlay/types"
 	log "github.com/sirupsen/logrus"
 )
 
 // This will iterate through a deployment map and build a new deployment map from found deployments
-func (m *TreasureMap) findDeployments(deployment []string) (*TreasureMap, error) {
+func (m *TreasureMap) FindDeployments(deployment []string) (*TreasureMap, error) {
 
 	var newDeploymentList []Deployment
 
@@ -27,7 +26,7 @@ func (m *TreasureMap) findDeployments(deployment []string) (*TreasureMap, error)
 	return m, nil
 }
 
-func (d *Deployment) findHosts(hosts []string) (*Deployment, error) {
+func (d *Deployment) FindHosts(hosts []string) (*Deployment, error) {
 
 	var newHostList []string
 
@@ -46,8 +45,8 @@ func (d *Deployment) findHosts(hosts []string) (*Deployment, error) {
 	return d, nil
 }
 
-func (d *Deployment) findActions(actions []string) ([]types.Action, error) {
-	var newActionList []types.Action
+func (d *Deployment) FindActions(actions []string) ([]Action, error) {
+	var newActionList []Action
 
 	for x := range actions {
 		for y := range d.Actions {
@@ -64,7 +63,7 @@ func (d *Deployment) findActions(actions []string) ([]types.Action, error) {
 }
 
 //FindDeployment - takes a number of flags and builds a new map to be processed
-func (m *TreasureMap) FindDeployment(deployment, action, host, logFile string, resume bool) error {
+func (m *TreasureMap) FindDeployment(deployment, action, host, logFile string, resume bool) (*TreasureMap, error) {
 	var foundMap TreasureMap
 	if deployment != "" {
 		log.Debugf("Looking for deployment [%s]", deployment)
@@ -88,7 +87,7 @@ func (m *TreasureMap) FindDeployment(deployment, action, host, logFile string, r
 					}
 					// If this is zero it means that no actions have been found
 					if len(foundMap.Deployments[0].Actions) == 0 {
-						return fmt.Errorf("No actions have been found, looking for action [%s]", action)
+						return nil, fmt.Errorf("No actions have been found, looking for action [%s]", action)
 					}
 				}
 				// If a host is specified act soley on it
@@ -103,17 +102,18 @@ func (m *TreasureMap) FindDeployment(deployment, action, host, logFile string, r
 					}
 					// If this is zero it means that no hosts have been found
 					if len(foundMap.Deployments[0].Hosts) == 0 {
-						return fmt.Errorf("No host has been found, looking for host [%s]", host)
+						return nil, fmt.Errorf("No host has been found, looking for host [%s]", host)
 					}
 				}
 			}
 		}
 		// If this is zero it means that no actions have been found
 		if len(foundMap.Deployments) == 0 {
-			return fmt.Errorf("No deployment has been found, looking for deployment [%s]", deployment)
+			return nil, fmt.Errorf("No deployment has been found, looking for deployment [%s]", deployment)
 		}
 	} else {
-		return fmt.Errorf("No deployment was specified")
+		return nil, fmt.Errorf("No deployment was specified")
 	}
-	return foundMap.DeploySSH(logFile, false, false)
+	return &foundMap, nil
+	//return parlay.DeploySSH(foundMap, logFile, false, false)
 }

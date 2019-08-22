@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey"
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 )
 
 func contains(v string, a []string) bool {
@@ -17,7 +18,7 @@ func contains(v string, a []string) bool {
 }
 
 // StartUI will enable parlay to provide an easier way of selecting which operations will be performed
-func (m *TreasureMap) StartUI() (*TreasureMap, error) {
+func StartUI(m *parlaytypes.TreasureMap) (*parlaytypes.TreasureMap, error) {
 
 	deployments := []string{}
 	for i := range m.Deployments {
@@ -46,7 +47,7 @@ func (m *TreasureMap) StartUI() (*TreasureMap, error) {
 	}
 
 	// Create a new TreasureMap from the answered questions
-	newMap, err := m.findDeployments(deploymentAnswers)
+	newMap, err := m.FindDeployments(deploymentAnswers)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +87,7 @@ func (m *TreasureMap) StartUI() (*TreasureMap, error) {
 		}
 
 		newMap.Deployments[i].Hosts = hostAnswers
-		foundActions, err := newMap.Deployments[i].findActions(deploymentAnswers)
+		foundActions, err := newMap.Deployments[i].FindActions(deploymentAnswers)
 		if err != nil {
 			return nil, err
 		}

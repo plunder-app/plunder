@@ -11,8 +11,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/plunder-app/plunder/pkg/apiserver"
 	"github.com/plunder-app/plunder/pkg/certs"
-	"github.com/plunder-app/plunder/pkg/parlay"
-	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 	"github.com/plunder-app/plunder/pkg/services"
 	"github.com/plunder-app/plunder/pkg/utils"
 
@@ -143,7 +142,7 @@ var PlunderParlayConfig = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 
-		parlayActionPackage := types.Action{
+		parlayActionPackage := parlaytypes.Action{
 			Name:         "Add package",
 			ActionType:   "pkg",
 			PkgManager:   "apt",
@@ -151,34 +150,34 @@ var PlunderParlayConfig = &cobra.Command{
 			Packages:     "mysql",
 		}
 
-		parlayActionCommand := types.Action{
+		parlayActionCommand := parlaytypes.Action{
 			Name:             "Run Command",
 			ActionType:       "command",
 			Command:          "which uptime",
 			CommandSudo:      "root",
 			CommandSaveAsKey: "cmdKey",
 		}
-		parlayActionUpload := types.Action{
+		parlayActionUpload := parlaytypes.Action{
 			Name:        "Upload File",
 			ActionType:  "upload",
 			Source:      "./my_file",
 			Destination: "/tmp/file",
 		}
 
-		parlayActionDownload := types.Action{
+		parlayActionDownload := parlaytypes.Action{
 			Name:        "Download File",
 			ActionType:  "download",
 			Destination: "./my_file",
 			Source:      "/tmp/file",
 		}
 
-		parlayActionKey := types.Action{
+		parlayActionKey := parlaytypes.Action{
 			Name:       "Execute key",
 			ActionType: "command",
 			KeyName:    "cmdKey",
 		}
 
-		parlayDeployment := parlay.Deployment{
+		parlayDeployment := parlaytypes.Deployment{
 			Name:  "Install MySQL",
 			Hosts: []string{"192.168.0.1", "192.168.0.2"},
 		}
@@ -189,8 +188,8 @@ var PlunderParlayConfig = &cobra.Command{
 		parlayDeployment.Actions = append(parlayDeployment.Actions, parlayActionDownload)
 		parlayDeployment.Actions = append(parlayDeployment.Actions, parlayActionKey)
 
-		parlayConfig := &parlay.TreasureMap{}
-		parlayConfig.Deployments = []parlay.Deployment{}
+		parlayConfig := &parlaytypes.TreasureMap{}
+		parlayConfig.Deployments = []parlaytypes.Deployment{}
 		parlayConfig.Deployments = append(parlayConfig.Deployments, parlayDeployment)
 
 		// Render the output to screen

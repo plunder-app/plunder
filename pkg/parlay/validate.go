@@ -3,11 +3,11 @@ package parlay
 import (
 	"fmt"
 
-	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 )
 
 // ValidateAction will parse an action to ensure it is valid
-func ValidateAction(action *types.Action) error {
+func ValidateAction(action *parlaytypes.Action) error {
 	switch action.ActionType {
 	case "upload":
 		// Validate the upload action

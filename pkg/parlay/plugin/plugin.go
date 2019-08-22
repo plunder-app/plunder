@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"plugin"
 
-	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -174,7 +174,7 @@ func UsagePlugin(pluginPath, action string) {
 		return
 	}
 
-	a := types.Action{
+	a := parlaytypes.Action{
 		Name:       fmt.Sprintf("Example name for action [%s]", action),
 		ActionType: action,
 		Plugin:     result,
@@ -184,7 +184,7 @@ func UsagePlugin(pluginPath, action string) {
 }
 
 // ExecuteAction uses the cache to find an action/plugin mapping
-func ExecuteAction(action, host string, raw json.RawMessage) ([]types.Action, error) {
+func ExecuteAction(action, host string, raw json.RawMessage) ([]parlaytypes.Action, error) {
 	if pluginCache[action] == "" {
 		// No KeyMap meaning that the action doesn't map to a plugin
 		return nil, fmt.Errorf("Action [%s] does not exist or has no plugin associated with it", action)
@@ -193,7 +193,7 @@ func ExecuteAction(action, host string, raw json.RawMessage) ([]types.Action, er
 }
 
 // ExecuteActionInPlugin specifies the plugin and action directly
-func ExecuteActionInPlugin(pluginPath, action, host string, raw json.RawMessage) ([]types.Action, error) {
+func ExecuteActionInPlugin(pluginPath, action, host string, raw json.RawMessage) ([]parlaytypes.Action, error) {
 
 	// Check a function with the name ParlayExec exists
 	symbol, err := findFunctionInPlugin(pluginPath, "ParlayExec")
@@ -202,7 +202,7 @@ func ExecuteActionInPlugin(pluginPath, action, host string, raw json.RawMessage)
 	}
 	log.Debugf("Attempting plugin [%s]", action)
 	// Check the function has the correct parameters
-	pluginExec, ok := symbol.(func(string, string, json.RawMessage) ([]types.Action, error))
+	pluginExec, ok := symbol.(func(string, string, json.RawMessage) ([]parlaytypes.Action, error))
 	if !ok {
 		return nil, fmt.Errorf("Unable to read functions from Plugin [%s]", pluginPath)
 	}
