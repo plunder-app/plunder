@@ -11,8 +11,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/plunder-app/plunder/pkg/apiserver"
 	"github.com/plunder-app/plunder/pkg/parlay"
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 	parlayplugin "github.com/plunder-app/plunder/pkg/parlay/plugin"
-	"github.com/plunder-app/plunder/pkg/parlay/types"
 	"github.com/plunder-app/plunder/pkg/ssh"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -131,7 +131,7 @@ var plunderAutomatePluginTest = &cobra.Command{
 		log.SetLevel(log.Level(logLevel))
 
 		test := `{ "name": "Example of test action", "type": "exampleAction/test", "plugin": { "credentials": "AAABBBCCCCDDEEEE", "address": "172.0.0.1" }	}`
-		var action types.Action
+		var action parlaytypes.Action
 		_ = json.Unmarshal([]byte(test), &action)
 
 		_, err := parlayplugin.ExecuteActionInPlugin("./plugin/example.plugin", "127.0.0.1", "example/test", action.Plugin)
@@ -211,7 +211,7 @@ var plunderAutomateSSH = &cobra.Command{
 		if *mapFile != "" {
 			log.Infof("Reading deployment configuration from [%s]", *mapFile)
 
-			var deployment parlay.TreasureMap
+			var deployment parlaytypes.TreasureMap
 			// // Check the actual path from the string
 			if _, err := os.Stat(*mapFile); !os.IsNotExist(err) {
 				b, err := ioutil.ReadFile(*mapFile)
@@ -228,10 +228,14 @@ var plunderAutomateSSH = &cobra.Command{
 				if *deploymentName != "" {
 					log.Infof("Looking for deployment [%s]", *deploymentName)
 
-					err = deployment.FindDeployment(*deploymentName, *actionName, *host, *logFile, *resume)
+					foundDeployment, err := deployment.FindDeployment(*deploymentName, *actionName, *host, *logFile, *resume)
+					if err != nil {
+						log.Fatalf("%s", err)
+					}
+					err = parlay.DeploySSH(foundDeployment, *logFile, false, false)
 				} else {
 					// Parse the entire deployment
-					err = deployment.DeploySSH(*logFile, false, false)
+					err = parlay.DeploySSH(&deployment, *logFile, false, false)
 				}
 				if err != nil {
 					log.Fatalf("%v", err)
@@ -255,7 +259,7 @@ var plunderAutomateValidate = &cobra.Command{
 		if *mapFile != "" {
 			log.Infof("Reading deployment configuration from [%s]", *mapFile)
 			//var err error
-			var deployment parlay.TreasureMap
+			var deployment parlaytypes.TreasureMap
 			// // Check the actual path from the string
 			if _, err := os.Stat(*mapFile); !os.IsNotExist(err) {
 				b, err := ioutil.ReadFile(*mapFile)
@@ -304,7 +308,7 @@ var plunderAutomateVMware = &cobra.Command{
 		if *mapFile != "" {
 			log.Infof("Reading deployment configuration from [%s]", *mapFile)
 			//var err error
-			var deployment parlay.TreasureMap
+			var deployment parlaytypes.TreasureMap
 			// // Check the actual path from the string
 			if _, err := os.Stat(*mapFile); !os.IsNotExist(err) {
 				b, err := ioutil.ReadFile(*mapFile)
@@ -319,10 +323,14 @@ var plunderAutomateVMware = &cobra.Command{
 				if *deploymentName != "" {
 					log.Infof("Looking for deployment [%s]", *deploymentName)
 
-					err = deployment.FindDeployment(*deploymentName, *actionName, *host, *logFile, *resume)
+					foundDeployment, err := deployment.FindDeployment(*deploymentName, *actionName, *host, *logFile, *resume)
+					if err != nil {
+						log.Fatalf("%s", err)
+					}
+					err = parlay.DeploySSH(foundDeployment, *logFile, false, false)
 				} else {
 					// Parse the entire deployment
-					err = deployment.DeploySSH(*logFile, false, false)
+					err = parlay.DeploySSH(&deployment, *logFile, false, false)
 				}
 				if err != nil {
 					log.Fatalf("%v", err)
@@ -341,11 +349,11 @@ var plunderAutomateUI = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.Level(logLevel))
 
-		var newMap *parlay.TreasureMap
+		var newMap *parlaytypes.TreasureMap
 		if *mapFile != "" {
 			log.Infof("Reading deployment configuration from [%s]", *mapFile)
 			//var err error
-			var deployment parlay.TreasureMap
+			var deployment parlaytypes.TreasureMap
 			// // Check the actual path from the string
 			if _, err := os.Stat(*mapFile); !os.IsNotExist(err) {
 				b, err := ioutil.ReadFile(*mapFile)
@@ -356,7 +364,7 @@ var plunderAutomateUI = &cobra.Command{
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
-				newMap, err = deployment.StartUI()
+				newMap, err = parlay.StartUI(&deployment)
 				if err != nil {
 					log.Fatalf("%v", err)
 				}
@@ -434,14 +442,14 @@ var plunderAutomateUI = &cobra.Command{
 			log.Fatalf("No Deployment information imported")
 		}
 
-		err := newMap.DeploySSH(*logFile, false, false)
+		err := parlay.DeploySSH(newMap, *logFile, false, false)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
 	},
 }
 
-func parseMapFile(b []byte) (deployment parlay.TreasureMap, err error) {
+func parseMapFile(b []byte) (deployment parlaytypes.TreasureMap, err error) {
 
 	jsonBytes, err := yaml.YAMLToJSON(b)
 	if err == nil {

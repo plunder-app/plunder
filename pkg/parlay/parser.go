@@ -7,8 +7,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 	parlayplugin "github.com/plunder-app/plunder/pkg/parlay/plugin"
-	"github.com/plunder-app/plunder/pkg/parlay/types"
 	"github.com/plunder-app/plunder/pkg/ssh"
 )
 
@@ -26,7 +26,7 @@ func DeleteTargetLogs(target string) error {
 }
 
 // DeploySSH - will iterate through a deployment and perform the relevant actions
-func (m *TreasureMap) DeploySSH(logFile string, jsonLogging, background bool) error {
+func DeploySSH(m *parlaytypes.TreasureMap, logFile string, jsonLogging, background bool) error {
 
 	// ERROR Checking
 	if len(ssh.Hosts) == 0 {
@@ -108,7 +108,7 @@ func (m *TreasureMap) DeploySSH(logFile string, jsonLogging, background bool) er
 	return nil
 }
 
-func startDeployments(d []Deployment) error {
+func startDeployments(d []parlaytypes.Deployment) error {
 	for x := range d {
 		// Build new hosts list from imported SSH servers and compare that we have required credentials
 		hosts, err := ssh.FindHosts(d[x].Hosts)
@@ -156,7 +156,7 @@ func startDeployments(d []Deployment) error {
 }
 
 // Begin host by host deployments as part of each deployment
-func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, logger *plunderlogging.Logger) error {
+func sequentialDeployment(action []parlaytypes.Action, hostConfig ssh.HostSSHConfig, logger *plunderlogging.Logger) error {
 	var err error
 
 	for y := range action {
@@ -246,7 +246,7 @@ func sequentialDeployment(action []types.Action, hostConfig ssh.HostSSHConfig, l
 
 // Peform all of the actions in parallel on all hosts in the host array
 // this function will make use of the parallel ssh calls
-func parallelDeployment(action []types.Action, hosts []ssh.HostSSHConfig, logger *plunderlogging.Logger) error {
+func parallelDeployment(action []parlaytypes.Action, hosts []ssh.HostSSHConfig, logger *plunderlogging.Logger) error {
 	for y := range action {
 		switch action[y].ActionType {
 		case "upload":

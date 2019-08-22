@@ -6,12 +6,12 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 	"github.com/plunder-app/plunder/pkg/ssh"
 	log "github.com/sirupsen/logrus"
 )
 
-func buildCommand(a types.Action) (string, error) {
+func buildCommand(a parlaytypes.Action) (string, error) {
 	var command string
 
 	// An executable Key takes presedence
@@ -40,7 +40,7 @@ func buildCommand(a types.Action) (string, error) {
 	return command, nil
 }
 
-func parseAndExecute(a types.Action, h *ssh.HostSSHConfig) ssh.CommandResult {
+func parseAndExecute(a parlaytypes.Action, h *ssh.HostSSHConfig) ssh.CommandResult {
 	// This will parse the options passed in the action and execute the required string
 	var cr ssh.CommandResult
 	var b []byte
