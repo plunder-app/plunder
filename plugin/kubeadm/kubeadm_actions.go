@@ -3,16 +3,16 @@ package main
 import (
 	"fmt"
 
-	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 )
 
-func (e *etcdMembers) generateActions() []types.Action {
-	var generatedActions []types.Action
-	var a types.Action
+func (e *etcdMembers) generateActions() []parlaytypes.Action {
+	var generatedActions []parlaytypes.Action
+	var a parlaytypes.Action
 	if e.InitCA == true {
 		// Ensure that a new Certificate Authority is generated
 		// Create action
-		a = types.Action{
+		a = parlaytypes.Action{
 			// Generate etcd server certificate
 			ActionType:  "command",
 			Command:     fmt.Sprintf("kubeadm init phase certs etcd-ca"),
@@ -62,9 +62,9 @@ func (e *etcdMembers) buildKubeadm(api, host, address string) string {
 }
 
 // generateCertificateActions - Hosts need adding in backward to the array i.e. host 2 -> host 1 -> host 0
-func (e *etcdMembers) generateCertificateActions(hosts []string) []types.Action {
-	var generatedActions []types.Action
-	var a types.Action
+func (e *etcdMembers) generateCertificateActions(hosts []string) []parlaytypes.Action {
+	var generatedActions []parlaytypes.Action
+	var a parlaytypes.Action
 
 	a.Command = "mkdir -p /etc/kubernetes/pki"
 	a.CommandSudo = "root"
@@ -131,16 +131,16 @@ func (e *etcdMembers) generateCertificateActions(hosts []string) []types.Action 
 }
 
 // At some point the functions for the various kubeadm arease will be split into seperate files to ease management
-func (m *managerMembers) generateActions() []types.Action {
-	var generatedActions []types.Action
-	var a types.Action
+func (m *managerMembers) generateActions() []parlaytypes.Action {
+	var generatedActions []parlaytypes.Action
+	var a parlaytypes.Action
 	if m.Stacked == false {
 		// Not implemented yet TODO
 		return nil
 	}
 
 	// Upload the initial etcd certificates to the first manager node
-	a = types.Action{
+	a = parlaytypes.Action{
 		// Upload etcd server certificate
 		ActionType:  "upload",
 		Source:      "/tmp/managercert.tar.gz",
