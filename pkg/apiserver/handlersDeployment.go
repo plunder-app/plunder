@@ -133,18 +133,67 @@ func deleteDeployment(w http.ResponseWriter, r *http.Request) {
 
 	// Find the deployment ID
 	id := mux.Vars(r)["id"]
-	// We need to revert the mac address back to the correct format (dashes back to colons)
-	mac := strings.Replace(id, "-", ":", -1)
 	var rsp Response
 
 	if b, err := ioutil.ReadAll(r.Body); err == nil {
-		err := services.DeleteDeployment(mac, b)
+		// Try the Mac address first
 
+		// We need to revert the mac address back to the correct format (dashes back to colons)
+		err := services.DeleteDeploymentMac(strings.Replace(id, "-", ":", -1), b)
+		if err != nil {
+
+			// We need to revert the ip address back to the correct format (dashes back to periods)
+			err = services.DeleteDeploymentAddress(strings.Replace(id, "-", ".", -1), b)
+			if err != nil {
+				rsp.FriendlyError = "Error updating Deployment Configuration"
+				rsp.Error = err.Error()
+				rsp.Payload = nil
+			}
+		}
+	}
+	json.NewEncoder(w).Encode(rsp)
+
+}
+
+// Retrieve a specific plunder deployment configuration
+func deleteDeploymentMac(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Find the deployment ID
+	id := mux.Vars(r)["id"]
+	var rsp Response
+
+	if b, err := ioutil.ReadAll(r.Body); err == nil {
+		// We need to revert the mac address back to the correct format (dashes back to colons)
+		err := services.DeleteDeploymentMac(strings.Replace(id, "-", ":", -1), b)
 		if err != nil {
 			rsp.FriendlyError = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
 			rsp.Payload = nil
 		}
+
+	}
+	json.NewEncoder(w).Encode(rsp)
+
+}
+
+// Retrieve a specific plunder deployment configuration
+func deleteDeploymentAddress(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Find the deployment ID
+	id := mux.Vars(r)["id"]
+	var rsp Response
+
+	if b, err := ioutil.ReadAll(r.Body); err == nil {
+		// We need to revert the mac address back to the correct format (dashes back to colons)
+		err = services.DeleteDeploymentAddress(strings.Replace(id, "-", ".", -1), b)
+		if err != nil {
+			rsp.FriendlyError = "Error updating Deployment Configuration"
+			rsp.Error = err.Error()
+			rsp.Payload = nil
+		}
+
 	}
 	json.NewEncoder(w).Encode(rsp)
 
