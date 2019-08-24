@@ -28,9 +28,9 @@ func getConfig(w http.ResponseWriter, r *http.Request) {
 
 func postConfig(w http.ResponseWriter, r *http.Request) {
 	if b, err := ioutil.ReadAll(r.Body); err == nil {
+		var rsp Response
 		// This function needs to parse both the data and then evaluate the state of running services
 		err := services.ParseControllerData(b)
-		var rsp Response
 
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -45,14 +45,19 @@ func postConfig(w http.ResponseWriter, r *http.Request) {
 // Apply a Specific Boot Configuration
 func postBootConfig(w http.ResponseWriter, r *http.Request) {
 	if b, err := ioutil.ReadAll(r.Body); err == nil {
-		err := services.ParseControllerData(b)
 		var rsp Response
 
+		// This function needs to parse both the data and then evaluate the state of running services
+		var newBoot services.BootConfig
+		err := json.Unmarshal(b, &newBoot)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			rsp.FriendlyError = "Error updating Server Configuration"
 			rsp.Error = err.Error()
+		} else {
+			services.Controller.BootConfigs = append(services.Controller.BootConfigs, newBoot)
 		}
+
 		json.NewEncoder(w).Encode(rsp)
 	}
 }

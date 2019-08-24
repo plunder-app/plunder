@@ -211,8 +211,8 @@ func UpdateDeployment(macAddress string, rawDeployment []byte) error {
 	return fmt.Errorf("Unable to find existing deployment for MAC address [%s]", macAddress)
 }
 
-// DeleteDeployment - This function will add a new deployment to the deployment configuration
-func DeleteDeployment(macAddress string, rawDeployment []byte) error {
+// DeleteDeploymentMac - This function will delete a deployment based upon it's mac Address
+func DeleteDeploymentMac(macAddress string, rawDeployment []byte) error {
 
 	// We will now duplicate our configuration
 	updateConfig := Deployments
@@ -231,7 +231,31 @@ func DeleteDeployment(macAddress string, rawDeployment []byte) error {
 			return rebuildConfiguration(&updateConfig)
 		}
 	}
-	return fmt.Errorf("Unable to find existing deployment for MAC address [%s]", macAddress)
+	return fmt.Errorf("Unable to find existing deployment for Address [%s]", macAddress)
+
+}
+
+// DeleteDeploymentAddress - This function will delete a deployment based upon it's IP Address
+func DeleteDeploymentAddress(address string, rawDeployment []byte) error {
+
+	// We will now duplicate our configuration
+	updateConfig := Deployments
+	// We will need to create space to copy the existing configurations over
+	updateConfig.Configs = make([]DeploymentConfig, len(Deployments.Configs))
+	// Copy our existing configurations into the new configuration
+	copy(updateConfig.Configs, Deployments.Configs)
+
+	// Find the original deployment via it's mac address
+	for i := range updateConfig.Configs {
+		// Compare this deployment to the one we're looking for
+		if updateConfig.Configs[i].ConfigHost.IPAddress == address {
+			// Remove the old matching configuration
+			updateConfig.Configs = append(updateConfig.Configs[:i], updateConfig.Configs[i+1:]...)
+			// Parse the new configuration
+			return rebuildConfiguration(&updateConfig)
+		}
+	}
+	return fmt.Errorf("Unable to find existing deployment for Address [%s]", address)
 
 }
 

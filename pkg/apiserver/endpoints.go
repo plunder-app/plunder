@@ -73,6 +73,10 @@ func setAPIEndpoints() *mux.Router {
 	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), updateDeployment).Methods("POST")
 	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), deleteDeployment).Methods("DELETE")
 
+	// Delete deployments based upon different criteria
+	router.HandleFunc(fmt.Sprintf("%s/mac/{id}", DeploymentAPIPath()), deleteDeployment).Methods("DELETE")
+	router.HandleFunc(fmt.Sprintf("%s/address/{id}", DeploymentAPIPath()), deleteDeployment).Methods("DELETE")
+
 	// Define the endpoint for sending commands to a remote host using the parlay engine
 	router.HandleFunc(fmt.Sprintf("%s/logs/{id}", ParlayAPIPath()), getParlay).Methods("GET")
 	router.HandleFunc(fmt.Sprintf("%s/logs/{id}", ParlayAPIPath()), delParlay).Methods("DELETE")
