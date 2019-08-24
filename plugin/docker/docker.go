@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 )
 
 const pluginInfo = `This plugin is used to managed docker automation`
@@ -87,7 +87,7 @@ func ParlayUsage(action string) (raw json.RawMessage, err error) {
 // <- raw - raw JSON that will be manipulated into a correct struct that matches the action
 // -> actions are an array of generated actions that the parser will then execute
 // -> err is any error that has been generated
-func ParlayExec(action, host string, raw json.RawMessage) (actions []types.Action, err error) {
+func ParlayExec(action, host string, raw json.RawMessage) (actions []parlaytypes.Action, err error) {
 
 	// This example plugin only has the code for "exampleAction/test" however this switch statement
 	// should handle all exposed actions from the plugin

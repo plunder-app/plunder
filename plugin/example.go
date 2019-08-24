@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 )
 
 const pluginInfo = `This example plugin is used to demonstrate the structure of a plugin`
@@ -40,9 +40,9 @@ func ParlayPluginInfo() string {
 }
 
 //ParlayActions -
-func ParlayActions(action string, iface interface{}) []types.Action {
-	var actions []types.Action
-	a := types.Action{
+func ParlayActions(action string, iface interface{}) []parlaytypes.Action {
+	var actions []parlaytypes.Action
+	a := parlaytypes.Action{
 		Command: "example/test",
 	}
 	actions = append(actions, a)
@@ -76,7 +76,7 @@ func ParlayUsage(action string) (raw json.RawMessage, err error) {
 // <- raw - raw JSON that will be manipulated into a correct struct that matches the action
 // -> actions are an array of generated actions that the parser will then execute
 // -> err is any error that has been generated
-func ParlayExec(action, host string, raw json.RawMessage) (actions []types.Action, err error) {
+func ParlayExec(action, host string, raw json.RawMessage) (actions []parlaytypes.Action, err error) {
 
 	var t pluginTestAction
 	// Unmarshall the JSON into the struct
@@ -87,7 +87,7 @@ func ParlayExec(action, host string, raw json.RawMessage) (actions []types.Actio
 	// should handle all exposed actions from the plugin
 	switch action {
 	case "exampleAction/test":
-		a := types.Action{
+		a := parlaytypes.Action{
 			Name:       "Echo the address",
 			ActionType: "command",
 			Command:    fmt.Sprintf("echo %s", t.Address),

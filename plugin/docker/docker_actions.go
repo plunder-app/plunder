@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/plunder-app/plunder/pkg/parlay/types"
+	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 )
 
-func (i *image) generateImageActions(host string) []types.Action {
-	var generatedActions []types.Action
-	var a types.Action
+func (i *image) generateImageActions(host string) []parlaytypes.Action {
+	var generatedActions []parlaytypes.Action
+	var a parlaytypes.Action
 	var dockerRemoteString, dockerLocalString string
 
 	// This should be set to true if sudo (NOPASSWD) is enabled and required on the local host
@@ -30,7 +30,7 @@ func (i *image) generateImageActions(host string) []types.Action {
 		// If we've specified a file (tarball, or tar+gzip) we cat then pipe over SSH to a docker load
 
 		for y := range i.ImageFiles {
-			a = types.Action{
+			a = parlaytypes.Action{
 				ActionType:      "command",
 				Command:         fmt.Sprintf("%s load ", dockerRemoteString),
 				CommandPipeFile: i.ImageFiles[y],
@@ -44,7 +44,7 @@ func (i *image) generateImageActions(host string) []types.Action {
 		// then we can cat then pipe over SSH to a docker load
 		for y := range i.ImageNames {
 
-			a = types.Action{
+			a = parlaytypes.Action{
 				ActionType:     "command",
 				Command:        fmt.Sprintf("%s load", dockerRemoteString),
 				CommandPipeCmd: fmt.Sprintf("%s %s", dockerLocalString, i.ImageNames[y]),
@@ -57,17 +57,17 @@ func (i *image) generateImageActions(host string) []types.Action {
 	return generatedActions
 }
 
-func (t *tag) generateTagActions(host string) ([]types.Action, error) {
+func (t *tag) generateTagActions(host string) ([]parlaytypes.Action, error) {
 
 	if len(t.SourceNames) != len(t.TargetNames) {
 		return nil, fmt.Errorf("The number of images to retag doesn't match the number of tags")
 	}
-	var generatedActions []types.Action
+	var generatedActions []parlaytypes.Action
 
 	// Iterate through all of the images and create retagging actions
 	for y := range t.SourceNames {
 		// Generate the retag action
-		var a = types.Action{
+		var a = parlaytypes.Action{
 			ActionType:  "command",
 			Command:     fmt.Sprintf("sudo docker tag %s %s", t.SourceNames[y], t.TargetNames[y]),
 			CommandSudo: "root",
