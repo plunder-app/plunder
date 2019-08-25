@@ -163,6 +163,9 @@ func AddDeployment(rawDeployment []byte) error {
 	// Append our new configuration into our new copy
 	updateConfig.Configs = append(updateConfig.Configs, newDeployment)
 
+	// Remove the deployment from the unleased addresses
+	controller.DelUnLeased(newDeployment.MAC)
+
 	// Parse the new configuration
 	return rebuildConfiguration(&updateConfig)
 }
