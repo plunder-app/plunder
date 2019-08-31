@@ -6,25 +6,33 @@ A `./plunder config server > config.json` will look at the network configuration
 
 ### Modifying the configuration
 
-```
+```json
 {
-	"adapter": "ens160",
-	"enableDHCP": false,
-	"addressDHCP": "192.168.0.110",
-	"startDHCP": "",
-	"leasePoolDHCP": 20,
-	"gatewayDHCP": "192.168.0.110",
-	"nameserverDHCP": "192.168.0.110",
-	"enableTFTP": false,
-	"addressTFTP": "192.168.0.110",
-	"enableHTTP": false,
-	"addressHTTP": "192.168.0.110",
-	"pxePath": "undionly.kpxe",
-	"kernelPath": "",
-	"initrdPath": "",
-	"cmdline": ""
+        "adapter": "en0",
+        "enableDHCP": false,
+        "dhcpConfig": {
+                "addressDHCP": "192.168.0.142",
+                "startDHCP": "192.168.0.143",
+                "leasePoolDHCP": 20,
+                "gatewayDHCP": "192.168.0.142",
+                "nameserverDHCP": "192.168.0.142"
+        },
+        "enableTFTP": false,
+        "addressTFTP": "192.168.0.142",
+        "enableHTTP": false,
+        "addressHTTP": "192.168.0.142",
+        "pxePath": "undionly.kpxe",
+        "bootConfigs": [
+                {
+                        "configName": "default",
+                        "kernelPath": "/kernelPath",
+                        "initrdPath": "/initPath",
+                        "cmdline": "cmd=options"
+                }
+        ]
 }
 ```
+
 *Example generated configuration above*
 
 By **default** the configuration that is generated will have all of the services disabled (dhcp/tftp/http) and attempting to start plunder will result in an error message saying that no services are being started. 

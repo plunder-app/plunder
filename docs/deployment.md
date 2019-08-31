@@ -7,47 +7,36 @@ A configured deployment should resemble something like the example below:
 
 ```json
 {
-	"globalConfig": {
-		"gateway": "",
-		"address": "",
-		"subnet": "",
-		"nameserver": "",
-		"hostname": "",
-		"ntpserver": "",
-		"adapter": "",
-		"swapEnabled": false,
-		"username": "",
-		"password": "",
-		"repoaddress": "",
-		"mirrordir": "",
-		"sshkeypath": "",
-		"packages": ""
-	},
-	"deployments": [
-		{
-			"mac": "",
-			"kernelPath": "",
-			"initrdPath": "",
-			"cmdline": "",
-			"deployment": "",
-			"config": {
-				"gateway": "",
-				"address": "",
-				"subnet": "",
-				"nameserver": "",
-				"hostname": "",
-				"ntpserver": "",
-				"adapter": "",
-				"swapEnabled": false,
-				"username": "",
-				"password": "",
-				"repoaddress": "",
-				"mirrordir": "",
-				"sshkeypath": "",
-				"packages": ""
-			}
-		}
-	]
+        "globalConfig": {
+                "adapter": "ens192",
+                "gateway": "192.168.0.1",
+                "subnet": "255.255.255.0",
+                "nameserver": "192.168.0.1",
+                "ntpserver": "192.168.0.1",
+                "username": "user",
+                "password": "pass",
+                "repoaddress": "192.168.0.1",
+                "mirrordir": "/ubuntu",
+                "sshkeypath": "/home/deploy/.ssh/id_pub.rsa",
+                "sshkey": "ssh-rsa AABBCCDDEE1122334455",
+                "packages": "nginx openssh-server"
+        },
+        "deployments": [
+                {
+                        "mac": "00:11:22:33:44:55",
+                        "bootConfigName": "default",
+                        "bootConfig": {
+                                "configName": "",
+                                "kernelPath": "",
+                                "initrdPath": "",
+                                "cmdline": ""
+                        },
+                        "config": {
+                                "address": "192.168.0.2",
+                                "hostname": "Server01"
+                        }
+                }
+        ]
 }
 ```
 
