@@ -17,7 +17,7 @@ var controller *BootController
 
 var mux *http.ServeMux
 
-func (c BootController) generateBootTypeHanders(mux *http.ServeMux) {
+func (c *BootController) generateBootTypeHanders(mux *http.ServeMux) {
 
 	// Find the default configuration
 	defaultConfig := findBootConfigForName("default")

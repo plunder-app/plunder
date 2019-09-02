@@ -37,10 +37,15 @@ type dhcpConfig struct {
 // BootConfig defines a named configuration for booting
 type BootConfig struct {
 	ConfigName string `json:"configName"`
+
 	// iPXE file settings - exported
 	Kernel  string `json:"kernelPath"`
 	Initrd  string `json:"initrdPath"`
 	Cmdline string `json:"cmdline"`
+
+	// ISO Reader settings
+	ISOPath   string `json:"isoPath,omitempty"`
+	ISOPrefix string `json:"isoPrefix,omitempty"`
 }
 
 // DeploymentConfigurationFile - The bootstraps.Configs is used by other packages to manage use case for Mac addresses

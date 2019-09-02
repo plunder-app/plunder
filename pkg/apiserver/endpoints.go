@@ -66,6 +66,7 @@ func setAPIEndpoints() *mux.Router {
 
 	// Define the creation endpoints for Plunder Server Boot Configuration
 	router.HandleFunc(fmt.Sprintf("%s/{id}", ConfigAPIPath()), postBootConfig).Methods("POST")
+	router.HandleFunc(fmt.Sprintf("%s/{id}", ConfigAPIPath()), deleteBootConfig).Methods("DELETE")
 
 	// Define the creation and modification endpoints for Plunder Deployment configuration
 	router.HandleFunc(fmt.Sprintf("%s", DeploymentAPIPath()), postDeployment).Methods("POST")
