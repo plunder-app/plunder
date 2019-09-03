@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/plunder-app/plunder/pkg/services"
 )
 
@@ -46,7 +47,6 @@ func postConfig(w http.ResponseWriter, r *http.Request) {
 func postBootConfig(w http.ResponseWriter, r *http.Request) {
 	if b, err := ioutil.ReadAll(r.Body); err == nil {
 		var rsp Response
-
 		// This function needs to parse both the data and then evaluate the state of running services
 		var newBoot services.BootConfig
 		err := json.Unmarshal(b, &newBoot)
@@ -55,9 +55,34 @@ func postBootConfig(w http.ResponseWriter, r *http.Request) {
 			rsp.FriendlyError = "Error updating Server Configuration"
 			rsp.Error = err.Error()
 		} else {
+			// Add the Boot configuration to the controller
 			services.Controller.BootConfigs = append(services.Controller.BootConfigs, newBoot)
+			// Parse the boot configuration (preload ISOs etc.)
+			services.Controller.ParseBootController()
 		}
 
 		json.NewEncoder(w).Encode(rsp)
 	}
+}
+
+// Apply a Specific Boot Configuration
+func deleteBootConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Find the deployment ID
+	id := mux.Vars(r)["id"]
+	var rsp Response
+
+	// We need to revert the mac address back to the correct format (dashes back to colons)
+	err := services.Controller.DeleteBootControllerConfig(id)
+	if err != nil {
+
+		if err != nil {
+			rsp.FriendlyError = "Error updating Deployment Configuration"
+			rsp.Error = err.Error()
+			rsp.Payload = nil
+		}
+	}
+
+	json.NewEncoder(w).Encode(rsp)
 }

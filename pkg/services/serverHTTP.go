@@ -17,13 +17,12 @@ var controller *BootController
 
 var mux *http.ServeMux
 
-func (c BootController) generateBootTypeHanders(mux *http.ServeMux) {
+func (c *BootController) generateBootTypeHanders() {
 
 	// Find the default configuration
 	defaultConfig := findBootConfigForName("default")
 	if defaultConfig != nil {
 		defaultBoot = utils.IPXEPreeseed(*c.HTTPAddress, defaultConfig.Kernel, defaultConfig.Initrd, defaultConfig.Cmdline)
-		mux.HandleFunc("/default.ipxe", rootHandler)
 	} else {
 		log.Warnf("Found [%d] configurations and no \"default\" configuration", len(c.BootConfigs))
 	}
@@ -33,28 +32,25 @@ func (c BootController) generateBootTypeHanders(mux *http.ServeMux) {
 	if preeseedConfig != nil {
 		preseed = utils.IPXEPreeseed(*c.HTTPAddress, preeseedConfig.Kernel, preeseedConfig.Initrd, preeseedConfig.Cmdline)
 
-		mux.HandleFunc("/preseed.ipxe", preseedHandler)
 	}
 
 	// If a kickstart configuration has been configured then add it, and create a HTTP endpoint
 	kickstartConfig := findBootConfigForName("kickstart")
 	if kickstartConfig != nil {
 		kickstart = utils.IPXEPreeseed(*c.HTTPAddress, kickstartConfig.Kernel, kickstartConfig.Initrd, kickstartConfig.Cmdline)
-		mux.HandleFunc("/kickstart.ipxe", kickstartHandler)
 	}
 
 	// If a vsphereConfig configuration has been configured then add it, and create a HTTP endpoint
 	vsphereConfig := findBootConfigForName("vsphere")
 	if vsphereConfig != nil {
 		vsphere = utils.IPXEVSphere(*c.HTTPAddress, vsphereConfig.Kernel, vsphereConfig.Cmdline)
-		mux.HandleFunc("/vsphere.ipxe", vsphereHandler)
 	}
 }
 
 func (c *BootController) serveHTTP() error {
 
 	// This function will pre-generate the boot handlers for the various boot types
-	c.generateBootTypeHanders(mux)
+	c.generateBootTypeHanders()
 
 	autoBoot = utils.IPXEAutoBoot()
 	reboot = utils.IPXEReboot()
@@ -64,10 +60,19 @@ func (c *BootController) serveHTTP() error {
 		return err
 	}
 
+	// Created only once
+
+	// TOTO - alloew this to be customisable
 	mux.Handle("/", http.FileServer(http.Dir(docroot)))
+
+	// Boot handlers
 	mux.HandleFunc("/health", HealthCheckHandler)
 	mux.HandleFunc("/reboot.ipxe", rebootHandler)
 	mux.HandleFunc("/autoBoot.ipxe", autoBootHandler)
+	mux.HandleFunc("/default.ipxe", rootHandler)
+	mux.HandleFunc("/kickstart.ipxe", kickstartHandler)
+	mux.HandleFunc("/preseed.ipxe", preseedHandler)
+	mux.HandleFunc("/vsphere.ipxe", vsphereHandler)
 
 	// Set the pointer to the boot config
 	controller = c

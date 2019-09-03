@@ -136,7 +136,9 @@ d-i user-setup/encrypt-home boolean false
 const preseedPkg = `
 ### Apt setup
 d-i apt-setup/restricted boolean true
-d-i apt-setup/universe boolean true
+d-i apt-setup/universe boolean false
+di- apt-setup/security_host %s
+d-i apt-setup/security_path string %s
 d-i mirror/http/hostname string %s
 d-i mirror/http/directory string %s
 d-i mirror/country string manual
@@ -161,6 +163,7 @@ d-i pkgsel/language-pack-patterns string
 d-i pkgsel/language-packs multiselect
 # or ...
 #d-i pkgsel/language-packs multiselect en, pl
+#d-i debian-installer/allow_unauthenticated boolean true
 
 # Policy for applying updates. May be "none" (no automatic updates),
 # "unattended-upgrades" (install security updates automatically), or
@@ -201,7 +204,7 @@ func (config *HostConfig) BuildPreeSeedConfig() string {
 		parsedDisk = preseedDisk + noswap
 	}
 	parsedNet := fmt.Sprintf(preseedNet, config.Adapter, config.Gateway, config.IPAddress, config.NameServer, config.Subnet, config.ServerName)
-	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory, config.Packages)
+	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory, config.RepositoryAddress, config.MirrorDirectory, config.Packages)
 	parsedCmd := fmt.Sprintf(preseedCmd, key)
 	parsedUsr := fmt.Sprintf(preseedUsers, config.Username, config.Username, config.Password, config.Password)
 	return fmt.Sprintf("%s%s%s%s%s%s", preseedHead, parsedDisk, parsedNet, parsedPkg, parsedUsr, parsedCmd)
