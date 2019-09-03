@@ -70,6 +70,8 @@ func (c *BootController) ParseBootController() error {
 
 		}
 	}
+	// Parse the boot controllers for new configuration changes
+	c.generateBootTypeHanders()
 	return nil
 }
 
