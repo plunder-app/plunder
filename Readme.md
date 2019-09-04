@@ -13,7 +13,7 @@ From an end-user interaction a plunder control utility has been created:
 
 [https://github.com/plunder-app/pldrctl](https://github.com/plunder-app/pldrctl) - provides the capability to query and create deployments and configurations within a plunder instance.
 
-### Services
+### Services
 
 - `DHCP` - Allocating an IP addressing and pointing to a TFTP server
 - `TFTP` - Bootstrapping an Operating system install (uses iPXE)
