@@ -1,13 +1,19 @@
 
 # Plunder
 
-The complete tool for finding kubernetes gold amongst bits of bare-metal!
+The complete tool for finding **Infrastructure** gold amongst bits of bare-metal!
 
 ![Plunder Captain](./image/plunder_captain.png)
 
-Plunder is a single-binary application that is all designed in order to make the provisioning of servers, platforms and applications easier. 
+## Overview
 
-It provides a provisioning service based upon:
+Plunder is a single-binary server that is all designed in order to make the provisioning of servers, platforms and applications easier. It is deployed as a server that an end user can interact with through it's **Api-server** in order to control and automate the usage. At this time interacting with the api-server is detailed in the source [https://github.com/plunder-app/plunder/blob/master/pkg/apiserver/endpoints.go](https://github.com/plunder-app/plunder/blob/master/pkg/apiserver/endpoints.go), however documentation will be added soon. 
+
+From an end-user interaction a plunder control utility has been created: 
+
+[https://github.com/plunder-app/pldrctl](https://github.com/plunder-app/pldrctl) - provides the capability to query and create deployments and configurations within a plunder instance.
+
+### Services
 
 - `DHCP` - Allocating an IP addressing and pointing to a TFTP server
 - `TFTP` - Bootstrapping an Operating system install (uses iPXE)
@@ -15,14 +21,23 @@ It provides a provisioning service based upon:
 
 An operating system can be easily performed using either **preseed** or **kickstart**, alternatively custom kernels and init ramdisks can be specified to be used based upon Mac address.
 
-
+### Automation
 
 Further more once the operating system has been provisioned there are usually post-deployment tasks in order to complete an installation. Plunder has the capability to do the following:
 
 - `Remote command execution` - Over SSH (key configured above)
 - `Scripting engine` - A JSON/YAML language that also supports plugins to extend the capablities of the automation engine.
 
-A small repository of existing deployment maps has been created https://github.com/plunder-app/maps
+A small repository of existing deployment maps has been created [https://github.com/plunder-app/maps](https://github.com/plunder-app/maps)
+
+### Additional features
+
+- `iso support` - Plunder no longer requires a user with elevated privileges to mount an OS ISO in order to read the contents. Plunder can read files directly from the iso file and expose them to an installer through `http`.
+- `online updates` - As all configuration to plunder is exposed and managed through an API, it provides the capability of performing most configuration changes with no down time or restarts.
+- `in-memory configurations` - Plunder will create all deployment configurations and hold them in memory, meaning that it is stateless and it doesn't leave configuration all over a filesystem
+- `VMware deployment support` - Plunder can deploy preseed/kickstart and now vSphere installations.
+- `Management of unclaimed devices` - Plunder will watch and keep a pool of devices that aren't being deployed and can force them to reboot/restart until they're needed for deployment.
+- `Logging of remote execution` - Plunder can now store all execution logs in-memory until told to clear them.
 
 ## Getting Plunder
 
@@ -33,7 +48,7 @@ Prebuilt binaries for Darwin(MacOS)/Linux and Windows can be found on the [relea
 If you wish to build the code yourself then this can be done simply by running:
 
 ```
-go get github.com/plunder-app/plunder
+go get -u github.com/plunder-app/plunder
 ```
 Alternatively clone the repository and either `go build` or `make build`, note that using the makefile will ensure that the current git commit and version number are returned by `plunder version`.
 
@@ -68,5 +83,3 @@ PXE booting provides very little feedback when things aren't working, but usuall
 - Additional plugins
 
   
-
-Created on 2018-11-14 17:30:01
