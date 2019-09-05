@@ -33,6 +33,11 @@ func ParlayAPIPath() string {
 	return "/parlay"
 }
 
+//LogsHTTPAPIPath returns the URI that is used to interact with the streaming of http logs
+func LogsHTTPAPIPath() string {
+	return "/logs/http"
+}
+
 // setAPIEndpoints defines all of the API end points for Plunder
 func setAPIEndpoints() *mux.Router {
 	// Create a new router
@@ -69,7 +74,7 @@ func setAPIEndpoints() *mux.Router {
 	router.HandleFunc(fmt.Sprintf("%s/{id}", ConfigAPIPath()), deleteBootConfig).Methods("DELETE")
 
 	// Define the creation and modification endpoints for Plunder Deployment configuration
-	router.HandleFunc(fmt.Sprintf("%s", DeploymentAPIPath()), postDeployment).Methods("POST")
+	router.HandleFunc(DeploymentAPIPath(), postDeployment).Methods("POST")
 	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), getSpecificDeployment).Methods("GET")
 	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), updateDeployment).Methods("POST")
 	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), deleteDeployment).Methods("DELETE")
@@ -81,6 +86,11 @@ func setAPIEndpoints() *mux.Router {
 	// Define the endpoint for sending commands to a remote host using the parlay engine
 	router.HandleFunc(fmt.Sprintf("%s/logs/{id}", ParlayAPIPath()), getParlay).Methods("GET")
 	router.HandleFunc(fmt.Sprintf("%s/logs/{id}", ParlayAPIPath()), delParlay).Methods("DELETE")
+
+	// Define the endpoints for logging notifications
+
+	// Define the endpoint for sending commands to a remote host using the parlay engine
+	router.HandleFunc(fmt.Sprintf("%s/{id}", LogsHTTPAPIPath()), handleSSE(loggingCenter)).Methods("GET")
 
 	return router
 }
