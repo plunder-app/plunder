@@ -11,15 +11,15 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var loggingCenter *NotificationCenter
+var loggingCenter *NotificationManager
 
 func init() {
-	loggingCenter = NewNotificationCenter()
+	loggingCenter = NewNotificationManager()
 
 	go func() {
 		for {
 			b := []byte(time.Now().Format(time.RFC3339))
-			if err := loggingCenter.Notify(b); err != nil {
+			if err := loggingCenter.NotifySubscribers(b); err != nil {
 				log.Fatal(err)
 			}
 
@@ -82,19 +82,19 @@ type Notifier interface {
 	Notify(b []byte) error
 }
 
-type NotificationCenter struct {
+type NotificationManager struct {
 	subscribers   map[chan []byte]struct{}
 	subscribersMu *sync.Mutex
 }
 
-func NewNotificationCenter() *NotificationCenter {
-	return &NotificationCenter{
+func NewNotificationManager() *NotificationManager {
+	return &NotificationManager{
 		subscribers:   map[chan []byte]struct{}{},
 		subscribersMu: &sync.Mutex{},
 	}
 }
 
-func (nc *NotificationCenter) Subscribe(c chan []byte) (UnsubscribeFunc, error) {
+func (nc *NotificationManager) Subscribe(c chan []byte) (UnsubscribeFunc, error) {
 	nc.subscribersMu.Lock()
 	nc.subscribers[c] = struct{}{}
 	nc.subscribersMu.Unlock()
@@ -110,7 +110,7 @@ func (nc *NotificationCenter) Subscribe(c chan []byte) (UnsubscribeFunc, error) 
 	return unsubscribeFn, nil
 }
 
-func (nc *NotificationCenter) Notify(b []byte) error {
+func (nc *NotificationManager) NotifySubscribers(b []byte) error {
 	nc.subscribersMu.Lock()
 	defer nc.subscribersMu.Unlock()
 

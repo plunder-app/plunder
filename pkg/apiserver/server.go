@@ -45,14 +45,11 @@ func Server(path string, port int, insecure bool) error {
 			Addr:         address,
 			Handler:      e,
 		}
-		err = srv.ListenAndServeTLS("", "")
 
-	} else {
-		err = http.ListenAndServe(address, e)
+		return srv.ListenAndServeTLS("", "")
+
 	}
 
-	if err != nil {
-		return err
-	}
-	return nil
+	return http.ListenAndServe(address, e)
+
 }
