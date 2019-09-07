@@ -38,59 +38,59 @@ func LogsHTTPAPIPath() string {
 	return "/logs/http"
 }
 
-// setAPIEndpoints defines all of the API end points for Plunder
-func setAPIEndpoints() *mux.Router {
+// setStaticAPIEndpoints defines all of the static API end points for Plunder
+func setStaticAPIEndpoints(r *mux.Router) {
 	// Create a new router
-	router := mux.NewRouter()
 
 	// ------------------------------------
 	// General configuration management
 	// ------------------------------------
 
 	// Define the retrieval endpoints for Plunder Server configuration
-	router.HandleFunc(fmt.Sprintf("%s", ConfigAPIPath()), getConfig).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("%s", ConfigAPIPath()), getConfig).Methods("GET")
 
 	// Define the creation endpoints for Plunder Server Configuration
-	router.HandleFunc(fmt.Sprintf("%s", ConfigAPIPath()), postConfig).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("%s", ConfigAPIPath()), postConfig).Methods("POST")
 
 	// Define the retrieval endpoints for Plunder Deployment configuration
-	router.HandleFunc(fmt.Sprintf("%s", DeploymentsAPIPath()), getDeployments).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("%s", DeploymentsAPIPath()), getDeployments).Methods("GET")
 
 	// Define the retrieval endpoints for Plunder Deployment configuration
-	router.HandleFunc(fmt.Sprintf("%s", DeploymentsAPIPath()), postDeployments).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("%s", DeploymentsAPIPath()), postDeployments).Methods("POST")
 
 	// Define the retrieval endpoints for Plunder Server configuration
-	router.HandleFunc(fmt.Sprintf("%s/{id}", DHCPAPIPath()), getDHCP).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("%s/{id}", DHCPAPIPath()), getDHCP).Methods("GET")
 
 	// Define the endpoint for sending commands to a remote host using the parlay engine
-	router.HandleFunc(fmt.Sprintf("%s", ParlayAPIPath()), postParlay).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("%s", ParlayAPIPath()), postParlay).Methods("POST")
 
 	// ------------------------------------
 	// Specific configuration management
 	// ------------------------------------
 
 	// Define the creation endpoints for Plunder Server Boot Configuration
-	router.HandleFunc(fmt.Sprintf("%s/{id}", ConfigAPIPath()), postBootConfig).Methods("POST")
-	router.HandleFunc(fmt.Sprintf("%s/{id}", ConfigAPIPath()), deleteBootConfig).Methods("DELETE")
+	r.HandleFunc(fmt.Sprintf("%s/{id}", ConfigAPIPath()), postBootConfig).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("%s/{id}", ConfigAPIPath()), deleteBootConfig).Methods("DELETE")
 
 	// Define the creation and modification endpoints for Plunder Deployment configuration
-	router.HandleFunc(DeploymentAPIPath(), postDeployment).Methods("POST")
-	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), getSpecificDeployment).Methods("GET")
-	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), updateDeployment).Methods("POST")
-	router.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), deleteDeployment).Methods("DELETE")
+	r.HandleFunc(DeploymentAPIPath(), postDeployment).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), getSpecificDeployment).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), updateDeployment).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("%s/{id}", DeploymentAPIPath()), deleteDeployment).Methods("DELETE")
 
 	// Delete deployments based upon different criteria
-	router.HandleFunc(fmt.Sprintf("%s/mac/{id}", DeploymentAPIPath()), deleteDeploymentMac).Methods("DELETE")
-	router.HandleFunc(fmt.Sprintf("%s/address/{id}", DeploymentAPIPath()), deleteDeploymentAddress).Methods("DELETE")
+	r.HandleFunc(fmt.Sprintf("%s/mac/{id}", DeploymentAPIPath()), deleteDeploymentMac).Methods("DELETE")
+	r.HandleFunc(fmt.Sprintf("%s/address/{id}", DeploymentAPIPath()), deleteDeploymentAddress).Methods("DELETE")
 
 	// Define the endpoint for sending commands to a remote host using the parlay engine
-	router.HandleFunc(fmt.Sprintf("%s/logs/{id}", ParlayAPIPath()), getParlay).Methods("GET")
-	router.HandleFunc(fmt.Sprintf("%s/logs/{id}", ParlayAPIPath()), delParlay).Methods("DELETE")
+	r.HandleFunc(fmt.Sprintf("%s/logs/{id}", ParlayAPIPath()), getParlay).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("%s/logs/{id}", ParlayAPIPath()), delParlay).Methods("DELETE")
 
-	// Define the endpoints for logging notifications
+	// ------------------------------------
+	// Logging endpoints
+	// ------------------------------------
 
 	// Define the endpoint for sending commands to a remote host using the parlay engine
-	router.HandleFunc(fmt.Sprintf("%s/{id}", LogsHTTPAPIPath()), handleSSE(loggingCenter)).Methods("GET")
-
-	return router
+	//router.HandleFunc(fmt.Sprintf("%s/{id}", LogsHTTPAPIPath()), handleSSE(loggingCenter)).Methods("GET")
+	return
 }

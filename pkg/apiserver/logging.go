@@ -2,50 +2,69 @@ package apiserver
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"path"
 	"sync"
-	"time"
 
 	"github.com/gorilla/mux"
 )
 
-var loggingCenter *NotificationManager
+// MVP of a streaming logging provider
+
+// The notificationCenter is in charge of handling the various notification managers, whihc
+// in turn will notify all of their subscribers
+var notificationCenter map[string]*notificationManager
+
+// Notification is what will be sent to subscribers of a manager
+type Notification struct {
+	ID      string
+	RawData []byte
+}
+
+// RegisterNotificationManager will create a manager and an endpoint
+func RegisterNotificationManager(managerName, endpoint string) error {
+	// Register the new Manager to the Notification Center
+	notificationCenter[managerName] = newNotificationManager()
+	addDynamicEndpoint(endpoint, handleSubscribers(notificationCenter[managerName]))
+	return nil
+}
+
+// NotifyManager - This will Notify a Manager that there is a new notification that needs to go to subscribers
+func NotifyManager(managerName string, n Notification) error {
+	manager := notificationCenter[managerName]
+	if manager == nil {
+		return fmt.Errorf("Notification Manager [%s], hasn't been registered", managerName)
+	}
+	manager.notifySubscribers(n)
+	return nil
+}
+
+//   --------------  Notication MAGIC below --------------
 
 func init() {
-	loggingCenter = NewNotificationManager()
+	// Initialise the notificationCenter map
 
-	go func() {
-		for {
-			b := []byte(time.Now().Format(time.RFC3339))
-			if err := loggingCenter.NotifySubscribers(b); err != nil {
-				log.Fatal(err)
-			}
-
-			time.Sleep(1 * time.Second)
-		}
-	}()
+	notificationCenter = make(map[string]*notificationManager)
 
 }
 
-type UnsubscribeFunc func() error
+type unsubscribeFunc func() error
 
-type Subscriber interface {
-	Subscribe(c chan []byte) (UnsubscribeFunc, error)
+type subscriber interface {
+	subscribe(n chan Notification) (unsubscribeFunc, error)
 }
 
-func handleSSE(s Subscriber) http.HandlerFunc {
+func handleSubscribers(s subscriber) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Subscribe
-		c := make(chan []byte)
-		unsubscribeFn, err := s.Subscribe(c)
+		n := make(chan Notification)
+		unsubscribeFn, err := s.subscribe(n)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		// Signal SSE Support
+		// Set environment for streaming events
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Connection", "keep-alive")
@@ -66,11 +85,13 @@ func handleSSE(s Subscriber) http.HandlerFunc {
 				id := mux.Vars(r)["id"]
 				_ = path.Base(r.URL.Path)
 				//r.URL.Path
-				b := <-c
-				// parse the data from the channel
-				// if the correct id then send them the data
+				newNotification := <-n
+				if newNotification.ID == id {
+					// parse the data from the channel
+					// if the correct id then send them the data
 
-				fmt.Fprintf(w, "data: %s %s\n\n", id, b)
+					fmt.Fprintf(w, "%s\n", newNotification.RawData)
+				}
 
 				w.(http.Flusher).Flush()
 			}
@@ -78,30 +99,30 @@ func handleSSE(s Subscriber) http.HandlerFunc {
 	}
 }
 
-type Notifier interface {
-	Notify(b []byte) error
+type notifier interface {
+	Notify(n Notification) error
 }
 
-type NotificationManager struct {
-	subscribers   map[chan []byte]struct{}
+type notificationManager struct {
+	subscribers   map[chan Notification]struct{}
 	subscribersMu *sync.Mutex
 }
 
-func NewNotificationManager() *NotificationManager {
-	return &NotificationManager{
-		subscribers:   map[chan []byte]struct{}{},
+func newNotificationManager() *notificationManager {
+	return &notificationManager{
+		subscribers:   map[chan Notification]struct{}{},
 		subscribersMu: &sync.Mutex{},
 	}
 }
 
-func (nc *NotificationManager) Subscribe(c chan []byte) (UnsubscribeFunc, error) {
+func (nc *notificationManager) subscribe(n chan Notification) (unsubscribeFunc, error) {
 	nc.subscribersMu.Lock()
-	nc.subscribers[c] = struct{}{}
+	nc.subscribers[n] = struct{}{}
 	nc.subscribersMu.Unlock()
 
 	unsubscribeFn := func() error {
 		nc.subscribersMu.Lock()
-		delete(nc.subscribers, c)
+		delete(nc.subscribers, n)
 		nc.subscribersMu.Unlock()
 
 		return nil
@@ -110,13 +131,14 @@ func (nc *NotificationManager) Subscribe(c chan []byte) (UnsubscribeFunc, error)
 	return unsubscribeFn, nil
 }
 
-func (nc *NotificationManager) NotifySubscribers(b []byte) error {
+func (nc *notificationManager) notifySubscribers(n Notification) error {
+	// Lock them until updates are complete
 	nc.subscribersMu.Lock()
 	defer nc.subscribersMu.Unlock()
 
 	for c := range nc.subscribers {
 		select {
-		case c <- b:
+		case c <- n:
 		default:
 		}
 	}

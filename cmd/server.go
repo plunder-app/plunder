@@ -124,12 +124,11 @@ var PlunderServer = &cobra.Command{
 
 		// Run the API server in a seperate go routine
 		go func() {
-			err := apiserver.Server(*apiServerPath, *port, *insecure)
+			err := apiserver.StartAPIServer(*apiServerPath, *port, *insecure)
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
 		}()
-
 		utils.WaitForCtrlC()
 
 		return

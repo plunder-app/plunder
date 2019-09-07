@@ -6,11 +6,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
+
 	log "github.com/sirupsen/logrus"
 )
 
-//Server - will parse a configuration file and passed variables and start the API Server
-func Server(path string, port int, insecure bool) error {
+var endpoints *mux.Router
+
+//StartAPIServer - will parse a configuration file and passed variables and start the API Server
+func StartAPIServer(path string, port int, insecure bool) error {
+	// Open and Parse the server configuration
 	conf, err := OpenServerConfig(path)
 	if err != nil {
 		log.Warnln(err)
@@ -24,9 +29,15 @@ func Server(path string, port int, insecure bool) error {
 		conf.Port = port
 	}
 
-	e := setAPIEndpoints()
 	log.Infof("Starting API server on port %d", conf.Port)
 	address := fmt.Sprintf(":%d", conf.Port)
+
+	// Initialise a new HTTP Router
+	endpoints = mux.NewRouter()
+	// Set the static endpoints
+	setStaticAPIEndpoints(endpoints)
+
+	// Begin the start of a secure endpoint (TODO)
 	if insecure == false {
 		cert, err := conf.RetrieveClientCert()
 		if err != nil {
@@ -43,13 +54,17 @@ func Server(path string, port int, insecure bool) error {
 			ReadTimeout:  time.Minute,
 			WriteTimeout: time.Minute,
 			Addr:         address,
-			Handler:      e,
+			Handler:      endpoints,
 		}
 
 		return srv.ListenAndServeTLS("", "")
 
 	}
+	// Start an insecure http server (TODO - warning)
+	return http.ListenAndServe(address, endpoints)
 
-	return http.ListenAndServe(address, e)
+}
 
+func addDynamicEndpoint(endpointPattern string, epFunc http.HandlerFunc) {
+	endpoints.HandleFunc(endpointPattern, epFunc)
 }
