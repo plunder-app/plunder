@@ -13,6 +13,30 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//FindFunctionEndpoint - will do a look up to find an exposed dynamic endpoint
+func FindFunctionEndpoint(u *url.URL, c *http.Client, f, m string) (*EndPoint, *Response) {
+	// Create local URL for the API call
+	newURL := *u
+	newURL.Path = fmt.Sprintf("%s/%s/%s", FunctionPath(), f, m)
+
+	// Interact with the API server to find the endpoint
+	response, err := ParsePlunderGet(&newURL, c)
+	if err != nil {
+
+		return nil, &Response{
+			FriendlyError: fmt.Sprintf("Unable to find method [%s] for function [%s]", m, f),
+			Error:         err.Error(),
+		}
+	}
+	var ep EndPoint
+	err = json.Unmarshal(response.Payload, &ep)
+	if err != nil {
+		response.Error = err.Error()
+		return nil, response
+	}
+	return &ep, response
+}
+
 //BuildEnvironmentFromConfig will use the apiserver pkg to parse a configuration file and create a http client with the correct authentication and URL
 func BuildEnvironmentFromConfig(path, urlFlag string) (*url.URL, *http.Client, error) {
 	log.Debugf("Parsing Configuration file [%s]", path)

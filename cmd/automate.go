@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/ghodss/yaml"
-	"github.com/plunder-app/plunder/pkg/apiserver"
 	"github.com/plunder-app/plunder/pkg/parlay"
 	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
 	parlayplugin "github.com/plunder-app/plunder/pkg/parlay/plugin"
@@ -172,7 +171,9 @@ var plunderAutomateSSH = &cobra.Command{
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
-			u.Path = apiserver.DeploymentsAPIPath()
+
+			// TODO - fix dynamic
+			u.Path = "/deployments"
 
 			resp, err := http.Get(u.String())
 			if err != nil {

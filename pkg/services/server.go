@@ -56,7 +56,7 @@ func (c *BootController) ParseBootController() error {
 			if _, ok := isoMapper[c.BootConfigs[i].ISOPrefix]; !ok {
 				log.Debugf("Adding handler %s", urlPrefix)
 
-				mux.HandleFunc(urlPrefix, isoReader)
+				serveMux.HandleFunc(urlPrefix, isoReader)
 			}
 
 			// Atempt to open the ISO and add it to the map for usage later

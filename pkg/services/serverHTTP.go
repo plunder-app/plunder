@@ -15,7 +15,7 @@ var autoBoot, preseed, kickstart, defaultBoot, vsphere, reboot string
 // controller Pointer for the config API endpoint handler
 var controller *BootController
 
-var mux *http.ServeMux
+var serveMux *http.ServeMux
 
 func (c *BootController) generateBootTypeHanders() {
 
@@ -63,21 +63,21 @@ func (c *BootController) serveHTTP() error {
 	// Created only once
 
 	// TOTO - alloew this to be customisable
-	mux.Handle("/", http.FileServer(http.Dir(docroot)))
+	serveMux.Handle("/", http.FileServer(http.Dir(docroot)))
 
 	// Boot handlers
-	mux.HandleFunc("/health", HealthCheckHandler)
-	mux.HandleFunc("/reboot.ipxe", rebootHandler)
-	mux.HandleFunc("/autoBoot.ipxe", autoBootHandler)
-	mux.HandleFunc("/default.ipxe", rootHandler)
-	mux.HandleFunc("/kickstart.ipxe", kickstartHandler)
-	mux.HandleFunc("/preseed.ipxe", preseedHandler)
-	mux.HandleFunc("/vsphere.ipxe", vsphereHandler)
+	serveMux.HandleFunc("/health", HealthCheckHandler)
+	serveMux.HandleFunc("/reboot.ipxe", rebootHandler)
+	serveMux.HandleFunc("/autoBoot.ipxe", autoBootHandler)
+	serveMux.HandleFunc("/default.ipxe", rootHandler)
+	serveMux.HandleFunc("/kickstart.ipxe", kickstartHandler)
+	serveMux.HandleFunc("/preseed.ipxe", preseedHandler)
+	serveMux.HandleFunc("/vsphere.ipxe", vsphereHandler)
 
 	// Set the pointer to the boot config
 	controller = c
 
-	return http.ListenAndServe(":80", mux)
+	return http.ListenAndServe(":80", serveMux)
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {

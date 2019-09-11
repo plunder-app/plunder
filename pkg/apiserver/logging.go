@@ -25,7 +25,12 @@ type Notification struct {
 func RegisterNotificationManager(managerName, endpoint string) error {
 	// Register the new Manager to the Notification Center
 	notificationCenter[managerName] = newNotificationManager()
-	addDynamicEndpoint(endpoint, handleSubscribers(notificationCenter[managerName]))
+	AddDynamicEndpoint(endpoint,
+		endpoint,
+		fmt.Sprintf("Automatically generated notification endpoint for [%s]", managerName),
+		managerName,
+		http.MethodGet,
+		handleSubscribers(notificationCenter[managerName]))
 	return nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/plunder-app/plunder/pkg/apiserver"
+	"github.com/plunder-app/plunder/pkg/parlay"
 	"github.com/plunder-app/plunder/pkg/services"
 	"github.com/plunder-app/plunder/pkg/utils"
 	"github.com/spf13/cobra"
@@ -129,6 +130,12 @@ var PlunderServer = &cobra.Command{
 				log.Fatalf("%v", err)
 			}
 		}()
+
+		// Register the packages to the apiserver
+		services.RegisterToAPIServer()
+		parlay.RegisterToAPIServer()
+
+		// Sit and wait for a control-C
 		utils.WaitForCtrlC()
 
 		return

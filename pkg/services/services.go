@@ -147,7 +147,7 @@ func (c *BootController) StartServices(deployment []byte) {
 		}()
 
 		// Use of a Mux allows the redefinition of http paths
-		mux = http.NewServeMux()
+		serveMux = http.NewServeMux()
 
 		// Parse the boot controller configuration
 		err := c.ParseBootController()

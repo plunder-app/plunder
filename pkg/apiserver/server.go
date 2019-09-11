@@ -13,6 +13,12 @@ import (
 
 var endpoints *mux.Router
 
+func init() {
+	// Initialise a new HTTP Router so that connections can be created before the API server starts, any registered will be added to this router and
+	// evaluated once the API Server starts
+	endpoints = mux.NewRouter()
+}
+
 //StartAPIServer - will parse a configuration file and passed variables and start the API Server
 func StartAPIServer(path string, port int, insecure bool) error {
 	// Open and Parse the server configuration
@@ -32,10 +38,21 @@ func StartAPIServer(path string, port int, insecure bool) error {
 	log.Infof("Starting API server on port %d", conf.Port)
 	address := fmt.Sprintf(":%d", conf.Port)
 
-	// Initialise a new HTTP Router
-	endpoints = mux.NewRouter()
-	// Set the static endpoints
-	setStaticAPIEndpoints(endpoints)
+	// Add the apiserver end point
+	AddDynamicEndpoint("/api",
+		"/api",
+		"Endpoint for interacting with the api server",
+		"apis",
+		http.MethodGet,
+		getAPIs)
+
+	// Add the apiserver end point
+	AddDynamicEndpoint("/api/{function}/{method}",
+		"/api",
+		"Endpoint for interacting with the api server",
+		"apiFunctions",
+		http.MethodGet,
+		getAPIFunctionMethod)
 
 	// Begin the start of a secure endpoint (TODO)
 	if insecure == false {
@@ -60,11 +77,8 @@ func StartAPIServer(path string, port int, insecure bool) error {
 		return srv.ListenAndServeTLS("", "")
 
 	}
+
 	// Start an insecure http server (TODO - warning)
 	return http.ListenAndServe(address, endpoints)
 
-}
-
-func addDynamicEndpoint(endpointPattern string, epFunc http.HandlerFunc) {
-	endpoints.HandleFunc(endpointPattern, epFunc)
 }
