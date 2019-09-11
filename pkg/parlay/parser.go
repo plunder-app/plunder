@@ -28,7 +28,6 @@ func DeleteTargetLogs(target string) error {
 // DeploySSH - will iterate through a deployment and perform the relevant actions
 func DeploySSH(m *parlaytypes.TreasureMap, logFile string, jsonLogging, background bool) error {
 
-	// ERROR Checking
 	if len(ssh.Hosts) == 0 {
 		log.Warnln("No hosts credentials have been loaded, only commands with commandLocal = true will work")
 	}

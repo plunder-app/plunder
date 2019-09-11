@@ -23,7 +23,7 @@ func init() {
 func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 
 	// If HTTP isn't enabled we can't build the multiplexer for URLs
-	if mux == nil {
+	if serveMux == nil {
 		return fmt.Errorf("Deployment HTTP Server isn't enabled, so parsing deployments isn't possible")
 	}
 
@@ -85,7 +85,7 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 			path := fmt.Sprintf("/%s.ipxe", dashMac)
 			if _, ok := httpPaths[path]; !ok {
 				// Only create the handler if one doesn't exist
-				mux.HandleFunc(path, rootHandler)
+				serveMux.HandleFunc(path, rootHandler)
 			}
 
 			httpPaths[path] = inMemipxeConfig
@@ -96,7 +96,7 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 			path := fmt.Sprintf("/%s.cfg", dashMac)
 			if _, ok := httpPaths[path]; !ok {
 				// Only create the handler if one doesn't exist
-				mux.HandleFunc(path, rootHandler)
+				serveMux.HandleFunc(path, rootHandler)
 			}
 			httpPaths[path] = inMemBootConfig
 		}
@@ -106,7 +106,7 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 			path := fmt.Sprintf("/%s.ks", dashMac)
 			if _, ok := httpPaths[path]; !ok {
 				// Only create the handler if one doesn't exist
-				mux.HandleFunc(path, rootHandler)
+				serveMux.HandleFunc(path, rootHandler)
 			}
 			httpPaths[path] = imMemESXiKickstart
 		}

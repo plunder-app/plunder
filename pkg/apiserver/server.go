@@ -6,11 +6,22 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
+
 	log "github.com/sirupsen/logrus"
 )
 
-//Server - will parse a configuration file and passed variables and start the API Server
-func Server(path string, port int, insecure bool) error {
+var endpoints *mux.Router
+
+func init() {
+	// Initialise a new HTTP Router so that connections can be created before the API server starts, any registered will be added to this router and
+	// evaluated once the API Server starts
+	endpoints = mux.NewRouter()
+}
+
+//StartAPIServer - will parse a configuration file and passed variables and start the API Server
+func StartAPIServer(path string, port int, insecure bool) error {
+	// Open and Parse the server configuration
 	conf, err := OpenServerConfig(path)
 	if err != nil {
 		log.Warnln(err)
@@ -24,9 +35,26 @@ func Server(path string, port int, insecure bool) error {
 		conf.Port = port
 	}
 
-	e := setAPIEndpoints()
 	log.Infof("Starting API server on port %d", conf.Port)
 	address := fmt.Sprintf(":%d", conf.Port)
+
+	// Add the apiserver end point
+	AddDynamicEndpoint("/api",
+		"/api",
+		"Endpoint for interacting with the api server",
+		"apis",
+		http.MethodGet,
+		getAPIs)
+
+	// Add the apiserver end point
+	AddDynamicEndpoint("/api/{function}/{method}",
+		"/api",
+		"Endpoint for interacting with the api server",
+		"apiFunctions",
+		http.MethodGet,
+		getAPIFunctionMethod)
+
+	// Begin the start of a secure endpoint (TODO)
 	if insecure == false {
 		cert, err := conf.RetrieveClientCert()
 		if err != nil {
@@ -43,16 +71,14 @@ func Server(path string, port int, insecure bool) error {
 			ReadTimeout:  time.Minute,
 			WriteTimeout: time.Minute,
 			Addr:         address,
-			Handler:      e,
+			Handler:      endpoints,
 		}
-		err = srv.ListenAndServeTLS("", "")
 
-	} else {
-		err = http.ListenAndServe(address, e)
+		return srv.ListenAndServeTLS("", "")
+
 	}
 
-	if err != nil {
-		return err
-	}
-	return nil
+	// Start an insecure http server (TODO - warning)
+	return http.ListenAndServe(address, endpoints)
+
 }
