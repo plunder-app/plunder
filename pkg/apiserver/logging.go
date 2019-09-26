@@ -3,7 +3,6 @@ package apiserver
 import (
 	"fmt"
 	"net/http"
-	"path"
 	"sync"
 
 	"github.com/gorilla/mux"
@@ -86,15 +85,13 @@ func handleSubscribers(s subscriber) http.HandlerFunc {
 				break Looping
 
 			default:
-				// Find the deployment ID
+				// Find the log ID
 				id := mux.Vars(r)["id"]
-				_ = path.Base(r.URL.Path)
-				//r.URL.Path
+				// retrieve the notification
 				newNotification := <-n
-				if newNotification.ID == id {
-					// parse the data from the channel
+				// compare the notification ID with that of the URL, optionally retrieve "all" notifications
+				if newNotification.ID == id || id == "all" {
 					// if the correct id then send them the data
-
 					fmt.Fprintf(w, "%s\n", newNotification.RawData)
 				}
 
