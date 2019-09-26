@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 
@@ -67,11 +66,12 @@ func StartAPIServer(path string, port int, insecure bool) error {
 		certPair, err := tls.X509KeyPair(cert, key)
 		cfg := &tls.Config{Certificates: []tls.Certificate{certPair}}
 		srv := &http.Server{
-			TLSConfig:    cfg,
-			ReadTimeout:  time.Minute,
-			WriteTimeout: time.Minute,
-			Addr:         address,
-			Handler:      endpoints,
+			TLSConfig: cfg,
+			Addr:      address,
+			Handler:   endpoints,
+			// TODO - exposing no timeout will lead to exhausted file descriptors
+			//	ReadTimeout:  time.Minute,
+			//	WriteTimeout: time.Minute,
 		}
 
 		return srv.ListenAndServeTLS("", "")
