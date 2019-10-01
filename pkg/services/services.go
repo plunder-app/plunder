@@ -64,7 +64,7 @@ func (c *BootController) setBootConfig(configName, kernel, initrd, cmdline strin
 }
 
 // StartServices - This will start all of the enabled services
-func (c *BootController) StartServices(deployment []byte) {
+func (c *BootController) StartServices(deployment []byte) error {
 	log.Infof("Starting Remote Boot Services, press CTRL + c to stop")
 
 	if *c.EnableDHCP == true {
@@ -166,5 +166,6 @@ func (c *BootController) StartServices(deployment []byte) {
 			}
 		}
 	}
-
+	// everything has been started correctly
+	return nil
 }

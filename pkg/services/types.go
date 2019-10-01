@@ -86,7 +86,7 @@ type HostConfig struct {
 
 	// SSHKeyPath will typically be referenced from a file ~/.ssh/id_rsa.pub
 	SSHKeyPath string `json:"sshkeypath,omitempty"`
-	// SSHKey is a full SSH Key
+	// SSHKey is a full SSH Key in base 64
 	SSHKey string `json:"sshkey,omitempty"`
 
 	// Packages to be installed

@@ -20,11 +20,17 @@ func init() {
 	httpPaths = make(map[string]string)
 }
 
+// rebuildConfiguration - will parse the entire deployment configuration and update anything that is missing
 func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 
 	// If HTTP isn't enabled we can't build the multiplexer for URLs
 	if serveMux == nil {
 		return fmt.Errorf("Deployment HTTP Server isn't enabled, so parsing deployments isn't possible")
+	}
+
+	// If a key is specified then we read it and base64 the file into the SSHKEY string
+	if updateConfig.GlobalServerConfig.SSHKeyPath != "" {
+
 	}
 
 	log.Debugf("Parsing [%d] Configurations", len(updateConfig.Configs))
@@ -126,10 +132,9 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 
 // UpdateDeploymentConfig will read a configuration string and build the iPXE files needed
 func UpdateDeploymentConfig(rawDeploymentConfig []byte) error {
-
-	// Separate configuration until everything is processes correctly
-
+	// Read through the deployment configuration
 	log.Infoln("Updating the Deployment Configuration")
+	// Work out if it is a YAML/JSON or unknown
 	updateConfig, err := ParseDeployment(rawDeploymentConfig)
 	if err != nil {
 		return err

@@ -192,7 +192,9 @@ func (config *HostConfig) BuildPreeSeedConfig() string {
 	if config.SSHKeyPath != "" {
 		key, err = config.ReadKeyFromFile(config.SSHKeyPath)
 		if err != nil {
-			log.Fatalf("%v", err)
+			// At this point we could build a server with bad config
+			// TODO - :-/
+			log.Errorf("SSH Key: %v", err)
 		}
 	}
 
