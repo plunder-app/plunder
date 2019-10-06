@@ -104,7 +104,7 @@ var plunderDeploymentConfig = &cobra.Command{
 			Subnet:            "255.255.255.0",
 			Username:          "user",
 			Password:          "pass",
-			Packages:          "nginx openssh-server",
+			Packages:          "openssh-server",
 			RepositoryAddress: "192.168.0.1",
 			MirrorDirectory:   "/ubuntu",
 			SSHKeyPath:        "/home/deploy/.ssh/id_pub.rsa",

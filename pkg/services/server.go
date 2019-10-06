@@ -65,7 +65,6 @@ func (c *BootController) ParseBootController() error {
 				return err
 			}
 
-			fmt.Printf("%v", isoMapper)
 			log.Debugf("Updating handler %s for config %s", urlPrefix, c.BootConfigs[i].ConfigName)
 
 		}

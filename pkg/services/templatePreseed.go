@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -176,25 +177,27 @@ const preseedCmd = `
 d-i preseed/late_command string \
     in-target sed -i 's/^%%sudo.*$/%%sudo ALL=(ALL:ALL) NOPASSWD: ALL/g' /etc/sudoers; \
     in-target /bin/sh -c "echo 'Defaults env_keep += \"SSH_AUTH_SOCK\" >> /etc/sudoers"; \
-    in-target mkdir -p /home/ubuntu/.ssh; \
-    in-target /bin/sh -c "echo '%s' >> /home/ubuntu/.ssh/authorized_keys"; \
-    in-target chown -R ubuntu:ubuntu /home/ubuntu/; \
-	in-target chmod -R go-rwx /home/ubuntu/.ssh/authorized_keys; \
+    in-target mkdir -p /home/%s/.ssh; \
+    in-target /bin/sh -c "echo '%s' >> /home/%s/.ssh/authorized_keys"; \
+    in-target chown -R %s:%s /home/%s/; \
+	in-target chmod -R go-rwx /home/%s/.ssh/authorized_keys; \
 	in-target sudo sed -i '/ swap / s/^/#/' /etc/fstab
 `
 
 //BuildPreeSeedConfig - Creates a new presseed configuration using the passed data
 func (config *HostConfig) BuildPreeSeedConfig() string {
 
-	var key string
+	var key []byte
 	var err error
 
-	if config.SSHKeyPath != "" {
-		key, err = config.ReadKeyFromFile(config.SSHKeyPath)
+	// Check the key has been populated
+	if config.SSHKey == "" {
+		log.Errorf("This server [%s] is being deployed with no SSH Key", config.ServerName)
+	} else {
+		// Decode the base64 into the SSH key
+		key, err = base64.StdEncoding.DecodeString(config.SSHKey)
 		if err != nil {
-			// At this point we could build a server with bad config
-			// TODO - :-/
-			log.Errorf("SSH Key: %v", err)
+			log.Errorf(err.Error())
 		}
 	}
 
@@ -207,7 +210,7 @@ func (config *HostConfig) BuildPreeSeedConfig() string {
 	}
 	parsedNet := fmt.Sprintf(preseedNet, config.Adapter, config.Gateway, config.IPAddress, config.NameServer, config.Subnet, config.ServerName)
 	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory, config.RepositoryAddress, config.MirrorDirectory, config.Packages)
-	parsedCmd := fmt.Sprintf(preseedCmd, key)
+	parsedCmd := fmt.Sprintf(preseedCmd, config.Username, key, config.Username, config.Username, config.Username, config.Username, config.Username)
 	parsedUsr := fmt.Sprintf(preseedUsers, config.Username, config.Username, config.Password, config.Password)
 	return fmt.Sprintf("%s%s%s%s%s%s", preseedHead, parsedDisk, parsedNet, parsedPkg, parsedUsr, parsedCmd)
 }

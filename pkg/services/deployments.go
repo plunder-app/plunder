@@ -30,11 +30,15 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 
 	// If a key is specified then we read it and base64 the file into the SSHKEY string
 	if updateConfig.GlobalServerConfig.SSHKeyPath != "" {
-
+		err := updateConfig.GlobalServerConfig.parseSSH()
+		if err != nil {
+			log.Errorf(err.Error())
+		}
 	}
 
 	log.Debugf("Parsing [%d] Configurations", len(updateConfig.Configs))
 	for i := range updateConfig.Configs {
+
 		// inMemipxeConfig is a custom configuration that matches kernel/initrd & cmdline and is 00:11:22:33:44:55.ipxe
 		var inMemipxeConfig string
 
@@ -62,6 +66,16 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 
 		// This will populate anything missing from the global configuration
 		updateConfig.Configs[i].ConfigHost.PopulateConfiguration(updateConfig.GlobalServerConfig)
+
+		// If a key is specified then we read it and base64 the file into the SSHKEY string
+		if updateConfig.Configs[i].ConfigHost.SSHKeyPath != "" {
+			err := updateConfig.Configs[i].ConfigHost.parseSSH()
+			if err != nil {
+				log.Errorf(err.Error())
+			}
+		} else {
+			log.Errorf("This server [%s] will be deployed with no SSH Key", updateConfig.Configs[i].ConfigHost.ServerName)
+		}
 
 		// Look for understood config types
 		switch updateConfig.Configs[i].ConfigName {
