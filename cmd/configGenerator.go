@@ -29,6 +29,7 @@ func init() {
 	plunderCmd.AddCommand(plunderConfig)
 	plunderConfig.PersistentFlags().StringVarP(&output, "output", "o", "json", "Ouput type, should be either JSON or YAML")
 	plunderConfig.PersistentFlags().BoolVarP(&pretty, "pretty", "p", false, "Ouput JSON in a pretty/Human readable format")
+	plunderServerConfig.PersistentFlags().StringVarP(&detectNic, "nic", "n", "", "Build configuration for a particular network interface")
 
 	// Persistent above both client functions
 	plunderAPIConfig.PersistentFlags().IntVar(&configAPIServerPort, "port", 60443, "Port that the plunder API server should use")
@@ -103,7 +104,7 @@ var plunderDeploymentConfig = &cobra.Command{
 			Subnet:            "255.255.255.0",
 			Username:          "user",
 			Password:          "pass",
-			Packages:          "nginx openssh-server",
+			Packages:          "openssh-server",
 			RepositoryAddress: "192.168.0.1",
 			MirrorDirectory:   "/ubuntu",
 			SSHKeyPath:        "/home/deploy/.ssh/id_pub.rsa",

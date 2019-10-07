@@ -68,12 +68,12 @@ func postParlay(w http.ResponseWriter, r *http.Request) {
 			//
 			err = ssh.ImportHostsFromDeployment(services.Deployments)
 			if err != nil {
-				rsp.FriendlyError = "Error parsing the parlay actions"
+				rsp.FriendlyError = "Error importing the hosts from deployment"
 				rsp.Error = err.Error()
 			} else {
 				err = DeploySSH(&m, "", true, true)
 				if err != nil {
-					rsp.FriendlyError = "Error parsing the parlay actions"
+					rsp.FriendlyError = "Error performing the parlay actions"
 					rsp.Error = err.Error()
 					log.Errorf("%s", err.Error())
 				}

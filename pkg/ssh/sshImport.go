@@ -96,10 +96,14 @@ func ImportHostsFromDeployment(deployment services.DeploymentConfigurationFile) 
 	// Find keys that are in the same places as the public Key
 	if deployment.GlobalServerConfig.SSHKeyPath != "" {
 		var err error
-		// Find if the private key exists
-		cachedGlobalKey, err = findPrivateKey(deployment.GlobalServerConfig.SSHKeyPath)
+		// Find if the private key from the global configuration
+		cachedGlobalKey, err = findDefaultKey()
 		if err != nil {
-			return err
+			log.Debugf("Failed to find default key, using Public key to find private")
+			cachedGlobalKey, err = findPrivateKey(deployment.GlobalServerConfig.SSHKeyPath)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		log.Debugln("No global configuration has been loaded, will default to local users keys")
@@ -111,7 +115,6 @@ func ImportHostsFromDeployment(deployment services.DeploymentConfigurationFile) 
 	} else {
 		log.Debugf("No global configuration has been loaded, default to user [%s]", cachedUsername)
 	}
-
 	// Parse the deployments
 	for i := range deployment.Configs {
 		var sshHost HostSSHConfig
@@ -126,12 +129,17 @@ func ImportHostsFromDeployment(deployment services.DeploymentConfigurationFile) 
 
 		// Find additional keys that may exist in the same location
 		var keys []ssh.AuthMethod
-
 		if deployment.Configs[i].ConfigHost.SSHKeyPath != "" {
-			key, err := findPrivateKey(deployment.Configs[i].ConfigHost.SSHKeyPath)
+			// Look up default key
+			key, err := findDefaultKey()
 			if err != nil {
-				return err
+				log.Debugf("Failed to find default key, using Public key to find private")
+				key, err = findPrivateKey(deployment.Configs[i].ConfigHost.SSHKeyPath)
+				if err != nil {
+					return err
+				}
 			}
+
 			keys = append(keys, key)
 		} else {
 			if cachedGlobalKey != nil {
