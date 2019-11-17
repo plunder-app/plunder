@@ -21,7 +21,7 @@ import (
 // isoMapper at this point just maps the prefix to the path this may change
 var isoMapper map[string]string
 
-// iso9660PathSanitiser will take a "standar" file path and convert it into something that make sense within iso9660 TOC
+// iso9660PathSanitiser will take a "standard" file path and convert it into something that make sense within iso9660 TOC
 // The iso9660 constraints:
 // - A-Z (uppercase)
 // - '_' is the only other character
@@ -56,14 +56,14 @@ func iso9660PathSanitiser(unsanitisedPath string) string {
 
 	switch stopCount {
 	case 0:
-		// Append one as there is no filepat
-		isoFilename = fmt.Sprintf("%s.;1", rebuiltFileName)
+		// Append one as there is no filepath
+		isoFilename = fmt.Sprintf("%s.", rebuiltFileName)
 	case 1:
 		// Not needed, just the semicolon
-		isoFilename = fmt.Sprintf("%s;1", rebuiltFileName)
+		isoFilename = fmt.Sprintf("%s", rebuiltFileName)
 	default:
 		// Ensure all other stops are changed to underscores
-		isoFilename = fmt.Sprintf("%s;1", strings.Replace(rebuiltFileName, ".", "_", stopCount-1))
+		isoFilename = fmt.Sprintf("%s", strings.Replace(rebuiltFileName, ".", "_", stopCount-1))
 	}
 
 	//rebuild the path uppercase
@@ -91,6 +91,7 @@ func isoReader(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		io.WriteString(w, fmt.Sprintf("%s", err.Error()))
+		log.Error(err)
 
 		return
 	}
@@ -104,20 +105,20 @@ func isoReader(w http.ResponseWriter, r *http.Request) {
 		isoPath := iso9660PathSanitiser(strings.Replace(isoURL, isoPrefix, "", 1))
 
 		// We now have the ISO prefix to look up files, and the path to look up in the ISO
-		//Check for ISO
+		// Check for ISO
 		log.Debugf("Original URL: %s ISO Path: %s", isoURL, isoPath)
 		if _, ok := isoMapper[isoPrefix]; ok {
 			file, err := os.Open(isoMapper[isoPrefix])
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				io.WriteString(w, fmt.Sprintf("%s", err.Error()))
-
+				log.Error(err)
 				return
 			}
 			defer file.Close()
 			r, err := iso9660.NewReader(file)
 			if err != nil {
-				fmt.Printf("%v", err)
+				log.Error(err)
 				return
 			}
 			for {
@@ -126,9 +127,15 @@ func isoReader(w http.ResponseWriter, r *http.Request) {
 				if err == io.EOF {
 					w.WriteHeader(http.StatusNotFound)
 					io.WriteString(w, fmt.Sprintf("Unable to read/find file %s", isoPath))
+
 					return
 				}
-				if f.Name() == isoPath {
+				if err != nil {
+					log.Error(err)
+					return
+				}
+
+				if strings.ToUpper(f.Name()) == isoPath {
 					freader := f.Sys().(io.Reader)
 					buf := new(bytes.Buffer)
 					buf.ReadFrom(freader)

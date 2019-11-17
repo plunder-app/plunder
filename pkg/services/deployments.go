@@ -247,6 +247,13 @@ func DeleteDeploymentMac(macAddress string, rawDeployment []byte) error {
 	for i := range updateConfig.Configs {
 		// Compare this deployment to the one we're looking for
 		if updateConfig.Configs[i].MAC == macAddress {
+
+			// Remove http Handler (if it exists)
+			_, ok := httpPaths[fmt.Sprintf("%s.ipxe", updateConfig.Configs[i].MAC)]
+			if ok {
+				delete(httpPaths, fmt.Sprintf("%s.ipxe", updateConfig.Configs[i].MAC))
+			}
+
 			// Remove the old matching configuration
 			updateConfig.Configs = append(updateConfig.Configs[:i], updateConfig.Configs[i+1:]...)
 			// Parse the new configuration
@@ -271,6 +278,13 @@ func DeleteDeploymentAddress(address string, rawDeployment []byte) error {
 	for i := range updateConfig.Configs {
 		// Compare this deployment to the one we're looking for
 		if updateConfig.Configs[i].ConfigHost.IPAddress == address {
+
+			// Remove http Handler (if it exists)
+			_, ok := httpPaths[fmt.Sprintf("%s.ipxe", updateConfig.Configs[i].MAC)]
+			if ok {
+				delete(httpPaths, fmt.Sprintf("%s.ipxe", updateConfig.Configs[i].MAC))
+			}
+
 			// Remove the old matching configuration
 			updateConfig.Configs = append(updateConfig.Configs[:i], updateConfig.Configs[i+1:]...)
 			// Parse the new configuration
