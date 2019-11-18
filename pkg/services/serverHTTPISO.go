@@ -67,7 +67,7 @@ func iso9660PathSanitiser(unsanitisedPath string) string {
 	}
 
 	//rebuild the path uppercase
-	rebuildPath := strings.ToUpper(fmt.Sprintf("%s/%s", filepath.Dir(unsanitisedPath), isoFilename))
+	rebuildPath := strings.ToLower(fmt.Sprintf("%s/%s", filepath.Dir(unsanitisedPath), isoFilename))
 
 	// strD replacer
 	replacer := strings.NewReplacer("+", "_", "-", "_", " ", "_", "~", "_")
@@ -127,7 +127,7 @@ func isoReader(w http.ResponseWriter, r *http.Request) {
 				if err == io.EOF {
 					w.WriteHeader(http.StatusNotFound)
 					io.WriteString(w, fmt.Sprintf("Unable to read/find file %s", isoPath))
-
+					log.Error(fmt.Sprintf("Unable to read/find file %s", isoPath))
 					return
 				}
 				if err != nil {
@@ -135,7 +135,7 @@ func isoReader(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				if strings.ToUpper(f.Name()) == isoPath {
+				if f.Name() == isoPath {
 					freader := f.Sys().(io.Reader)
 					buf := new(bytes.Buffer)
 					buf.ReadFrom(freader)

@@ -39,6 +39,7 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 	mac := strings.ToLower(p.CHAddr().String())
 	log.Debugf("DCHP Message Type: [%v] from MAC Address [%s]", msgType, mac)
 
+	// Retrieve teh deployment type
 	deploymentType := FindDeploymentConfigFromMac(mac)
 	// Convert the : in the mac address to dashes to make life easier
 	dashMac := strings.Replace(mac, ":", "-", -1)
@@ -67,11 +68,10 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 
 		// if DHCP option "OptionUserClass" is set to iPXE then we know that it's default booted to the correct bootloader
 		if string(options[dhcp.OptionUserClass]) == "iPXE" {
-			// Look up the deployment type from the server mac address
-			log.Infof("Mac address [%s] is assigned a [%s] deployment type", mac, deploymentType)
-
 			// This will ensure that the leasing table is kept updated for when a server was last seen
 			h.leaseHander(deploymentType, mac)
+
+			// TODO - This can be removed and left in the REQUEST section only
 
 			// if an entry doesnt exist then drop it to a default type, if not then it has its own specific
 			if httpPaths[fmt.Sprintf("%s.ipxe", dashMac)] == "" {
@@ -102,13 +102,18 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 			if leaseNum := dhcp.IPRange(h.Start, reqIP) - 1; leaseNum >= 0 && leaseNum < h.LeaseRange {
 				if l, exists := h.Leases[leaseNum]; !exists || l.MAC == p.CHAddr().String() {
 
+					// Specify the new lease
 					h.Leases[leaseNum] = Lease{
 						MAC:    p.CHAddr().String(),
 						Expiry: time.Now().Add(h.LeaseDuration),
 					}
 
-					// Convert the : in the mac address to dashes to make life easier
-					//dashMac := strings.Replace(mac, ":", "-", -1)
+					// if DHCP option "OptionUserClass" is set to iPXE then we know that it's default booted to the correct bootloader
+					if string(options[dhcp.OptionUserClass]) == "iPXE" {
+						// Only Print out this notification if it's from the iPXE Boot loader
+						log.Infof("Mac address [%s] is assigned a [%s] deployment type", mac, deploymentType)
+					}
+
 					// if an entry doesnt exist then drop it to a default type, if not then it has its own specific
 					if httpPaths[fmt.Sprintf("%s.ipxe", dashMac)] == "" {
 						h.Options[dhcp.OptionBootFileName] = []byte("http://" + h.IP.String() + "/" + deploymentType + ".ipxe")
@@ -124,7 +129,6 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 		return dhcp.ReplyPacket(p, dhcp.NAK, h.IP, nil, 0, nil)
 
 	case dhcp.Release, dhcp.Decline:
-		//nic := p.CHAddr().String()
 		for i, v := range h.Leases {
 			if v.MAC == mac {
 				log.Debugf("Releasing lease for [%s]", mac)
