@@ -15,12 +15,11 @@ TARGETOS=linux
 # Use linker flags to provide version/build settings to the target
 LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(BUILD) -s"
 
-# go source files, ignore vendor directory
-SRC = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
+SRC = "./..."
 
 DOCKERTAG=latest
 
-.PHONY: all build clean install uninstall fmt simplify check run
+.PHONY: all build clean install uninstall fmt simplify check run lint vet
 
 all: check install
 
@@ -48,6 +47,12 @@ uninstall: clean
 
 fmt:
 	@gofmt -l -w $(SRC)
+
+vet:
+	@go vet $(SRC)
+
+lint:
+	@golint $(SRC)
 
 docker:
 	@GOOS=$(TARGETOS) make build
@@ -83,8 +88,8 @@ simplify:
 
 check:
 	@test -z $(shell gofmt -l main.go | tee /dev/stderr) || echo "[WARN] Fix formatting issues with 'make fmt'"
-	@for d in $$(go list ./... | grep -v /vendor/); do golint $${d}; done
-	@go tool vet ${SRC}
+	make lint
+	make vet
 
 run: install
 	@$(TARGET)
