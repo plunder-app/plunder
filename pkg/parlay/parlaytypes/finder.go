@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// This will iterate through a deployment map and build a new deployment map from found deployments
+// FindDeployments - This will iterate through a deployment map and build a new deployment map from found deployments
 func (m *TreasureMap) FindDeployments(deployment []string) (*TreasureMap, error) {
 
 	var newDeploymentList []Deployment
@@ -26,6 +26,7 @@ func (m *TreasureMap) FindDeployments(deployment []string) (*TreasureMap, error)
 	return m, nil
 }
 
+// FindHosts - will iterate through the deployment hosts and compare to the array of hosts to return
 func (d *Deployment) FindHosts(hosts []string) (*Deployment, error) {
 
 	var newHostList []string
@@ -45,6 +46,7 @@ func (d *Deployment) FindHosts(hosts []string) (*Deployment, error) {
 	return d, nil
 }
 
+// FindActions - will iterate through the deployment actions and compare to the array of actions to return
 func (d *Deployment) FindActions(actions []string) ([]Action, error) {
 	var newActionList []Action
 
