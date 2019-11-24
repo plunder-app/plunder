@@ -6,8 +6,11 @@ TARGET := plunder
 .DEFAULT_GOAL: $(TARGET)
 
 # These will be provided to the target
-VERSION := 0.4.5
+VERSION := 0.5.0
 BUILD := `git rev-parse HEAD`
+
+# Required for the move to go modules for >v0.5.0
+export GO111MODULE=on
 
 # Operating System Default (LINUX)
 TARGETOS=linux
@@ -15,7 +18,7 @@ TARGETOS=linux
 # Use linker flags to provide version/build settings to the target
 LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(BUILD) -s"
 
-SRC = "./..."
+#SRC = "."
 
 DOCKERTAG=latest
 
@@ -24,7 +27,7 @@ DOCKERTAG=latest
 all: check install
 
 $(TARGET): $(SRC)
-	@go build $(LDFLAGS) -o $(TARGET)
+	@go build $(LDFLAGS) -o $(TARGET) ./main.go
 
 build: $(TARGET)
 	@true
