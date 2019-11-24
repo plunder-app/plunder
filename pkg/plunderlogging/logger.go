@@ -2,20 +2,24 @@ package plunderlogging
 
 import "fmt"
 
+// Logger - is a stuct that manages the verious types of logger available
 type Logger struct {
 	json JSONLogger
 	file FileLogger
 }
 
+// EnableJSONLogging - will enable logging through JSON
 func (l *Logger) EnableJSONLogging(e bool) {
 	l.json.enabled = e
 	l.json.initJSONLogger()
 }
 
+// EnableFileLogging - will enable logging to a file
 func (l *Logger) EnableFileLogging(e bool) {
 	l.file.enabled = e
 }
 
+// InitLogFile - will initialise file based logging
 func (l *Logger) InitLogFile(path string) error {
 	if l.file.enabled != true {
 		return l.file.initFileLogger(path)
@@ -25,6 +29,7 @@ func (l *Logger) InitLogFile(path string) error {
 
 }
 
+// InitJSON - will start/initialise the JSON logging functionality
 func (l *Logger) InitJSON() {
 	// Dont re-initialise the json
 
@@ -50,6 +55,7 @@ func (l *Logger) WriteLogEntry(target, task, entry, err string) {
 
 }
 
+// SetLoggingState - currently a NOOP (TODO)
 func (l *Logger) SetLoggingState(target, state string) {
 	if l.file.enabled {
 		l.file.setLoggingState(target, state)
@@ -62,6 +68,7 @@ func (l *Logger) SetLoggingState(target, state string) {
 
 }
 
+// GetJSONLogs - returns a pointer to the current JSON Logs
 func (l *Logger) GetJSONLogs(target string) (*JSONLog, error) {
 	if l.json.logger == nil {
 		return nil, fmt.Errorf("JSON Logging hasn't been enabled")
@@ -74,6 +81,7 @@ func (l *Logger) GetJSONLogs(target string) (*JSONLog, error) {
 	return nil, fmt.Errorf("No Logs for Target [%s] exist", target)
 }
 
+// DeleteLogs - will remove logs for a particular target
 func (l *Logger) DeleteLogs(target string) error {
 	if l.json.logger == nil {
 		return nil
