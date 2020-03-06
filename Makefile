@@ -20,7 +20,8 @@ LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(BUILD) -s"
 
 #SRC = "."
 
-DOCKERTAG=latest
+DOCKERREPO ?= $(TARGET)
+DOCKERTAG ?= latest
 
 .PHONY: all build clean install uninstall fmt simplify check run lint vet
 
@@ -60,7 +61,7 @@ lint:
 docker:
 	@GOOS=$(TARGETOS) make build
 	@mv $(TARGET) ./dockerfile
-	@docker build -t $(TARGET):$(DOCKERTAG) ./dockerfile/
+	@docker build -t $(DOCKERREPO):$(DOCKERTAG) ./dockerfile/
 	@rm ./dockerfile/$(TARGET)
 	@echo New Docker image created
 
