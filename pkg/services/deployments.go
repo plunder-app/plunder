@@ -45,7 +45,7 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 		// inMemipxeConfig is a custom configuration that is specific to the boot type [preseed/kickstart/vsphere] and is 00:11:22:33:44:55.cfg
 		var inMemBootConfig string
 
-		// imMemESXiKickstart is a custom configuraton specific to vSphere for it's kickstart
+		// imMemESXiKickstart is a custom configuration specific to vSphere for it's kickstart
 		var imMemESXiKickstart string
 
 		// We need to move all ":" to "-" to make life a little easier for filesystems and internet standards

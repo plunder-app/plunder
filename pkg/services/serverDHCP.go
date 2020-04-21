@@ -115,7 +115,7 @@ func (h *DHCPSettings) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, option
 					}
 
 					// if an entry doesnt exist then drop it to a default type, if not then it has its own specific
-					if httpPaths[fmt.Sprintf("%s.ipxe", dashMac)] == "" {
+					if httpPaths[fmt.Sprintf("/%s.ipxe", dashMac)] == "" {
 						h.Options[dhcp.OptionBootFileName] = []byte("http://" + h.IP.String() + "/" + deploymentType + ".ipxe")
 					} else {
 						h.Options[dhcp.OptionBootFileName] = []byte("http://" + h.IP.String() + "/" + dashMac + ".ipxe")

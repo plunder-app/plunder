@@ -81,7 +81,10 @@ func (c *BootController) DeleteBootControllerConfig(configName string) error {
 	for i := range c.BootConfigs {
 		if c.BootConfigs[i].ConfigName == configName {
 			// Remove the mapping to an ISO path
-			isoMapper[c.BootConfigs[i].ISOPrefix] = ""
+			if isoMapper != nil {
+				// Ensure it is initialised before trying to remove boot config
+				isoMapper[c.BootConfigs[i].ISOPrefix] = ""
+			}
 			c.BootConfigs = append(c.BootConfigs[:i], c.BootConfigs[i+1:]...)
 			return nil
 		}
