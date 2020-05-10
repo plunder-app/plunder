@@ -14,6 +14,7 @@ require (
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/krolaw/dhcp4 v0.0.0-20190531080455-7b64900047ae // indirect
 	github.com/pkg/sftp v1.10.1 // indirect
+	github.com/plunder-app/BOOTy v0.0.0-20200506165408-19d2090683fe // indirect
 	github.com/plunder-app/plunder/pkg/apiserver v0.0.0-20191105152536-b5c505aaf830
 	github.com/plunder-app/plunder/pkg/certs v0.0.0-00010101000000-000000000000
 	github.com/plunder-app/plunder/pkg/parlay v0.0.0-20191105152536-b5c505aaf830
@@ -25,6 +26,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/thebsdbox/go-tftp v0.0.0-20190329154032-a7263f18c49c // indirect
+	github.com/vishvananda/netlink v1.1.0 // indirect
 	github.com/whyrusleeping/go-tftp v0.0.0-20180830013254-3695fa5761ee // indirect
 	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7 // indirect
 	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a // indirect
@@ -36,4 +38,7 @@ replace (
 	github.com/plunder-app/plunder/pkg/certs => ./pkg/certs
 	github.com/plunder-app/plunder/pkg/services => ./pkg/services
 	github.com/plunder-app/plunder/pkg/ssh => ./pkg/ssh
+	github.com/plunder-app/plunder/pkg/utils => ./pkg/utils
+	github.com/plunder-app/BOOTy => ../../../github.com/thebsdbox/BOOTy
+
 )

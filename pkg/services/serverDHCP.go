@@ -206,6 +206,9 @@ func (c *BootController) GetUnLeased() *[]Lease {
 
 // DelUnLeased - This will retrieve all of the un-allocated leases from the boot controller
 func (c *BootController) DelUnLeased(mac string) {
+	if c == nil || c.handler == nil {
+		return
+	}
 	if len(c.handler.UnLeased) == 0 {
 		return
 	}

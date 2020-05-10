@@ -39,8 +39,8 @@ func (c *HostConfig) parseSSH() error {
 	return nil
 }
 
-// PopulateConfiguration - This will read a deployment configuration and attempt to fill any missing fields from the global config
-func (c *HostConfig) PopulateConfiguration(globalConfig HostConfig) {
+// PopulateFromGlobalConfiguration - This will read a deployment configuration and attempt to fill any missing fields from the global config
+func (c *HostConfig) PopulateFromGlobalConfiguration(globalConfig HostConfig) {
 	// NETWORK CONFIGURATION
 
 	// Inherit the global Gateway
@@ -96,5 +96,27 @@ func (c *HostConfig) PopulateConfiguration(globalConfig HostConfig) {
 	// Inherit the global package selection
 	if c.Packages == "" {
 		c.Packages = globalConfig.Packages
+	}
+
+	// BOOTy configuration (TODO CAN NOT LEAVE THIS HERE)
+	if c.GrowPartition == nil && globalConfig.GrowPartition != nil {
+		c.GrowPartition = globalConfig.GrowPartition
+	}
+
+	if c.LVMRootName == "" {
+		c.LVMRootName = globalConfig.LVMRootName
+	}
+
+	if c.DestinationDevice == "" {
+		c.DestinationDevice = globalConfig.DestinationDevice
+	}
+
+	if c.SourceImage == "" {
+		c.SourceImage = globalConfig.SourceImage
+	}
+
+	// TODO
+	if c.ShellOnFail == nil && globalConfig.ShellOnFail != nil {
+		c.ShellOnFail = globalConfig.ShellOnFail
 	}
 }

@@ -62,6 +62,8 @@ github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/sftp v1.10.1 h1:VasscCm72135zRysgrJDKsntdmPN+OuU3+nnHYA9wyc=
 github.com/pkg/sftp v1.10.1/go.mod h1:lYOWFsE0bwd1+KfKJaKeuokY15vzFx25BLbzYYoAxZI=
+github.com/plunder-app/BOOTy v0.0.0-20200506165408-19d2090683fe h1:UaS5HU5eeNd8ArNna0yf/nr/usHoQZsXfZUerj3lhmE=
+github.com/plunder-app/BOOTy v0.0.0-20200506165408-19d2090683fe/go.mod h1:EhhJilCAJNAXb/ZvNPPUb+VOnMF5F47KiSjJxQzBzNw=
 github.com/plunder-app/plunder/pkg/parlay v0.0.0-20191105152536-b5c505aaf830 h1:8z5GZZQUY+GBT+kOd8gKpD0lS1qrh9he7SmEDwQS4jg=
 github.com/plunder-app/plunder/pkg/parlay v0.0.0-20191105152536-b5c505aaf830/go.mod h1:5UuNaULcTUSFIkrbe+NA/ufh9iyUEtsKqmjlbl88AVw=
 github.com/plunder-app/plunder/pkg/parlay/parlaytypes v0.0.0-20191105152536-b5c505aaf830 h1:sbV3um7RoWCkSMCY0azjr5Dovv7Z9PnaozkWSpxFgG0=
@@ -93,6 +95,10 @@ github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81P
 github.com/thebsdbox/go-tftp v0.0.0-20190329154032-a7263f18c49c h1:cYCrFUo78/407dxOlYw2g4pdm4Ly8RSPedsYB+z7h1s=
 github.com/thebsdbox/go-tftp v0.0.0-20190329154032-a7263f18c49c/go.mod h1:yXG6GIu/ptjkk0fd++y96R2cahlvxZr4LhMdf0j/L2Q=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
+github.com/vishvananda/netlink v1.1.0 h1:1iyaYNBLmP6L0220aDnYQpo1QEV4t4hJ+xEEhhJH8j0=
+github.com/vishvananda/netlink v1.1.0/go.mod h1:cTgwzPIzzgDAYoQrMm0EdrjRUBkTqKYppBueQtXaqoE=
+github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df h1:OviZH7qLw/7ZovXvuNyL3XQl8UFofeikI1NW1Gypu7k=
+github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df/go.mod h1:JP3t17pCcGlemwknint6hfoeCVQrEMVwxRLRjXpq+BU=
 github.com/whyrusleeping/go-tftp v0.0.0-20180830013254-3695fa5761ee h1:P2Wwq5QukiLY/I6+mc7NyLFX/atHAj6pGwiVu6fld98=
 github.com/whyrusleeping/go-tftp v0.0.0-20180830013254-3695fa5761ee/go.mod h1:ZemSN4DPuG1ppDttxnu45zl8BenKT9xSjMyapUd+Dd0=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
@@ -112,6 +118,7 @@ golang.org/x/sys v0.0.0-20190422165155-953cdadca894 h1:Cz4ceDQGXuKRnVBDTS23GTn/p
 golang.org/x/sys v0.0.0-20190422165155-953cdadca894/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20190530182044-ad28b68e88f1 h1:R4dVlxdmKenVdMRS/tTspEpSTRWINYrHD8ySIU9yCIU=
 golang.org/x/sys v0.0.0-20190530182044-ad28b68e88f1/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20190606203320-7fc4e5ec1444/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a h1:aYOabOQFp6Vj6W1F80affTUvO9UxmJRx8K0gsfABByQ=
 golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=

@@ -104,12 +104,18 @@ var plunderDeploymentConfig = &cobra.Command{
 			Subnet:            "255.255.255.0",
 			Username:          "user",
 			Password:          "pass",
-			Packages:          "openssh-server",
+			Packages:          "openssh-server cloud-guest-utils",
 			RepositoryAddress: "192.168.0.1",
 			MirrorDirectory:   "/ubuntu",
 			SSHKeyPath:        "/home/deploy/.ssh/id_pub.rsa",
 			SSHKey:            "ssh-rsa AABBCCDDEE1122334455",
+			LVMRootName:       "/dev/ubuntu-vg/root",
+			DestinationDevice: "/dev/sda",
+			SourceImage:       "http://192.168.0.95/images/ubuntu.img",
 		}
+		// Addtional step to create the partition information
+		defaultPartition := 1
+		globalConfig.GrowPartition = &defaultPartition
 
 		// Create an example Host configuration
 		hostConfig := services.HostConfig{

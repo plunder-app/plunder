@@ -94,6 +94,19 @@ boot
 	return iPXEHeader + buildScript
 }
 
+// IPXEBOOTy - This will build an iPXE boot script for the BOOTy boot loader
+func IPXEBOOTy(webserverAddress, kernel, initrd, cmdline string) string {
+	script := `
+kernel http://%s/%s BOOTYURL=http://%s %s
+initrd http://%s/%s
+boot
+`
+	// Replace the addresses inline
+	buildScript := fmt.Sprintf(script, webserverAddress, kernel, webserverAddress, cmdline, webserverAddress, initrd)
+
+	return iPXEHeader + buildScript
+}
+
 // IPXEAnyBoot - This will build an iPXE boot script for anything wanting to PXE boot
 func IPXEAnyBoot(webserverAddress string, kernel, initrd, cmdline string) string {
 	script := `
