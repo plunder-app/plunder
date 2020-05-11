@@ -48,6 +48,9 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 		// imMemESXiKickstart is a custom configuration specific to vSphere for it's kickstart
 		var imMemESXiKickstart string
 
+		// inMemBOOTyConfig is a custom configuration that matches kernel/initrd & cmdline and is 00:11:22:33:44:55.bty
+		var inMemBOOTyConfig string
+
 		// We need to move all ":" to "-" to make life a little easier for filesystems and internet standards
 		dashMac := strings.Replace(updateConfig.Configs[i].MAC, ":", "-", -1)
 
@@ -65,7 +68,7 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 		updateConfig.Configs[i].ConfigBoot = *bootConfig
 
 		// This will populate anything missing from the global configuration
-		updateConfig.Configs[i].ConfigHost.PopulateConfiguration(updateConfig.GlobalServerConfig)
+		updateConfig.Configs[i].ConfigHost.PopulateFromGlobalConfiguration(updateConfig.GlobalServerConfig)
 
 		// If a key is specified then we read it and base64 the file into the SSHKEY string
 		if updateConfig.Configs[i].ConfigHost.SSHKeyPath != "" {
@@ -94,6 +97,11 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 			log.Debugf("Generating vsphere ipxeConfig for [%s]", dashMac)
 			inMemBootConfig = updateConfig.Configs[i].ConfigHost.BuildESXiConfig()
 			imMemESXiKickstart = updateConfig.Configs[i].ConfigHost.BuildESXiKickStart()
+
+		case "booty":
+			inMemipxeConfig = utils.IPXEBOOTy(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
+			log.Debugf("Generating booty ipxeConfig for [%s]", dashMac)
+			inMemBOOTyConfig = updateConfig.Configs[i].ConfigHost.BuildBOOTYconfig()
 
 		default:
 			log.Debugf("Building configuration for configName [%s]", updateConfig.Configs[i].ConfigBoot.ConfigName)
@@ -129,6 +137,16 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 				serveMux.HandleFunc(path, rootHandler)
 			}
 			httpPaths[path] = imMemESXiKickstart
+		}
+
+		// Build a BOOTy configuration that is passed to an installer
+		if inMemBOOTyConfig != "" {
+			path := fmt.Sprintf("/%s.bty", dashMac)
+			if _, ok := httpPaths[path]; !ok {
+				// Only create the handler if one doesn't exist
+				serveMux.HandleFunc(path, rootHandler)
+			}
+			httpPaths[path] = inMemBOOTyConfig
 		}
 
 	}

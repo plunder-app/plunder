@@ -80,6 +80,7 @@ type HostConfig struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 
+	// RepositoryAddress is required for pre-seed / kickstart
 	RepositoryAddress string `json:"repoaddress,omitempty"`
 	// MirrorDirectory is an Ubuntu specific config
 	MirrorDirectory string `json:"mirrordir,omitempty"`
@@ -91,4 +92,18 @@ type HostConfig struct {
 
 	// Packages to be installed
 	Packages string `json:"packages,omitempty"`
+
+	// OS Image provisioning
+	// Write image to disk from remote address
+	SourceImage       string `json:"sourceImage,omitempty"`
+	DestinationDevice string `json:"destinationDevice,omitempty"`
+
+	// Post tasks - Once the image has been deployed
+
+	// Volume modifications (LVM2)
+	GrowPartition *int   `json:"growPartition,omitempty"`
+	LVMRootName   string `json:"lvmRootName,omitempty"`
+
+	// Troubleshooting
+	ShellOnFail *bool `json:"shellOnFail,omitempty"`
 }

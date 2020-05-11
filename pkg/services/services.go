@@ -166,6 +166,18 @@ func (c *BootController) StartServices(deployment []byte) error {
 			}
 		}
 	}
+
+	go func() {
+
+		fs := http.FileServer(http.Dir("./images"))
+		http.Handle("/images/", http.StripPrefix("/images/", fs))
+		log.Println("Plunder OS Image Services --> Starting HTTP")
+		err := http.ListenAndServe(":3000", nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
 	// everything has been started correctly
 	return nil
 }
