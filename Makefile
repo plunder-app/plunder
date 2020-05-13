@@ -1,5 +1,5 @@
 
-SHELL := /bin/bash
+SHELL := /bin/sh
 
 # The name of the executable (default is current directory name)
 TARGET := plunder
@@ -18,8 +18,7 @@ TARGETOS=linux
 # Use linker flags to provide version/build settings to the target
 LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(BUILD) -s"
 
-#SRC = "."
-
+REPOSITORY = plndr
 DOCKERREPO ?= $(TARGET)
 DOCKERTAG ?= latest
 
@@ -28,7 +27,7 @@ DOCKERTAG ?= latest
 all: check install
 
 $(TARGET): $(SRC)
-	@go build $(LDFLAGS) -o $(TARGET) ./main.go
+	@go build $(LDFLAGS) -o $(TARGET)
 
 build: $(TARGET)
 	@true
@@ -58,12 +57,14 @@ vet:
 lint:
 	@golint $(SRC)
 
+# This is typically only for quick testing
+dockerx86:
+	@docker buildx build  --platform linux/amd64 --load -t $(REPOSITORY)/$(TARGET):$(DOCKERTAG) -f Dockerfile .
+	@echo New Multi Architecture Docker image created
+
 docker:
-	@GOOS=$(TARGETOS) make build
-	@mv $(TARGET) ./dockerfile
-	@docker build -t $(DOCKERREPO):$(DOCKERTAG) ./dockerfile/
-	@rm ./dockerfile/$(TARGET)
-	@echo New Docker image created
+	@docker buildx build  --platform linux/amd64,linux/arm64,linux/arm/v7 --push -t $(REPOSITORY)/$(TARGET):$(DOCKERTAG) -f Dockerfile .
+	@echo New Multi Architecture Docker image created
 
 plugins:
 	@echo Building plugins
