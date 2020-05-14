@@ -162,7 +162,18 @@ func postBootConfig(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			rsp.Warning = "Error updating Server Configuration"
 			rsp.Error = err.Error()
+
 		} else {
+			for x := range Controller.BootConfigs {
+				if Controller.BootConfigs[x].ConfigName == newBoot.ConfigName {
+					// Found a duplicate
+					w.Header().Set("Content-Type", "application/json")
+					rsp.Warning = "Error duplicate Server Configuration"
+					rsp.Error = fmt.Sprintf("Boot Configuration [%s] already exists", Controller.BootConfigs[x].ConfigName)
+					json.NewEncoder(w).Encode(rsp)
+					return
+				}
+			}
 			// Add the Boot configuration to the controller
 			Controller.BootConfigs = append(Controller.BootConfigs, newBoot)
 			// Parse the boot configuration (preload ISOs etc.)

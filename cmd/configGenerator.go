@@ -75,7 +75,8 @@ var plunderServerConfig = &cobra.Command{
 			Kernel:     "/kernelPath",
 			Initrd:     "/initPath",
 			Cmdline:    "cmd=options",
-			ConfigName: "default",
+			ConfigName: "demo config",
+			ConfigType: "default",
 		}
 
 		detectServerConfig()
@@ -125,7 +126,7 @@ var plunderDeploymentConfig = &cobra.Command{
 		hostDeployConfig := services.DeploymentConfig{
 			MAC:        "00:11:22:33:44:55",
 			ConfigHost: hostConfig,
-			ConfigName: "default",
+			//ConfigName: "default",
 		}
 
 		configuration := &services.DeploymentConfigurationFile{

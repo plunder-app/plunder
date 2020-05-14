@@ -81,7 +81,7 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 		}
 
 		// Look for understood config types
-		switch updateConfig.Configs[i].ConfigName {
+		switch updateConfig.Configs[i].ConfigBoot.ConfigType {
 		case "preseed":
 			inMemipxeConfig = utils.IPXEPreeseed(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
 			log.Debugf("Generating preseed ipxeConfig for [%s]", dashMac)

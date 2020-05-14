@@ -117,8 +117,16 @@ github.com/plunder-app/plunder/pkg/parlay v0.0.0-20200513203243-eccb418a5255 h1:
 github.com/plunder-app/plunder/pkg/parlay v0.0.0-20200513203243-eccb418a5255/go.mod h1:5UuNaULcTUSFIkrbe+NA/ufh9iyUEtsKqmjlbl88AVw=
 github.com/plunder-app/plunder/pkg/parlay/parlaytypes v0.0.0-20200513203243-eccb418a5255 h1:765Djvc0TdpwZFlEmyq1ruUPx69klzHQOMAMCK1KJZM=
 github.com/plunder-app/plunder/pkg/parlay/parlaytypes v0.0.0-20200513203243-eccb418a5255/go.mod h1:QtxXmGRkwdtiiH03oveOPcYXucOv/FxJq2a170aXkxg=
+github.com/plunder-app/plunder/pkg/parlay/parlaytypes v0.0.0-20200514154439-933b7120d270 h1:p59jcYFaRO6LOJz/OAcdPNSlbgl1QPH4cmlFs69BZ6g=
+github.com/plunder-app/plunder/pkg/parlay/parlaytypes v0.0.0-20200514154439-933b7120d270/go.mod h1:QtxXmGRkwdtiiH03oveOPcYXucOv/FxJq2a170aXkxg=
+github.com/plunder-app/plunder/pkg/parlay/parlaytypes v0.0.0-20200514155151-dfdcaab2e5cd h1:CA9lXqJAJxwA/NGepdfE/hQapGplV4CNNal3eZ9C/k0=
+github.com/plunder-app/plunder/pkg/parlay/parlaytypes v0.0.0-20200514155151-dfdcaab2e5cd/go.mod h1:QtxXmGRkwdtiiH03oveOPcYXucOv/FxJq2a170aXkxg=
 github.com/plunder-app/plunder/pkg/plunderlogging v0.0.0-20200513203243-eccb418a5255 h1:gzlti8QQwa02qAGlFktceQucT4HZUZFWIm6h4b03JBo=
 github.com/plunder-app/plunder/pkg/plunderlogging v0.0.0-20200513203243-eccb418a5255/go.mod h1:ketI5Vxh8nmxwiWnS644ZaEwVt9M/bpP6ISaFeWpcS0=
+github.com/plunder-app/plunder/pkg/plunderlogging v0.0.0-20200514154439-933b7120d270 h1:abUhCq54uc/4Q/ApJMGtWmsSGSLJcni5P8VXyrLZ49o=
+github.com/plunder-app/plunder/pkg/plunderlogging v0.0.0-20200514154439-933b7120d270/go.mod h1:ketI5Vxh8nmxwiWnS644ZaEwVt9M/bpP6ISaFeWpcS0=
+github.com/plunder-app/plunder/pkg/plunderlogging v0.0.0-20200514155151-dfdcaab2e5cd h1:luKDb4GvbZlnythTGjypGW8EdCyRSSXwUvbr+ZrB2zU=
+github.com/plunder-app/plunder/pkg/plunderlogging v0.0.0-20200514155151-dfdcaab2e5cd/go.mod h1:ketI5Vxh8nmxwiWnS644ZaEwVt9M/bpP6ISaFeWpcS0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=

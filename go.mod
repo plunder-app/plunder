@@ -15,14 +15,14 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.11.0 // indirect
 	github.com/plunder-app/BOOTy v0.0.0-20200513203223-f43f6ea742c4 // indirect
-	github.com/plunder-app/plunder/pkg/apiserver v0.0.0-20200513203243-eccb418a5255
-	github.com/plunder-app/plunder/pkg/certs v0.0.0-20200513203243-eccb418a5255
-	github.com/plunder-app/plunder/pkg/parlay v0.0.0-20200513203243-eccb418a5255
-	github.com/plunder-app/plunder/pkg/parlay/parlaytypes v0.0.0-20200513203243-eccb418a5255
-	github.com/plunder-app/plunder/pkg/plunderlogging v0.0.0-20200513203243-eccb418a5255 // indirect
-	github.com/plunder-app/plunder/pkg/services v0.0.0-20200513203243-eccb418a5255
-	github.com/plunder-app/plunder/pkg/ssh v0.0.0-20200513203243-eccb418a5255
-	github.com/plunder-app/plunder/pkg/utils v0.0.0-20200513203243-eccb418a5255
+	github.com/plunder-app/plunder/pkg/apiserver v0.0.0-20200514155151-dfdcaab2e5cd
+	github.com/plunder-app/plunder/pkg/certs v0.0.0-20200514155151-dfdcaab2e5cd
+	github.com/plunder-app/plunder/pkg/parlay v0.0.0-20200514155151-dfdcaab2e5cd
+	github.com/plunder-app/plunder/pkg/parlay/parlaytypes v0.0.0-20200514155151-dfdcaab2e5cd
+	github.com/plunder-app/plunder/pkg/plunderlogging v0.0.0-20200514155151-dfdcaab2e5cd // indirect
+	github.com/plunder-app/plunder/pkg/services v0.0.0-20200514155151-dfdcaab2e5cd
+	github.com/plunder-app/plunder/pkg/ssh v0.0.0-20200514155151-dfdcaab2e5cd
+	github.com/plunder-app/plunder/pkg/utils v0.0.0-20200514155151-dfdcaab2e5cd
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -36,9 +36,9 @@ require (
 replace (
 	github.com/plunder-app/plunder/pkg/apiserver => ./pkg/apiserver
 	github.com/plunder-app/plunder/pkg/certs => ./pkg/certs
+	github.com/plunder-app/plunder/pkg/parlay => ./pkg/parlay
 	github.com/plunder-app/plunder/pkg/services => ./pkg/services
 	github.com/plunder-app/plunder/pkg/ssh => ./pkg/ssh
 	github.com/plunder-app/plunder/pkg/utils => ./pkg/utils
-	github.com/plunder-app/plunder/pkg/parlay => ./pkg/parlay
 
 )

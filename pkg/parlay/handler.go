@@ -103,7 +103,6 @@ func getParlay(w http.ResponseWriter, r *http.Request) {
 	logs, err := GetTargetLogs(target)
 	// If the deployment exists then process the POST data
 	if err != nil {
-
 		// RETREIVE the deployment Logs (TODO)
 		rsp.Warning = "Error reading Parlay Logs"
 		rsp.Error = err.Error()
