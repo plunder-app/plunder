@@ -61,19 +61,19 @@ func postParlay(w http.ResponseWriter, r *http.Request) {
 		err := json.Unmarshal(b, &m)
 		// Unable to parse the JSON payload
 		if err != nil {
-			rsp.FriendlyError = "Error parsing the parlay actions"
+			rsp.Warning = "Error parsing the parlay actions"
 			rsp.Error = err.Error()
 		} else {
 			// Parsed succesfully, we will deploy this in a go routine and use GET /parlay/MAC to view progress
 			//
 			err = ssh.ImportHostsFromDeployment(services.Deployments)
 			if err != nil {
-				rsp.FriendlyError = "Error importing the hosts from deployment"
+				rsp.Warning = "Error importing the hosts from deployment"
 				rsp.Error = err.Error()
 			} else {
 				err = DeploySSH(&m, "", true, true)
 				if err != nil {
-					rsp.FriendlyError = "Error performing the parlay actions"
+					rsp.Warning = "Error performing the parlay actions"
 					rsp.Error = err.Error()
 					log.Errorf("%s", err.Error())
 				}
@@ -81,7 +81,7 @@ func postParlay(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		rsp.FriendlyError = "Error reading HTTP data"
+		rsp.Warning = "Error reading HTTP data"
 		rsp.Error = err.Error()
 
 	}
@@ -105,14 +105,14 @@ func getParlay(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 
 		// RETREIVE the deployment Logs (TODO)
-		rsp.FriendlyError = "Error reading Parlay Logs"
+		rsp.Warning = "Error reading Parlay Logs"
 		rsp.Error = err.Error()
 	} else {
 		jsonData, err := json.Marshal(logs)
 		if err != nil {
 
 			// RETREIVE the deployment Logs (TODO)
-			rsp.FriendlyError = "Error parsing Parlay Logs"
+			rsp.Warning = "Error parsing Parlay Logs"
 			rsp.Error = err.Error()
 		} else {
 			rsp.Payload = jsonData
@@ -138,7 +138,7 @@ func delParlay(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 
 		// RETREIVE the deployment Logs (TODO)
-		rsp.FriendlyError = "Error reading deleting logs"
+		rsp.Warning = "Error reading deleting logs"
 		rsp.Error = err.Error()
 	}
 
