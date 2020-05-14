@@ -37,6 +37,7 @@ type dhcpConfig struct {
 // BootConfig defines a named configuration for booting
 type BootConfig struct {
 	ConfigName string `json:"configName"`
+	ConfigType string `json:"configType"`
 
 	// iPXE file settings - exported
 	Kernel  string `json:"kernelPath"`

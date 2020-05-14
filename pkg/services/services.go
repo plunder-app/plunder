@@ -39,11 +39,11 @@ func findBootConfigForDeployment(deployment DeploymentConfig) *BootConfig {
 }
 
 // find BootConfig will look through a Boot controller for a booting configuration identified through a configuration name
-func findBootConfigForName(configName string) *BootConfig {
+func findBootConfigForType(ConfigType string) *BootConfig {
 
 	// Find a matching controller configuration to return
 	for i := range Controller.BootConfigs {
-		if Controller.BootConfigs[i].ConfigName == configName {
+		if Controller.BootConfigs[i].ConfigType == ConfigType {
 			return &Controller.BootConfigs[i]
 		}
 	}
@@ -53,9 +53,10 @@ func findBootConfigForName(configName string) *BootConfig {
 }
 
 // find BootConfig will look through a Boot controller for a booting configuration identified through a configuration name
-func (c *BootController) setBootConfig(configName, kernel, initrd, cmdline string) {
+func (c *BootController) setBootConfig(configName, configType, kernel, initrd, cmdline string) {
 	newConfig := &BootConfig{
 		ConfigName: configName,
+		ConfigType: configType,
 		Kernel:     kernel,
 		Initrd:     initrd,
 		Cmdline:    cmdline,

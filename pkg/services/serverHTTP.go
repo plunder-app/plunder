@@ -20,7 +20,7 @@ var serveMux *http.ServeMux
 func (c *BootController) generateBootTypeHanders() {
 
 	// Find the default configuration
-	defaultConfig := findBootConfigForName("default")
+	defaultConfig := findBootConfigForType("default")
 	if defaultConfig != nil {
 		defaultBoot = utils.IPXEPreeseed(*c.HTTPAddress, defaultConfig.Kernel, defaultConfig.Initrd, defaultConfig.Cmdline)
 	} else {
@@ -28,20 +28,20 @@ func (c *BootController) generateBootTypeHanders() {
 	}
 
 	// If a preeseed configuration has been configured then add it, and create a HTTP endpoint
-	preeseedConfig := findBootConfigForName("preseed")
+	preeseedConfig := findBootConfigForType("preseed")
 	if preeseedConfig != nil {
 		preseed = utils.IPXEPreeseed(*c.HTTPAddress, preeseedConfig.Kernel, preeseedConfig.Initrd, preeseedConfig.Cmdline)
 
 	}
 
 	// If a kickstart configuration has been configured then add it, and create a HTTP endpoint
-	kickstartConfig := findBootConfigForName("kickstart")
+	kickstartConfig := findBootConfigForType("kickstart")
 	if kickstartConfig != nil {
 		kickstart = utils.IPXEPreeseed(*c.HTTPAddress, kickstartConfig.Kernel, kickstartConfig.Initrd, kickstartConfig.Cmdline)
 	}
 
 	// If a vsphereConfig configuration has been configured then add it, and create a HTTP endpoint
-	vsphereConfig := findBootConfigForName("vsphere")
+	vsphereConfig := findBootConfigForType("vsphere")
 	if vsphereConfig != nil {
 		vsphere = utils.IPXEVSphere(*c.HTTPAddress, vsphereConfig.Kernel, vsphereConfig.Cmdline)
 	}
