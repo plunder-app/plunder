@@ -19,13 +19,13 @@ func getAPIFunctionMethod(w http.ResponseWriter, r *http.Request) {
 	ep := GetEndpoint(f, m)
 	if ep == nil {
 		// RETREIVE the deployment Logs (TODO)
-		rsp.FriendlyError = fmt.Sprintf("Unable to find HTTP method [%s] for function [%s]", m, f)
+		rsp.Warning = fmt.Sprintf("Unable to find HTTP method [%s] for function [%s]", m, f)
 		rsp.Error = "Error looking up in API Server"
 	} else {
 		jsonData, err := json.Marshal(ep)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			rsp.FriendlyError = "Error retrieving deployment Configuration"
+			rsp.Warning = "Error retrieving deployment Configuration"
 			rsp.Error = err.Error()
 		} else {
 			rsp.Payload = jsonData
@@ -43,7 +43,7 @@ func getAPIs(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(EndPointManager)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		rsp.FriendlyError = "Error retrieving deployment Configuration"
+		rsp.Warning = "Error retrieving deployment Configuration"
 		rsp.Error = err.Error()
 	} else {
 		rsp.Payload = jsonData
