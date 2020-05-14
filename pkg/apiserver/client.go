@@ -24,8 +24,8 @@ func FindFunctionEndpoint(u *url.URL, c *http.Client, f, m string) (*EndPoint, *
 	if err != nil {
 
 		return nil, &Response{
-			FriendlyError: fmt.Sprintf("Unable to find method [%s] for function [%s]", m, f),
-			Error:         err.Error(),
+			Warning: fmt.Sprintf("Unable to find method [%s] for function [%s]", m, f),
+			Error:   err.Error(),
 		}
 	}
 	var ep EndPoint

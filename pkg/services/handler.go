@@ -125,7 +125,7 @@ func getConfig(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(Controller)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		rsp.FriendlyError = "Error retrieving Server Configuration"
+		rsp.Warning = "Error retrieving Server Configuration"
 		rsp.Error = err.Error()
 	} else {
 		rsp.Payload = jsonData
@@ -143,7 +143,7 @@ func postConfig(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			rsp.FriendlyError = "Error updating Server Configuration"
+			rsp.Warning = "Error updating Server Configuration"
 			rsp.Error = err.Error()
 		}
 		json.NewEncoder(w).Encode(rsp)
@@ -160,13 +160,18 @@ func postBootConfig(w http.ResponseWriter, r *http.Request) {
 		err := json.Unmarshal(b, &newBoot)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			rsp.FriendlyError = "Error updating Server Configuration"
+			rsp.Warning = "Error updating Server Configuration"
 			rsp.Error = err.Error()
 		} else {
 			// Add the Boot configuration to the controller
 			Controller.BootConfigs = append(Controller.BootConfigs, newBoot)
 			// Parse the boot configuration (preload ISOs etc.)
-			Controller.ParseBootController()
+			err = Controller.ParseBootController()
+			if err != nil {
+				w.Header().Set("Content-Type", "application/json")
+				rsp.Warning = "Error updating Server Configuration"
+				rsp.Error = err.Error()
+			}
 		}
 
 		json.NewEncoder(w).Encode(rsp)
@@ -186,7 +191,7 @@ func deleteBootConfig(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 
 		if err != nil {
-			rsp.FriendlyError = "Error updating Deployment Configuration"
+			rsp.Warning = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
 			rsp.Payload = nil
 		}
@@ -201,7 +206,7 @@ func getDeployments(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(Deployments)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		rsp.FriendlyError = "Error retrieving deployment Configuration"
+		rsp.Warning = "Error retrieving deployment Configuration"
 		rsp.Error = err.Error()
 	} else {
 		rsp.Payload = jsonData
@@ -218,7 +223,7 @@ func postDeployments(w http.ResponseWriter, r *http.Request) {
 		var rsp apiserver.Response
 
 		if err != nil {
-			rsp.FriendlyError = "Error updating Deployment Configuration"
+			rsp.Warning = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
 			rsp.Payload = nil
 		}
@@ -242,7 +247,7 @@ func getSpecificDeployment(w http.ResponseWriter, r *http.Request) {
 		jsonData, err := json.Marshal(deployment)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			rsp.FriendlyError = "Error retrieving deployment Configuration"
+			rsp.Warning = "Error retrieving deployment Configuration"
 			rsp.Error = err.Error()
 		} else {
 			rsp.Payload = jsonData
@@ -264,7 +269,7 @@ func postDeployment(w http.ResponseWriter, r *http.Request) {
 		var rsp apiserver.Response
 
 		if err != nil {
-			rsp.FriendlyError = "Error updating Deployment Configuration"
+			rsp.Warning = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
 			rsp.Payload = nil
 		}
@@ -287,7 +292,7 @@ func updateDeployment(w http.ResponseWriter, r *http.Request) {
 			err := UpdateGlobalDeploymentConfig(b)
 
 			if err != nil {
-				rsp.FriendlyError = "Error updating Global Configuration"
+				rsp.Warning = "Error updating Global Configuration"
 				rsp.Error = err.Error()
 				rsp.Payload = nil
 			}
@@ -300,7 +305,7 @@ func updateDeployment(w http.ResponseWriter, r *http.Request) {
 			err := UpdateDeployment(mac, b)
 
 			if err != nil {
-				rsp.FriendlyError = "Error updating Deployment Configuration"
+				rsp.Warning = "Error updating Deployment Configuration"
 				rsp.Error = err.Error()
 				rsp.Payload = nil
 			}
@@ -327,7 +332,7 @@ func deleteDeployment(w http.ResponseWriter, r *http.Request) {
 			// We need to revert the ip address back to the correct format (dashes back to periods)
 			err = DeleteDeploymentAddress(strings.Replace(id, "-", ".", -1), b)
 			if err != nil {
-				rsp.FriendlyError = "Error updating Deployment Configuration"
+				rsp.Warning = "Error updating Deployment Configuration"
 				rsp.Error = err.Error()
 				rsp.Payload = nil
 			}
@@ -349,7 +354,7 @@ func deleteDeploymentMac(w http.ResponseWriter, r *http.Request) {
 		// We need to revert the mac address back to the correct format (dashes back to colons)
 		err := DeleteDeploymentMac(strings.Replace(id, "-", ":", -1), b)
 		if err != nil {
-			rsp.FriendlyError = "Error updating Deployment Configuration"
+			rsp.Warning = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
 			rsp.Payload = nil
 		}
@@ -371,7 +376,7 @@ func deleteDeploymentAddress(w http.ResponseWriter, r *http.Request) {
 		// We need to revert the mac address back to the correct format (dashes back to colons)
 		err = DeleteDeploymentAddress(strings.Replace(id, "-", ".", -1), b)
 		if err != nil {
-			rsp.FriendlyError = "Error updating Deployment Configuration"
+			rsp.Warning = "Error updating Deployment Configuration"
 			rsp.Error = err.Error()
 			rsp.Payload = nil
 		}
@@ -393,7 +398,7 @@ func getDHCP(w http.ResponseWriter, r *http.Request) {
 		jsonData, err := json.Marshal(Controller.GetLeases())
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			rsp.FriendlyError = "Error retrieving allocated leases"
+			rsp.Warning = "Error retrieving allocated leases"
 			rsp.Error = err.Error()
 		} else {
 			rsp.Payload = jsonData
@@ -406,7 +411,7 @@ func getDHCP(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			rsp.FriendlyError = "Error retrieving allocated leases"
+			rsp.Warning = "Error retrieving allocated leases"
 			rsp.Error = err.Error()
 		} else {
 			rsp.Payload = jsonData

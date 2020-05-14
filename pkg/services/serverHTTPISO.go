@@ -179,15 +179,13 @@ func isoReader(w http.ResponseWriter, r *http.Request) {
 
 // OpenISO will open an iso and add it to out ISO Map for reading at a later point
 func OpenISO(isoPath, isoPrefix string) error {
-	// file, err := os.Open(isoPath)
-	// if err != nil {
-	// 	return err
-	// }
+	// Check that the file exists
 
-	// f, err := iso9660(isoPath)
-	// if err != nil {
-	// 	return err
-	// }
+	_, err := os.Stat(isoPath)
+	// We could use os.IsNotExist() but we may as well capture all errors
+	if err != nil {
+		return fmt.Errorf("Error reading file [%s]", isoPath)
+	}
 
 	if isoMapper == nil {
 		// Ensure it is initialised before trying to use it

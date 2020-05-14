@@ -48,6 +48,12 @@ func (c *BootController) ParseBootController() error {
 		if c.BootConfigs[i].ISOPrefix == "" || c.BootConfigs[i].ISOPath == "" {
 			log.Debugf("No ISO is being parsed for configuration %s", c.BootConfigs[i].ConfigName)
 		} else {
+			// Atempt to open the ISO and add it to the map for usage later
+			err := OpenISO(c.BootConfigs[i].ISOPath, c.BootConfigs[i].ISOPrefix)
+			if err != nil {
+				log.Errorf("Error parsing ISO [%v]", err)
+				return err
+			}
 
 			// Create the prefix
 			urlPrefix := fmt.Sprintf("/%s/", c.BootConfigs[i].ISOPrefix)
@@ -57,12 +63,6 @@ func (c *BootController) ParseBootController() error {
 				log.Debugf("Adding handler %s", urlPrefix)
 
 				serveMux.HandleFunc(urlPrefix, isoReader)
-			}
-
-			// Atempt to open the ISO and add it to the map for usage later
-			err := OpenISO(c.BootConfigs[i].ISOPath, c.BootConfigs[i].ISOPrefix)
-			if err != nil {
-				return err
 			}
 
 			log.Debugf("Updating handler %s for config %s", urlPrefix, c.BootConfigs[i].ConfigName)
