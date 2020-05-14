@@ -39,4 +39,6 @@ replace (
 	github.com/plunder-app/plunder/pkg/services => ./pkg/services
 	github.com/plunder-app/plunder/pkg/ssh => ./pkg/ssh
 	github.com/plunder-app/plunder/pkg/utils => ./pkg/utils
+	github.com/plunder-app/plunder/pkg/parlay => ./pkg/parlay
+
 )
