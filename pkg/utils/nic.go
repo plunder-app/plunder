@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"log"
 	"net"
 )
 
@@ -69,14 +68,14 @@ func FindAllIPAddresses() ([]net.IP, error) {
 }
 
 //ConvertIP -
-func ConvertIP(ipAddress string) []byte {
+func ConvertIP(ipAddress string) ([]byte, error) {
 	// net.ParseIP has returned IPv6 sized allocations o_O
 	fixIP := net.ParseIP(ipAddress)
 	if fixIP == nil {
-		log.Fatalf("Couldn't parse the IP address: %s\n", ipAddress)
+		return nil, fmt.Errorf("Couldn't parse the IP address: %s", ipAddress)
 	}
 	if len(fixIP) > 4 {
-		return fixIP[len(fixIP)-4:]
+		return fixIP[len(fixIP)-4:], nil
 	}
-	return fixIP
+	return fixIP, nil
 }

@@ -14,7 +14,7 @@ require (
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.11.0 // indirect
-	github.com/plunder-app/BOOTy v0.0.0-20200513203223-f43f6ea742c4 // indirect
+	github.com/plunder-app/BOOTy v0.0.0-20200513203223-f43f6ea742c4
 	github.com/plunder-app/plunder/pkg/apiserver v0.0.0-20200514155151-dfdcaab2e5cd
 	github.com/plunder-app/plunder/pkg/certs v0.0.0-20200514155151-dfdcaab2e5cd
 	github.com/plunder-app/plunder/pkg/parlay v0.0.0-20200514155151-dfdcaab2e5cd
@@ -40,5 +40,5 @@ replace (
 	github.com/plunder-app/plunder/pkg/services => ./pkg/services
 	github.com/plunder-app/plunder/pkg/ssh => ./pkg/ssh
 	github.com/plunder-app/plunder/pkg/utils => ./pkg/utils
-
+github.com/plunder-app/BOOTy => ../../plunder-app/BOOTy
 )

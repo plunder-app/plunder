@@ -187,12 +187,5 @@ func OpenISO(isoPath, isoPrefix string) error {
 		return fmt.Errorf("Error reading file [%s]", isoPath)
 	}
 
-	if isoMapper == nil {
-		// Ensure it is initialised before trying to use it
-		isoMapper = make(map[string]string)
-	}
-	// Add the reader
-	isoMapper[isoPrefix] = isoPath
-
 	return nil
 }

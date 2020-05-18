@@ -99,6 +99,15 @@ func (c *HostConfig) PopulateFromGlobalConfiguration(globalConfig HostConfig) {
 	}
 
 	// BOOTy configuration (TODO CAN NOT LEAVE THIS HERE)
+
+	if c.BOOTYAction == "" {
+		c.BOOTYAction = globalConfig.BOOTYAction
+	}
+
+	if c.Compressed == nil && globalConfig.Compressed != nil {
+		c.Compressed = globalConfig.Compressed
+	}
+
 	if c.GrowPartition == nil && globalConfig.GrowPartition != nil {
 		c.GrowPartition = globalConfig.GrowPartition
 	}
@@ -107,12 +116,22 @@ func (c *HostConfig) PopulateFromGlobalConfiguration(globalConfig HostConfig) {
 		c.LVMRootName = globalConfig.LVMRootName
 	}
 
+	// WRITE to server
 	if c.DestinationDevice == "" {
 		c.DestinationDevice = globalConfig.DestinationDevice
 	}
 
 	if c.SourceImage == "" {
 		c.SourceImage = globalConfig.SourceImage
+	}
+
+	// READ from server
+	if c.DestinationAddress == "" {
+		c.DestinationAddress = globalConfig.DestinationAddress
+	}
+
+	if c.SourceDevice == "" {
+		c.SourceDevice = globalConfig.SourceDevice
 	}
 
 	// TODO

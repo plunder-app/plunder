@@ -39,40 +39,76 @@ func ParseControllerData(b []byte) error {
 	return nil
 }
 
-// ParseBootController - will iterate through the boot controller and see if any changes need applying
-// this is mainly for the dynamic loading of ISOs
-func (c *BootController) ParseBootController() error {
-
-	for i := range c.BootConfigs {
-		// If either the prefix or path are blank then iterate over, both need to be set in order to load the ISO
-		if c.BootConfigs[i].ISOPrefix == "" || c.BootConfigs[i].ISOPath == "" {
-			log.Debugf("No ISO is being parsed for configuration %s", c.BootConfigs[i].ConfigName)
-		} else {
-			// Atempt to open the ISO and add it to the map for usage later
-			err := OpenISO(c.BootConfigs[i].ISOPath, c.BootConfigs[i].ISOPrefix)
-			if err != nil {
-				log.Errorf("Error parsing ISO [%v]", err)
-				return err
-			}
-
-			// Create the prefix
-			urlPrefix := fmt.Sprintf("/%s/", c.BootConfigs[i].ISOPrefix)
-
-			// Only create the handler if one doesn't exist
-			if _, ok := isoMapper[c.BootConfigs[i].ISOPrefix]; !ok {
-				log.Debugf("Adding handler %s", urlPrefix)
-
-				serveMux.HandleFunc(urlPrefix, isoReader)
-			}
-
-			log.Debugf("Updating handler %s for config %s", urlPrefix, c.BootConfigs[i].ConfigName)
-
-		}
+// Parse will read through a new configuration and implement the configuration if possible
+func (b *BootConfig) Parse() error {
+	if isoMapper == nil {
+		// Ensure it is initialised before trying to use it
+		isoMapper = make(map[string]string)
 	}
-	// Parse the boot controllers for new configuration changes
-	c.generateBootTypeHanders()
+
+	if b.ISOPrefix == "" || b.ISOPath == "" {
+		log.Debugf("No ISO is being parsed for configuration %s", b.ConfigName)
+	} else {
+		// Atempt to open the ISO and add it to the map for usage later
+		err := OpenISO(b.ISOPath, b.ISOPrefix)
+		if err != nil {
+			log.Errorf("Error parsing ISO [%v]", err)
+			return err
+		}
+
+		// Create the prefix
+		urlPrefix := fmt.Sprintf("/%s/", b.ISOPrefix)
+
+		// Only create the handler if one doesn't exist
+		if _, ok := isoMapper[b.ISOPrefix]; !ok {
+			log.Debugf("Adding handler %s", urlPrefix)
+			serveMux.HandleFunc(urlPrefix, isoReader)
+
+			// Add the iso path to the correct prefix
+			isoMapper[b.ISOPrefix] = b.ISOPath
+		}
+
+		log.Debugf("Updating handler %s for config %s", urlPrefix, b.ConfigName)
+	}
+	log.Infof("Boot Config [%s] of type [%s] parsed succesfully", b.ConfigName, b.ConfigType)
+	// No errors and BootConfig is applied
 	return nil
 }
+
+// // ParseBootController - will iterate through the boot controller and see if any changes need applying
+// // this is mainly for the dynamic loading of ISOs
+// func (c *BootController) ParseBootController() error {
+
+// 	for i := range c.BootConfigs {
+// 		// If either the prefix or path are blank then iterate over, both need to be set in order to load the ISO
+// 		if c.BootConfigs[i].ISOPrefix == "" || c.BootConfigs[i].ISOPath == "" {
+// 			log.Debugf("No ISO is being parsed for configuration %s", c.BootConfigs[i].ConfigName)
+// 		} else {
+// 			// Atempt to open the ISO and add it to the map for usage later
+// 			err := OpenISO(c.BootConfigs[i].ISOPath, c.BootConfigs[i].ISOPrefix)
+// 			if err != nil {
+// 				log.Errorf("Error parsing ISO [%v]", err)
+// 				return err
+// 			}
+
+// 			// Create the prefix
+// 			urlPrefix := fmt.Sprintf("/%s/", c.BootConfigs[i].ISOPrefix)
+
+// 			// Only create the handler if one doesn't exist
+// 			if _, ok := isoMapper[c.BootConfigs[i].ISOPrefix]; !ok {
+// 				log.Debugf("Adding handler %s", urlPrefix)
+
+// 				serveMux.HandleFunc(urlPrefix, isoReader)
+// 			}
+
+// 			log.Debugf("Updating handler %s for config %s", urlPrefix, c.BootConfigs[i].ConfigName)
+
+// 		}
+// 	}
+// 	// Parse the boot controllers for new configuration changes
+// 	c.generateBootTypeHanders()
+// 	return nil
+// }
 
 // DeleteBootControllerConfig - will iterate through the boot controller and see if any changes need applying
 // this is mainly for the dynamic loading of ISOs

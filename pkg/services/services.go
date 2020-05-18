@@ -19,12 +19,12 @@ var runningDHCP, runningTFTP, runningHTTP bool
 // find BootConfig will look through a Boot controller for a booting configuration identified through a configuration name
 func findBootConfigForDeployment(deployment DeploymentConfig) *BootConfig {
 
-	// First check is to look inside the deployment configuration for a custom configuration
-	if deployment.ConfigBoot.Kernel != "" && deployment.ConfigBoot.Initrd != "" {
-		// A Custom Kernel and initrd are specified
-		log.Debugf("The server [%s] has a custom bootConfig defined", deployment.MAC)
-		return &deployment.ConfigBoot
-	}
+	// // First check is to look inside the deployment configuration for a custom configuration
+	// if deployment.ConfigBoot.Kernel != "" && deployment.ConfigBoot.Initrd != "" {
+	// 	// A Custom Kernel and initrd are specified
+	// 	log.Debugf("The server [%s] has a custom bootConfig defined", deployment.MAC)
+	// 	return &deployment.ConfigBoot
+	// }
 
 	// Second check is to find a matching controller configuration to adopt
 	for i := range Controller.BootConfigs {
@@ -70,22 +70,55 @@ func (c *BootController) StartServices(deployment []byte) error {
 
 	if *c.EnableDHCP == true {
 		c.handler = &DHCPSettings{}
-		c.handler.IP = utils.ConvertIP(*c.DHCPConfig.DHCPAddress)
-		c.handler.Start = utils.ConvertIP(*c.DHCPConfig.DHCPStartAddress)
-
-		c.handler.LeaseDuration = 2 * time.Hour //TODO, make time modifiable
-		c.handler.LeaseRange = *c.DHCPConfig.DHCPLeasePool
-		// Initialise the two maps
-		c.handler.Leases = make(map[int]Lease, *c.DHCPConfig.DHCPLeasePool)
-
-		c.handler.Options = dhcp.Options{
-			dhcp.OptionSubnetMask:       []byte{255, 255, 255, 0},
-			dhcp.OptionRouter:           []byte(utils.ConvertIP(*c.DHCPConfig.DHCPGateway)),
-			dhcp.OptionDomainNameServer: []byte(utils.ConvertIP(*c.DHCPConfig.DHCPDNS)),
-			dhcp.OptionBootFileName:     []byte(*c.PXEFileName),
+		// DHCP Server address
+		ip, err := utils.ConvertIP(c.DHCPConfig.DHCPAddress)
+		if err != nil {
+			log.Fatalf("DHCP Server -> %v", err)
 		}
+		c.handler.IP = ip
 
-		log.Debugf("\nServer IP:\t%s\nAdapter:\t%s\nStart Address:\t%s\nPool Size:\t%d\n", *c.DHCPConfig.DHCPAddress, *c.AdapterName, *c.DHCPConfig.DHCPStartAddress, *c.DHCPConfig.DHCPLeasePool)
+		// Start address of DHCP Range
+		ip, err = utils.ConvertIP(c.DHCPConfig.DHCPStartAddress)
+		if err != nil {
+			log.Fatalf("DHCP Start Address -> %v", err)
+		}
+		c.handler.Start = ip
+
+		// Additional DHCP options
+		c.handler.LeaseDuration = 2 * time.Hour //TODO, make time modifiable
+		c.handler.LeaseRange = c.DHCPConfig.DHCPLeasePool
+		// Initialise the two maps
+		c.handler.Leases = make(map[int]Lease, c.DHCPConfig.DHCPLeasePool)
+
+		var options = dhcp.Options{}
+
+		// Subnet
+		ip, err = utils.ConvertIP(c.DHCPConfig.DHCPSubnet)
+		if err != nil {
+			log.Fatalf("DHCP Subnet -> %v", err)
+		}
+		options[dhcp.OptionSubnetMask] = ip
+
+		// Gateway / Router
+		ip, err = utils.ConvertIP(c.DHCPConfig.DHCPGateway)
+		if err != nil {
+			log.Fatalf("DHCP Gateway -> %v", err)
+		}
+		options[dhcp.OptionRouter] = ip
+
+		// DNS
+		ip, err = utils.ConvertIP(c.DHCPConfig.DHCPDNS)
+		if err != nil {
+			log.Fatalf("DHCP DNS ->%v", err)
+		}
+		options[dhcp.OptionDomainNameServer] = ip
+
+		// Set bootname path (used by tftp)
+		options[dhcp.OptionBootFileName] = []byte(*c.PXEFileName)
+
+		c.handler.Options = options
+
+		log.Debugf("\nServer IP:\t%s\nAdapter:\t%s\nStart Address:\t%s\nPool Size:\t%d\n", c.DHCPConfig.DHCPAddress, *c.AdapterName, c.DHCPConfig.DHCPStartAddress, c.DHCPConfig.DHCPLeasePool)
 		log.Println("Plunder Services --> Starting DHCP")
 
 		if runningDHCP == false {
@@ -151,12 +184,16 @@ func (c *BootController) StartServices(deployment []byte) error {
 		serveMux = http.NewServeMux()
 
 		// Parse the boot controller configuration
-		err := c.ParseBootController()
-
-		if err != nil {
-			// Don't quit on error as updated configuration can be uploaded through the API
-			log.Errorf("%v", err)
+		// err := c.ParseBootController()
+		for x := range c.BootConfigs {
+			// // Parse the boot configuration (preload ISOs etc.)
+			err := c.BootConfigs[x].Parse()
+			if err != nil {
+				// Don't quit on error as updated configuration can be uploaded through the API
+				log.Errorf("%v", err)
+			}
 		}
+		c.generateBootTypeHanders()
 
 		// If a Deployment file is set then update the configuration
 		if len(deployment) != 0 {
@@ -168,16 +205,18 @@ func (c *BootController) StartServices(deployment []byte) error {
 		}
 	}
 
-	go func() {
+	go c.serveImageHTTP()
+	// // Image OS
+	// go func() {
 
-		fs := http.FileServer(http.Dir("./images"))
-		http.Handle("/images/", http.StripPrefix("/images/", fs))
-		log.Println("Plunder OS Image Services --> Starting HTTP")
-		err := http.ListenAndServe(":3000", nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
+	// 	fs := http.FileServer(http.Dir("./images"))
+	// 	http.Handle("/images/", http.StripPrefix("/images/", fs))
+	// 	log.Println("Plunder OS Image Services --> Starting HTTP :3000")
+	// 	err := http.ListenAndServe(":3000", nil)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// }()
 
 	// everything has been started correctly
 	return nil

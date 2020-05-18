@@ -37,11 +37,11 @@ func init() {
 	services.Controller.PXEFileName = PlunderServer.Flags().String("iPXEPath", "undionly.kpxe", "Path to an iPXE bootloader")
 
 	// DHCP Settings
-	services.Controller.DHCPConfig.DHCPAddress = PlunderServer.Flags().String("addressDHCP", "", "Address to advertise leases from, ideally will be the IP address of --adapter")
-	services.Controller.DHCPConfig.DHCPGateway = PlunderServer.Flags().String("gateway", "", "Address of Gateway to use, if blank will default to [addressDHCP]")
-	services.Controller.DHCPConfig.DHCPDNS = PlunderServer.Flags().String("dns", "", "Address of DNS to use, if blank will default to [addressDHCP]")
-	services.Controller.DHCPConfig.DHCPLeasePool = PlunderServer.Flags().Int("leasecount", 20, "Amount of leases to advertise")
-	services.Controller.DHCPConfig.DHCPStartAddress = PlunderServer.Flags().String("startAddress", "", "Start advertised address [REQUIRED]")
+	PlunderServer.Flags().StringVar(&services.Controller.DHCPConfig.DHCPAddress, "addressDHCP", "", "Address to advertise leases from, ideally will be the IP address of --adapter")
+	PlunderServer.Flags().StringVar(&services.Controller.DHCPConfig.DHCPGateway, "gateway", "", "Address of Gateway to use, if blank will default to [addressDHCP]")
+	PlunderServer.Flags().StringVar(&services.Controller.DHCPConfig.DHCPDNS, "dns", "", "Address of DNS to use, if blank will default to [addressDHCP]")
+	PlunderServer.Flags().IntVar(&services.Controller.DHCPConfig.DHCPLeasePool, "leasecount", 20, "Amount of leases to advertise")
+	PlunderServer.Flags().StringVar(&services.Controller.DHCPConfig.DHCPStartAddress, "startAddress", "", "Start advertised address [REQUIRED]")
 
 	//HTTP Settings
 	defaultKernel = PlunderServer.Flags().String("kernel", "", "Path to a kernel to set as the *default* kernel")
@@ -113,11 +113,11 @@ var PlunderServer = &cobra.Command{
 		}
 
 		// If we've enabled DHCP, then we need to ensure a start address for the range is populated
-		if *services.Controller.EnableDHCP && *services.Controller.DHCPConfig.DHCPStartAddress == "" {
+		if *services.Controller.EnableDHCP && services.Controller.DHCPConfig.DHCPStartAddress == "" {
 			log.Fatalln("A DHCP Start address is required")
 		}
 
-		if *services.Controller.DHCPConfig.DHCPLeasePool == 0 {
+		if services.Controller.DHCPConfig.DHCPLeasePool == 0 {
 			log.Fatalln("At least one available lease is required")
 		}
 
