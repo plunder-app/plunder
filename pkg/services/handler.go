@@ -174,15 +174,26 @@ func postBootConfig(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			}
-			// Add the Boot configuration to the controller
-			Controller.BootConfigs = append(Controller.BootConfigs, newBoot)
-			// Parse the boot configuration (preload ISOs etc.)
-			err = Controller.ParseBootController()
+			// // Parse the boot configuration (preload ISOs etc.)
+			err = newBoot.Parse()
+			// err = Controller.ParseBootController()
 			if err != nil {
 				w.Header().Set("Content-Type", "application/json")
 				rsp.Warning = "Error updating Server Configuration"
 				rsp.Error = err.Error()
+			} else {
+				// Add the Boot configuration to the controller
+				Controller.BootConfigs = append(Controller.BootConfigs, newBoot)
+				// Generate the handlers (this can probably GO soon)
+				Controller.generateBootTypeHanders()
 			}
+			// // Parse the boot configuration (preload ISOs etc.)
+			// err = Controller.ParseBootController()
+			// if err != nil {
+			// 	w.Header().Set("Content-Type", "application/json")
+			// 	rsp.Warning = "Error updating Server Configuration"
+			// 	rsp.Error = err.Error()
+			// }
 		}
 
 		json.NewEncoder(w).Encode(rsp)

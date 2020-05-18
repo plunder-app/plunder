@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+	booty "github.com/plunder-app/BOOTy/pkg/plunderclient/types"
 	"github.com/plunder-app/plunder/pkg/apiserver"
 	"github.com/plunder-app/plunder/pkg/certs"
 	"github.com/plunder-app/plunder/pkg/parlay/parlaytypes"
@@ -98,11 +99,12 @@ var plunderDeploymentConfig = &cobra.Command{
 		log.SetLevel(log.Level(logLevel))
 		// Create an example Global configuration
 		globalConfig := services.HostConfig{
-			Gateway:           "192.168.0.1",
-			NTPServer:         "192.168.0.1",
-			NameServer:        "192.168.0.1",
-			Adapter:           "ens192",
-			Subnet:            "255.255.255.0",
+			Gateway:    "192.168.0.1",
+			NTPServer:  "192.168.0.1",
+			NameServer: "192.168.0.1",
+			Adapter:    "ens192",
+			Subnet:     "255.255.255.0",
+			// OS Provision
 			Username:          "user",
 			Password:          "pass",
 			Packages:          "openssh-server cloud-guest-utils",
@@ -110,10 +112,19 @@ var plunderDeploymentConfig = &cobra.Command{
 			MirrorDirectory:   "/ubuntu",
 			SSHKeyPath:        "/home/deploy/.ssh/id_pub.rsa",
 			SSHKey:            "ssh-rsa AABBCCDDEE1122334455",
-			LVMRootName:       "/dev/ubuntu-vg/root",
-			DestinationDevice: "/dev/sda",
-			SourceImage:       "http://192.168.0.95/images/ubuntu.img",
+			// BOOTy
+			BOOTYAction:        booty.ReadImage,
+			LVMRootName:        "/dev/ubuntu-vg/root",
+			DestinationDevice:  "/dev/sda",
+			DestinationAddress: "http://192.168.0.1/image",
+			SourceImage:        "http://192.168.0.1/images/ubuntu.img",
+			SourceDevice:       "/dev/sda",
 		}
+
+		// Set compressed pointer
+		compressed := false
+		globalConfig.Compressed = &compressed
+
 		// Addtional step to create the partition information
 		defaultPartition := 1
 		globalConfig.GrowPartition = &defaultPartition
@@ -322,11 +333,12 @@ func detectServerConfig() error {
 	*services.Controller.PXEFileName = "undionly.kpxe"
 
 	// DHCP Settings
-	services.Controller.DHCPConfig.DHCPAddress = &nicAddr
-	services.Controller.DHCPConfig.DHCPGateway = &nicAddr
-	services.Controller.DHCPConfig.DHCPDNS = &nicAddr
-	*services.Controller.DHCPConfig.DHCPLeasePool = 20
-	*services.Controller.DHCPConfig.DHCPStartAddress = ip.String()
+	services.Controller.DHCPConfig.DHCPAddress = nicAddr
+	services.Controller.DHCPConfig.DHCPSubnet = "255.255.255.0"
+	services.Controller.DHCPConfig.DHCPGateway = nicAddr
+	services.Controller.DHCPConfig.DHCPDNS = nicAddr
+	services.Controller.DHCPConfig.DHCPLeasePool = 20
+	services.Controller.DHCPConfig.DHCPStartAddress = ip.String()
 
 	return nil
 }

@@ -17,15 +17,16 @@ var controller *BootController
 
 var serveMux *http.ServeMux
 
+// TODO - this should be removed
 func (c *BootController) generateBootTypeHanders() {
 
 	// Find the default configuration
 	defaultConfig := findBootConfigForType("default")
 	if defaultConfig != nil {
 		defaultBoot = utils.IPXEPreeseed(*c.HTTPAddress, defaultConfig.Kernel, defaultConfig.Initrd, defaultConfig.Cmdline)
-	} else {
-		log.Warnf("Found [%d] configurations and no \"default\" configuration", len(c.BootConfigs))
-	}
+	} //else {
+	//	log.Warnf("Found [%d] configurations and no \"default\" configuration", len(c.BootConfigs))
+	//}
 
 	// If a preeseed configuration has been configured then add it, and create a HTTP endpoint
 	preeseedConfig := findBootConfigForType("preseed")

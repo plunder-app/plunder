@@ -27,11 +27,12 @@ type BootController struct {
 }
 
 type dhcpConfig struct {
-	DHCPAddress      *string `json:"addressDHCP"`    // Should ideally be the IP of the adapter
-	DHCPStartAddress *string `json:"startDHCP"`      // The first available DHCP address
-	DHCPLeasePool    *int    `json:"leasePoolDHCP"`  // Size of the IP Address pool
-	DHCPGateway      *string `json:"gatewayDHCP"`    // Gatewway to advertise
-	DHCPDNS          *string `json:"nameserverDHCP"` // DNS server to advertise
+	DHCPAddress      string `json:"addressDHCP"`    // Should ideally be the IP of the adapter
+	DHCPStartAddress string `json:"startDHCP"`      // The first available DHCP address
+	DHCPLeasePool    int    `json:"leasePoolDHCP"`  // Size of the IP Address pool
+	DHCPSubnet       string `json:"subnetDHCP"`     // Subnet for leases
+	DHCPGateway      string `json:"gatewayDHCP"`    // Gateway to advertise
+	DHCPDNS          string `json:"nameserverDHCP"` // DNS server to advertise
 }
 
 // BootConfig defines a named configuration for booting
@@ -95,9 +96,16 @@ type HostConfig struct {
 	Packages string `json:"packages,omitempty"`
 
 	// OS Image provisioning
+	BOOTYAction string `json:"bootyAction,omitempty"`
+	Compressed  *bool  `json:"compressed,omitempty"`
+
 	// Write image to disk from remote address
 	SourceImage       string `json:"sourceImage,omitempty"`
 	DestinationDevice string `json:"destinationDevice,omitempty"`
+
+	// Read image from disk from remote address
+	SourceDevice       string `json:"sourceDevice,omitempty"`
+	DestinationAddress string `json:"destinationAddress,omitempty"`
 
 	// Post tasks - Once the image has been deployed
 

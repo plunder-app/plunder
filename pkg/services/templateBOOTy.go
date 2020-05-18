@@ -11,7 +11,17 @@ import (
 //BuildBOOTYconfig - Creates a new presseed configuration using the passed data
 func (config *HostConfig) BuildBOOTYconfig() string {
 	a := types.BootyConfig{}
-	a.Action = types.WriteImage
+
+	// set the required action
+	a.Action = config.BOOTYAction
+
+	// Default to false if not in configuration
+	if config.Compressed == nil {
+		a.Compressed = false
+	} else {
+		a.Compressed = *config.Compressed
+	}
+
 	// Parse the strings
 	subnet := net.ParseIP(config.Subnet)
 	ip := net.ParseIP(config.IPAddress)
@@ -29,12 +39,31 @@ func (config *HostConfig) BuildBOOTYconfig() string {
 		a.Gateway = config.Gateway
 	}
 
+	// READ
 	a.DestinationDevice = config.DestinationDevice
 	a.SourceImage = config.SourceImage
-	a.GrowPartition = *config.GrowPartition
+	// WRITE
+	a.DesintationAddress = config.DestinationAddress
+	a.SourceDevice = config.SourceDevice
+
+	// Default to false if not in configuration
+	if config.GrowPartition == nil {
+		a.GrowPartition = 0
+	} else {
+		a.GrowPartition = *config.GrowPartition
+	}
 	a.LVMRootName = config.LVMRootName
+
+	// Default to false if not in configuration
+	if config.ShellOnFail == nil {
+		a.DropToShell = false
+	} else {
+		a.DropToShell = *config.ShellOnFail
+	}
+
 	a.DropToShell = *config.ShellOnFail
 	a.NameServer = config.NameServer
+
 	b, _ := json.Marshal(a)
 	return string(b)
 }

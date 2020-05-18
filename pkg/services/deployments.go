@@ -84,27 +84,27 @@ func rebuildConfiguration(updateConfig *DeploymentConfigurationFile) error {
 		switch updateConfig.Configs[i].ConfigBoot.ConfigType {
 		case "preseed":
 			inMemipxeConfig = utils.IPXEPreeseed(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
-			log.Debugf("Generating preseed ipxeConfig for [%s]", dashMac)
+			log.Debugf("Generating preseed ipxeConfig for configName [%s]", dashMac)
 			inMemBootConfig = updateConfig.Configs[i].ConfigHost.BuildPreeSeedConfig()
 
 		case "kickstart":
 			inMemipxeConfig = utils.IPXEKickstart(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
-			log.Debugf("Generating kickstart ipxeConfig for [%s]", dashMac)
+			log.Debugf("Generating kickstart ipxeConfig for configName [%s]", dashMac)
 			inMemBootConfig = updateConfig.Configs[i].ConfigHost.BuildKickStartConfig()
 
 		case "vsphere":
 			inMemipxeConfig = utils.IPXEVSphere(httpAddress, bootConfig.Kernel, bootConfig.Cmdline)
-			log.Debugf("Generating vsphere ipxeConfig for [%s]", dashMac)
+			log.Debugf("Generating vsphere ipxeConfig for configName [%s]", dashMac)
 			inMemBootConfig = updateConfig.Configs[i].ConfigHost.BuildESXiConfig()
 			imMemESXiKickstart = updateConfig.Configs[i].ConfigHost.BuildESXiKickStart()
 
 		case "booty":
 			inMemipxeConfig = utils.IPXEBOOTy(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
-			log.Debugf("Generating booty ipxeConfig for [%s]", dashMac)
+			log.Debugf("Generating booty ipxeConfig for configName [%s]", dashMac)
 			inMemBOOTyConfig = updateConfig.Configs[i].ConfigHost.BuildBOOTYconfig()
 
 		default:
-			log.Debugf("Building configuration for configName [%s]", updateConfig.Configs[i].ConfigBoot.ConfigName)
+			log.Debugf("Generating default ipxeConfig for configName [%s]", updateConfig.Configs[i].ConfigBoot.ConfigName)
 			inMemipxeConfig = utils.IPXEAnyBoot(httpAddress, bootConfig.Kernel, bootConfig.Initrd, bootConfig.Cmdline)
 		}
 
