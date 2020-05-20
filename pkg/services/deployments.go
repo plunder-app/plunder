@@ -228,6 +228,11 @@ func UpdateDeployment(macAddress string, rawDeployment []byte) error {
 		return fmt.Errorf("Unable to parse deployment configuration")
 	}
 
+	// if no ID or specific MAC address was passed then assume the mac address of the deployment
+	if macAddress == "" {
+		macAddress = newDeployment.MAC
+	}
+
 	// We will now duplicate our configuration
 	updateConfig := Deployments
 	// We will need to create space to copy the existing configurations over

@@ -62,6 +62,22 @@ func (c *HostConfig) PopulateFromGlobalConfiguration(globalConfig HostConfig) {
 		c.Adapter = globalConfig.Adapter
 	}
 
+	// Disk Configuration
+
+	if c.LVMEnable == nil && globalConfig.LVMEnable != nil {
+		c.LVMEnable = globalConfig.LVMEnable
+	} else {
+		disabled := false
+		c.LVMEnable = &disabled
+	}
+
+	if c.SwapDisabled == nil && globalConfig.SwapDisabled != nil {
+		c.SwapDisabled = globalConfig.SwapDisabled
+	} else {
+		disabled := false
+		c.SwapDisabled = &disabled
+	}
+
 	// REPOSITORY CONFIGURATION
 
 	// Inherit the global Repository address
