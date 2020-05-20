@@ -103,6 +103,37 @@ func ParsePlunderGet(u *url.URL, c *http.Client) (*Response, error) {
 	}
 
 	return &response, nil
+}
+
+//ParsePlunderPatch will attempt to retrieve data from the plunder API server
+func ParsePlunderPatch(u *url.URL, c *http.Client, data []byte) (*Response, error) {
+	var response Response
+
+	log.Debugf("Posting [%d] bytes to the Plunder Server [%s]", len(data), u.String())
+
+	req, err := http.NewRequest("PATCH", u.String(), bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if resp.StatusCode > 200 {
+		return nil, fmt.Errorf(resp.Status)
+	}
+
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
 
 }
 

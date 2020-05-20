@@ -73,11 +73,13 @@ type HostConfig struct {
 	ServerName string `json:"hostname,omitempty"` // Hostname to be applied to a server
 
 	// Typically shared details
-	Gateway    string `json:"gateway,omitempty"` // Default Gateway
-	Subnet     string `json:"subnet,omitempty"`  // Subnet to be used for the host
-	NameServer string `json:"nameserver,omitempty"`
-	NTPServer  string `json:"ntpserver,omitempty"` // Time Server to be used
-	SwapEnable bool   `json:"swapEnabled,omitempty"`
+	Gateway    string `json:"gateway,omitempty"`    // Default Gateway
+	Subnet     string `json:"subnet,omitempty"`     // Subnet to be used for the host
+	NameServer string `json:"nameserver,omitempty"` // Set the default nameserver for DNS
+	NTPServer  string `json:"ntpserver,omitempty"`  // Time Server to be used
+
+	LVMEnable    *bool `json:"lvmEnabled,omitempty"`   // Use LVM for the configuration
+	SwapDisabled *bool `json:"swapDisabled,omitempty"` // Dont create swap partitions
 
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`

@@ -51,121 +51,12 @@ d-i netcfg/get_domain string internal
 
 d-i netcfg/hostname string %s`
 
-const preseedLVMDisk2 = `
-d-i partman-auto/method string lvm
-
-# If one of the disks that are going to be automatically partitioned
-# contains an old LVM configuration, the user will normally receive a
-# warning. This can be preseeded away...
-d-i partman-lvm/device_remove_lvm boolean true
-# The same applies to pre-existing software RAID array:
-d-i partman-md/device_remove_md boolean true
-# And the same goes for the confirmation to write the lvm partitions.
-d-i partman-lvm/confirm boolean true
-
-# You can choose one of the three predefined partitioning recipes:
-# - atomic: all files in one partition
-# - home:   separate /home partition
-# - multi:  separate /home, /usr, /var, and /tmp partitions
-d-i partman-auto/choose_recipe select atomic
-
-# Or provide a recipe of your own...
-# If you have a way to get a recipe file into the d-i environment, you can
-# just point at it.
-#d-i partman-auto/expert_recipe_file string /hd-media/recipe
-
-# If not, you can put an entire recipe into the preconfiguration file in one
-# (logical) line. This example creates a small /boot partition, suitable
-# swap, and uses the rest of the space for the root partition:
-#d-i partman-auto/expert_recipe string                         \
-#      boot-root ::                                            \
-#              40 50 100 ext3                                  \
-#                      $primary{ } $bootable{ }                \
-#                      method{ format } format{ }              \
-#                      use_filesystem{ } filesystem{ ext3 }    \
-#                      mountpoint{ /boot }                     \
-#              .                                               \
-#              500 10000 1000000000 ext3                       \
-#                      method{ format } format{ }              \
-#                      use_filesystem{ } filesystem{ ext3 }    \
-#                      mountpoint{ / }                         \
-#              .                                               \
-#              64 512 300% linux-swap                          \
-#                      method{ swap } format{ }                \
-#              .
-
-# The full recipe format is documented in the file partman-auto-recipe.txt
-# included in the 'debian-installer' package or available from D-I source
-# repository. This also documents how to specify settings such as file
-# system labels, volume group names and which physical devices to include
-# in a volume group.
-
-# This makes partman automatically partition without confirmation, provided
-# that you told it what to do using one of the methods above.
-d-i partman-partitioning/confirm_write_new_label boolean true
-d-i partman/choose_partition select finish
-d-i partman/confirm boolean true
-d-i partman/confirm_nooverwrite boolean true
-
-## Partitioning using RAID
-# The method should be set to "raid".
-#d-i partman-auto/method string raid
-# Specify the disks to be partitioned. They will all get the same layout,
-# so this will only work if the disks are the same size.
-#d-i partman-auto/disk string /dev/sda /dev/sdb
-
-# Next you need to specify the physical partitions that will be used. 
-#d-i partman-auto/expert_recipe string \
-#      multiraid ::                                         \
-#              1000 5000 4000 raid                          \
-#                      $primary{ } method{ raid }           \
-#              .                                            \
-#              64 512 300% raid                             \
-#                      method{ raid }                       \
-#              .                                            \
-#              500 10000 1000000000 raid                    \
-#                      method{ raid }                       \
-#              .
-
-# Last you need to specify how the previously defined partitions will be
-# used in the RAID setup. Remember to use the correct partition numbers
-# for logical partitions. RAID levels 0, 1, 5, 6 and 10 are supported;
-# devices are separated using "#".
-# Parameters are:
-# <raidtype> <devcount> <sparecount> <fstype> <mountpoint> \
-#          <devices> <sparedevices>
-
-#d-i partman-auto-raid/recipe string \
-#    1 2 0 ext3 /                    \
-#          /dev/sda1#/dev/sdb1       \
-#    .                               \
-#    1 2 0 swap -                    \
-#          /dev/sda5#/dev/sdb5       \
-#    .                               \
-#    0 2 0 ext3 /home                \
-#          /dev/sda6#/dev/sdb6       \
-#    .
-
-# For additional information see the file partman-auto-raid-recipe.txt
-# included in the 'debian-installer' package or available from D-I source
-# repository.
-
-# This makes partman automatically partition without confirmation.
-d-i partman-md/confirm boolean true
-d-i partman-partitioning/confirm_write_new_label boolean true
-d-i partman/choose_partition select finish
-d-i partman/confirm boolean true
-d-i partman/confirm_nooverwrite boolean true
-d-i partman-basicfilesystems/no_swap boolean false
-`
-
 const preseedLVMDisk = `
 d-i partman-auto/method string lvm
 
 # If one of the disks that are going to be automatically partitioned
 # contains an old LVM configuration, the user will normally receive a
 # warning. This can be preseeded away...
-
 d-i partman-lvm/device_remove_lvm boolean true
 
 # The same applies to pre-existing software RAID array:
@@ -173,12 +64,6 @@ d-i partman-md/device_remove_md boolean true
 
 # And the same goes for the confirmation to write the lvm partitions.
 d-i partman-lvm/confirm boolean true
-
-# You can choose one of the three predefined partitioning recipes:
-# - atomic: all files in one partition
-# - home:   separate /home partition
-# - multi:  separate /home, /usr, /var, and /tmp partitions
-d-i partman-auto/choose_recipe select atomic
 
 # This makes partman automatically partition without confirmation, provided
 # that you told it what to do using one of the methods above.
@@ -205,7 +90,47 @@ d-i cdrom-detect/eject boolean true
 
 ### Preseeding other packages
 popularity-contest popularity-contest/participate boolean false
+`
 
+const preseedLVMDiskRecipe = `
+d-i partman-auto/choose_recipe select parlayfs
+d-i partman-auto/expert_recipe string                         \
+parlayfs ::                                                   \
+		269 269 269 ext4 $primary{ } $bootable{ }             \
+		$defaultignore{ }                                     \
+		$lvmignore{ }                                         \
+        mountpoint{ /boot }                                   \
+        method{ format }                                      \
+        format{ }                                             \
+		use_filesystem{ }                                     \
+        filesystem{ ext4 }                                    \
+        .                                                     \
+        900 10000 -1 ext4 $lvmok{ }                           \
+        mountpoint{ / }                                       \
+        lv_name{ lv_root }                                    \
+        in_vg { vg-root }                                     \
+        method{ format }                                      \
+        format{ }                                             \
+        use_filesystem{ }                                     \
+        filesystem{ ext4 }                                    \
+        .
+`
+
+const preseedLVMDiskRecipe2 = `
+d-i partman-auto/choose_recipe select parlayfs
+d-i partman-auto/expert_recipe string                         \
+parlayfs ::                                                   \
+269 269 269 ext4 $primary{ } $bootable{ } $defaultignore{ } $lvmignore{ } mountpoint{ /boot } method{ format } format{ } use_filesystem{ } filesystem{ ext4 } . \
+900 10000 -1 ext4 $lvmok{ } mountpoint{ / } lv_name{ root } in_vg { ubuntu-vg } method{ format } format{ } use_filesystem{ } filesystem{ ext4 } .
+`
+
+const preseedLVMDiskDisableSwap = `
+# will result in a zero swapfile being created
+d-i partman-swapfile/percentage string 0
+d-i partman-swapfile/size string 0
+`
+const preseedDiskAtomic = `
+d-i partman-auto/choose_recipe select atomic
 `
 
 const preseedDisk = `
@@ -360,13 +285,20 @@ func (config *HostConfig) BuildPreeSeedConfig() string {
 
 	var parsedDisk string
 
-	if config.SwapEnable == true {
-		parsedDisk = preseedDisk + swap
+	if *config.LVMEnable {
+		// We're using LVM, check if swap should be disabled or not
+		if *config.SwapDisabled {
+			parsedDisk = preseedLVMDisk + preseedLVMDiskRecipe2 + preseedLVMDiskDisableSwap
+		} else {
+			parsedDisk = preseedLVMDisk + preseedLVMDiskRecipe
+		}
 	} else {
-		parsedDisk = preseedDisk + noswap
+		if *config.SwapDisabled {
+			parsedDisk = preseedDisk + noswap
+		} else {
+			parsedDisk = preseedDisk + swap
+		}
 	}
-
-	parsedDisk = preseedLVMDisk
 
 	parsedNet := fmt.Sprintf(preseedNet, config.Adapter, config.Gateway, config.IPAddress, config.NameServer, config.Subnet, config.ServerName)
 	parsedPkg := fmt.Sprintf(preseedPkg, config.RepositoryAddress, config.MirrorDirectory, config.RepositoryAddress, config.MirrorDirectory, config.Packages)

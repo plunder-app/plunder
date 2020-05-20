@@ -82,6 +82,13 @@ func RegisterToAPIServer() {
 		http.MethodPost,
 		postDeployment)
 
+	apiserver.AddDynamicEndpoint("/deployment",
+		"/deployment",
+		"Allows the patching of a Plunder Server deployment",
+		"deployment",
+		http.MethodPatch,
+		updateDeployment)
+
 	apiserver.AddDynamicEndpoint("/deployment/{id}",
 		"/deployment",
 		"Allows the retrieval of specific information about a deployment",
@@ -91,7 +98,7 @@ func RegisterToAPIServer() {
 
 	apiserver.AddDynamicEndpoint("/deployment/{id}",
 		"/deployment",
-		"Allows the retrieving of Plunder Server deployments",
+		"Allows the patching of Plunder Server deployments",
 		"deploymentID",
 		http.MethodPatch,
 		updateDeployment)
